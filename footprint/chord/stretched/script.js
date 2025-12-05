@@ -3,7 +3,7 @@
 
 // Global configuration
 const config = {
-    margin: {left: 50, top: 10, right: 50, bottom: 10},
+    margin: {left: 50, top: 10, right: 50, bottom: 120},
     opacity: {
         default: 0.7,
         low: 0.02
