@@ -106,8 +106,8 @@ function parseNumeric(value) {
 //     });
 // }
 
-function loadMenu() {
-    let hash = getUrlHash();
+async function loadMenu() {
+    let hash = (typeof getHash === "function") ? getHash() : getUrlHash();
 
     const searchDiv = document.getElementById("usda-search-div");
     const searchResultsContainer = document.getElementById("search-results-container");
@@ -125,7 +125,10 @@ function loadMenu() {
         searchDiv.style.display = "none";
         searchResultsContainer.style.display = "none";
         menuContainer.style.display = "none";
-        loadProductList();
+        await loadProductList();
+        if (hash.country && hash.id) {
+            await loadProductByCountryAndId(hash.country, hash.id);
+        }
         return;
     }
 
@@ -291,20 +294,69 @@ async function loadItems(region, category) {
     const files = await fetchJSON(`${API_BASE}/${region}/${category}`);
 
     files.filter(x => x.type === "file" && x.name.endsWith(".yaml")).forEach(file => {
-        const row = document.createElement("div");
-        row.classList.add("file-row");
-        row.textContent = file.name.replace(".yaml", "");
-        row.onclick = () => loadYAMLProfile(region, category, file);
+        const id = file.name.replace(".yaml", "");  
+            
+            const row = document.createElement("div");
+            row.classList.add("file-row");
+            row.textContent = id;
+
+            row.onclick = () => {
+                // Hide UUID list
+                container.style.display = "none";
+
+                // Update URL hash
+                if (typeof updateHash === "function") {
+                    updateHash({
+                        layout: "product",
+                        country: region,
+                        id: id
+                    });
+                }
+
+                loadYAMLProfile(region, category, file);
+            };
         container.appendChild(row);
     });
 }
+
+async function loadProductByCountryAndId(region, id) {
+    try {
+        const categories = await fetchJSON(`${API_BASE}/${region}`);
+
+        for (const cat of categories.filter(x => x.type === "dir")) {
+            const files = await fetchJSON(`${API_BASE}/${region}/${cat.name}`);
+            const match = files.find(
+                f => f.type === "file" && f.name.replace(".yaml", "") === id
+            );
+
+            if (match) {
+                const container = document.getElementById("product-container");
+                if (container) {
+                    container.innerHTML = `<h3>${region} / ${cat.name}</h3>`;
+                }
+
+                await loadYAMLProfile(region, cat.name, match);
+                return;
+            }
+        }
+    } catch (e) {
+        console.log("Error loading product from hash:", e);
+    }
+}
+
 
 async function loadYAMLProfile(region, category, file) {
     const yamlText = await fetchText(file.download_url);
     const data = jsyaml.load(yamlText);
 
     const profile = createProfileObject(data);
-
+    
+    const uuidListContainer = document.getElementById("product-container");
+    if (uuidListContainer) {
+        uuidListContainer.innerHTML = "";  
+        uuidListContainer.style.display = "none";
+    }
+    
     const container = document.getElementById("product-label");
     if (!container) return;
 
