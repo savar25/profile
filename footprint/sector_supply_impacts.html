@@ -264,9 +264,9 @@
       
           <div style="display:flex; flex-wrap:wrap; gap:20px; width:100%">
             <!-- Left: D3 Separated chord chart -->
-            <div id="chart2Parent" style="flex:0 0 100%; min-width:300px; position:relative;">
-              <div id="chart2Wrapper" myparent="chart2Parent" class="basePanel" style="width:100%; height:100%; position: relative;">
-                <div id="chart2" style="width:100%; height:100%;"></div>
+            <div id="chart2Parent" style="flex:0 0 100%; min-width:300px; height:600px; position:relative;">
+              <div id="chart2Wrapper" myparent="chart2Parent" class="basePanel" style="width:100%; height:100%; position: relative; overflow:hidden;">
+                <div id="chart2" style="width:100%; height:100%; overflow:hidden;"></div>
                 <!-- Expand Icon for Chart2 -->
                 <div class="fullscreen-toggle-container" style="position: absolute; top: 8px; right: 8px; z-index: 10;">
                   <button class="fullscreen-toggle-btn" mywidgetpanel="chart2Wrapper" onclick="myHero()" title="Collapse Chart">
@@ -1153,6 +1153,11 @@
           // Update layout after the myHero function completes
           setTimeout(function() {
             updateChartLayout();
+
+            // Trigger resize event so charts redraw at correct size (with delay for DOM to settle)
+            setTimeout(function() {
+              window.dispatchEvent(new Event('resize'));
+            }, 50);
 
             // Scroll to expanded chart
             const panelId = btn.getAttribute('mywidgetpanel');
