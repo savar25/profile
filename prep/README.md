@@ -21,5 +21,5 @@ Multi-Regional Input-Output (MRIO) Models - Data Pulls
 
 <a href="../../profile/trade/map/">Trade Flow Map</a>  
 <a href="../../profile/footprint/sector_supply_impacts.html">Chord (D3)</a>
-<a href="../charts/echarts/sankey-nodeAlign-left.html">Sankey (eCharts)</a>
+<a href="../charts/echarts/">Sankey (eCharts)</a>
 [UN Timelines](../../localsite/timeline/)
