@@ -442,7 +442,28 @@ input[type=number]::-webkit-outer-spin-button {
     background-color: #e8f4ff;
     border-color: #80bfff;
   }
-  
+
+  /* Dark mode for collapsible header */
+  .dark .collapsible-header {
+    background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+
+  .dark .collapsible-header:hover {
+    background: linear-gradient(180deg, #475569 0%, #334155 100%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark .collapsible-header.active {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  .dark .collapsible-header .calories-label {
+    color: #cbd5e1;
+  }
+
   .collapsible-content.open {
     max-height: 1000px; /* big enough for full label */
     opacity: 1;

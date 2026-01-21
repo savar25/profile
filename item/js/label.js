@@ -158,21 +158,161 @@ async function loadMenu() {
 }
 
 const FOOD_CATEGORIES = [
-    { name: "All Foods", query: "" },
-    { name: "Fruits and Fruit Juices", query: "Fruits and Fruit Juices" },
-    { name: "Vegetables", query: "Vegetables and Vegetable Products" },
-    { name: "Dairy and Eggs", query: "Dairy and Egg Products" },
-    { name: "Meats and Poultry", query: "Poultry Products" },
-    { name: "Fish and Seafood", query: "Finfish and Shellfish Products" },
-    { name: "Grains and Pasta", query: "Cereal Grains and Pasta" },
-    { name: "Nuts and Seeds", query: "Nut and Seed Products" },
-    { name: "Legumes", query: "Legumes and Legume Products" },
-    { name: "Baked Products", query: "Baked Products" },
-    { name: "Beverages", query: "Beverages" },
-    { name: "Fats and Oils", query: "Fats and Oils" },
-    { name: "Snacks and Sweets", query: "Sweets" },
-    { name: "Soups and Sauces", query: "Soups, Sauces, and Gravies" },
-    { name: "Fast Foods", query: "Fast Foods" }
+    {
+        name: "Fruits and Fruit Juices",
+        query: "Fruits and Fruit Juices",
+        subcategories: [
+            { name: "Citrus Fruits", query: "citrus orange lemon lime grapefruit" },
+            { name: "Berries", query: "berry strawberry blueberry raspberry blackberry" },
+            { name: "Stone Fruits", query: "peach plum cherry apricot nectarine" },
+            { name: "Tropical Fruits", query: "mango pineapple banana papaya guava" },
+            { name: "Apples and Pears", query: "apple pear" },
+            { name: "Melons", query: "melon watermelon cantaloupe honeydew" },
+            { name: "Grapes", query: "grape raisin" },
+            { name: "Fruit Juices", query: "juice" }
+        ]
+    },
+    {
+        name: "Vegetables",
+        query: "Vegetables and Vegetable Products",
+        subcategories: [
+            { name: "Leafy Greens", query: "lettuce spinach kale chard arugula" },
+            { name: "Root Vegetables", query: "carrot potato beet turnip radish" },
+            { name: "Cruciferous", query: "broccoli cauliflower cabbage brussels" },
+            { name: "Peppers and Tomatoes", query: "pepper tomato" },
+            { name: "Squash and Gourds", query: "squash zucchini pumpkin cucumber" },
+            { name: "Alliums", query: "onion garlic leek shallot" },
+            { name: "Beans and Peas", query: "green beans peas snap pea" },
+            { name: "Corn", query: "corn" }
+        ]
+    },
+    {
+        name: "Dairy and Eggs",
+        query: "Dairy and Egg Products",
+        subcategories: [
+            { name: "Milk", query: "milk whole skim" },
+            { name: "Cheese", query: "cheese cheddar mozzarella" },
+            { name: "Yogurt", query: "yogurt" },
+            { name: "Cream and Butter", query: "cream butter" },
+            { name: "Eggs", query: "egg" },
+            { name: "Ice Cream", query: "ice cream" }
+        ]
+    },
+    {
+        name: "Meats and Poultry",
+        query: "Poultry Products",
+        subcategories: [
+            { name: "Chicken", query: "chicken" },
+            { name: "Turkey", query: "turkey" },
+            { name: "Duck and Game Birds", query: "duck goose quail" },
+            { name: "Beef", query: "beef steak" },
+            { name: "Pork", query: "pork ham bacon" },
+            { name: "Lamb and Veal", query: "lamb veal" }
+        ]
+    },
+    {
+        name: "Fish and Seafood",
+        query: "Finfish and Shellfish Products",
+        subcategories: [
+            { name: "Finfish", query: "salmon tuna cod tilapia" },
+            { name: "Shellfish", query: "shrimp crab lobster" },
+            { name: "Mollusks", query: "clam oyster mussel scallop" },
+            { name: "Canned Seafood", query: "canned tuna salmon sardine" }
+        ]
+    },
+    {
+        name: "Grains and Pasta",
+        query: "Cereal Grains and Pasta",
+        subcategories: [
+            { name: "Rice", query: "rice" },
+            { name: "Wheat Products", query: "wheat flour bread" },
+            { name: "Pasta and Noodles", query: "pasta noodle spaghetti" },
+            { name: "Oats and Oatmeal", query: "oats oatmeal" },
+            { name: "Quinoa and Ancient Grains", query: "quinoa barley bulgur" },
+            { name: "Breakfast Cereals", query: "cereal" }
+        ]
+    },
+    {
+        name: "Nuts and Seeds",
+        query: "Nut and Seed Products",
+        subcategories: [
+            { name: "Tree Nuts", query: "almond walnut cashew" },
+            { name: "Peanuts", query: "peanut peanut butter" },
+            { name: "Seeds", query: "sunflower seed chia flax" },
+            { name: "Nut Butters", query: "almond butter nut butter" }
+        ]
+    },
+    {
+        name: "Legumes",
+        query: "Legumes and Legume Products",
+        subcategories: [
+            { name: "Beans", query: "bean kidney black pinto" },
+            { name: "Lentils", query: "lentil" },
+            { name: "Chickpeas", query: "chickpea garbanzo hummus" },
+            { name: "Soy Products", query: "tofu tempeh soy" }
+        ]
+    },
+    {
+        name: "Baked Products",
+        query: "Baked Products",
+        subcategories: [
+            { name: "Bread", query: "bread" },
+            { name: "Rolls and Buns", query: "roll bun" },
+            { name: "Cookies and Cakes", query: "cookie cake" },
+            { name: "Pastries", query: "pastry danish croissant" },
+            { name: "Muffins and Scones", query: "muffin scone" }
+        ]
+    },
+    {
+        name: "Beverages",
+        query: "Beverages",
+        subcategories: [
+            { name: "Coffee and Tea", query: "coffee tea" },
+            { name: "Soft Drinks", query: "soda cola" },
+            { name: "Energy Drinks", query: "energy drink" },
+            { name: "Water", query: "water" },
+            { name: "Plant-Based Milk", query: "almond milk soy milk oat milk" }
+        ]
+    },
+    {
+        name: "Fats and Oils",
+        query: "Fats and Oils",
+        subcategories: [
+            { name: "Cooking Oils", query: "olive oil vegetable oil canola" },
+            { name: "Butter and Margarine", query: "butter margarine" },
+            { name: "Salad Dressings", query: "dressing vinaigrette" }
+        ]
+    },
+    {
+        name: "Snacks and Sweets",
+        query: "Sweets",
+        subcategories: [
+            { name: "Candy", query: "candy chocolate" },
+            { name: "Chips and Crackers", query: "chips crackers" },
+            { name: "Popcorn", query: "popcorn" },
+            { name: "Desserts", query: "pudding gelatin" }
+        ]
+    },
+    {
+        name: "Soups and Sauces",
+        query: "Soups, Sauces, and Gravies",
+        subcategories: [
+            { name: "Soups", query: "soup" },
+            { name: "Sauces", query: "sauce tomato sauce" },
+            { name: "Gravies", query: "gravy" },
+            { name: "Condiments", query: "ketchup mustard mayo" }
+        ]
+    },
+    {
+        name: "Fast Foods",
+        query: "Fast Foods",
+        subcategories: [
+            { name: "Burgers and Sandwiches", query: "burger sandwich" },
+            { name: "Pizza", query: "pizza" },
+            { name: "Fried Foods", query: "fried chicken fries" },
+            { name: "Mexican Fast Food", query: "taco burrito" }
+        ]
+    }
 ];
 
 const PRODUCT_CATEGORIES = {
@@ -287,20 +427,92 @@ function loadFoodCategorySidebar() {
     if (!sidebar || !categoryList) return;
 
     sidebar.style.display = "block";
+    const sidebarTitle = sidebar.querySelector("h3");
+    if (sidebarTitle) {
+        sidebarTitle.textContent = "Food Categories";
+    }
+
     categoryList.innerHTML = "";
 
     FOOD_CATEGORIES.forEach((category, index) => {
-        const categoryDiv = document.createElement("div");
-        categoryDiv.className = "category-item";
-        categoryDiv.textContent = category.name;
-        categoryDiv.dataset.query = category.query;
-        categoryDiv.dataset.index = index;
+        // Create category container
+        const categoryContainer = document.createElement("div");
+        categoryContainer.style.marginBottom = "8px";
 
-        categoryDiv.onclick = function() {
-            selectFoodCategory(category, categoryDiv);
+        // Create category header
+        const categoryHeader = document.createElement("div");
+        categoryHeader.className = "category-header";
+
+        // Category title button with arrow inside
+        const categoryTitle = document.createElement("div");
+        categoryTitle.className = "category-title";
+
+        // Only add arrow if category has subcategories
+        if (category.subcategories && category.subcategories.length > 0) {
+            categoryTitle.innerHTML = `<span class="toggle-arrow">▶</span> ${category.name}`;
+        } else {
+            categoryTitle.textContent = category.name;
+        }
+
+        categoryTitle.dataset.categoryName = category.name;
+        categoryTitle.dataset.query = category.query;
+        categoryTitle.dataset.index = index;
+
+        const subcategoryList = document.createElement("ul");
+        subcategoryList.className = "subcategory-list";
+        subcategoryList.style.display = "none";
+
+        // Click title behavior: toggle submenu if exists, or search main category
+        categoryTitle.onclick = function(e) {
+            e.stopPropagation();
+
+            if (category.subcategories && category.subcategories.length > 0) {
+                // Has subcategories - toggle submenu
+                const arrow = categoryTitle.querySelector(".toggle-arrow");
+                const isOpen = subcategoryList.style.display === "block";
+
+                if (isOpen) {
+                    subcategoryList.style.display = "none";
+                    arrow.classList.remove("open");
+                    categoryTitle.classList.remove("active");
+                } else {
+                    subcategoryList.style.display = "block";
+                    arrow.classList.add("open");
+                    categoryTitle.classList.add("active");
+                }
+            } else {
+                // No subcategories - search main category directly
+                selectFoodCategory(category.query, categoryTitle);
+            }
         };
 
-        categoryList.appendChild(categoryDiv);
+        categoryHeader.appendChild(categoryTitle);
+        categoryContainer.appendChild(categoryHeader);
+
+        // Create subcategory list if exists
+        if (category.subcategories && category.subcategories.length > 0) {
+            category.subcategories.forEach(subcat => {
+                const subcatItem = document.createElement("li");
+                subcatItem.className = "subcategory-item";
+
+                const subcatLink = document.createElement("a");
+                subcatLink.className = "subcategory-link";
+                subcatLink.textContent = subcat.name;
+                subcatLink.dataset.query = subcat.query;
+
+                subcatLink.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectFoodCategory(subcat.query, subcatLink);
+                };
+
+                subcatItem.appendChild(subcatLink);
+                subcategoryList.appendChild(subcatItem);
+            });
+        }
+
+        categoryContainer.appendChild(subcategoryList);
+        categoryList.appendChild(categoryContainer);
     });
 }
 
@@ -387,23 +599,26 @@ function loadProductCategorySidebar() {
     });
 }
 
-function selectFoodCategory(category, element) {
-    // Remove active class from all categories
-    document.querySelectorAll(".category-item").forEach(item => {
+function selectFoodCategory(queryString, element) {
+    // Remove active class from all category-related elements
+    document.querySelectorAll(".category-item, .category-title, .subcategory-link").forEach(item => {
         item.classList.remove("active");
     });
 
-    // Add active class to selected category
-    element.classList.add("active");
-    selectedCategory = category.query;
+    // Add active class to selected element if provided
+    if (element) {
+        element.classList.add("active");
+    }
+
+    selectedCategory = queryString;
 
     // Filter foods by category
-    if (category.query === "") {
+    if (!queryString || queryString === "") {
         // Show all foods (initial display)
         displayInitialFoodItems();
     } else {
         // Search USDA API by category
-        searchUSDAFoodByCategory(category.query);
+        searchUSDAFoodByCategory(queryString);
     }
 }
 
