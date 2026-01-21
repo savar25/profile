@@ -2,16 +2,6 @@
 
 # Profile YAML and JS
 
-**What's New:** <a href="menu.html">Nutritious Meal Planner</a>
+**What's New:** <a href="menu.html">Nutritious Meal Planner</a> and <a href="menu.html#layout=product&country=US&id=61a3d3f6469b4e9baa9da7605650a63d">Product Impact Details</a>
 
 Toggle between [Nutrition Layout](#layout=nutrition) and [Product Layout](#layout=product)
-
-TO DO: Add impact details from [BuildingTransparency.org Products](/products/) to the [Product Layout](#layout=product).  
-
-[View Profile Label JavaScript](https://github.com/ModelEarth/profile/blob/main/item/js/label.js)
-
-Our following label builder is similar to a [Nutritionix Label](/data-commons/docs/food/), but it's easier to reuse since the layout object is built from YAML by a javascript template. Here's an assist from [ChatGPT](https://chatgpt.com/share/68ade5c5-9b05-46a8-a0da-ccd771289693). Combines Food YAML and Daily Recommended YAML to create Profile Object json.
-
-**Additional Nutrition Labels**  
-<a href="https://model.earth/nutrition-label/dist/demo/demo.html">Nutritionix&nbsp;Label&nbsp;Demos</a>  
-<a href="https://github.com/nutritionix/nutrition-label/tree/master/dist/demo">Nutrition Label GitHub</a>

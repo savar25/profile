@@ -1,0 +1,3 @@
+The model.earth label builder is similar to a [Nutritionix Label](https://model.earth/data-commons/docs/food/), but it's easier to reuse since the layout object is built from YAML by a javascript template that combines Food YAML and Daily Recommended YAML to create Profile Object json. [View JavaScript](https://github.com/ModelEarth/profile/blob/main/item/js/label.js)
+
+**Additional Nutrition Labels:** <a href="https://model.earth/nutrition-label/dist/demo/demo.html">Nutritionix&nbsp;Label&nbsp;Demos</a> and <a href="https://github.com/nutritionix/nutrition-label/tree/master/dist/demo">Nutrition Label GitHub</a>
