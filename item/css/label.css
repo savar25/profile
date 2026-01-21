@@ -438,3 +438,1861 @@ input[type=number]::-webkit-outer-spin-button {
     opacity: 1;
     padding: 10px;
   }
+
+/* ============================================
+   Environmental Badge Style
+   ============================================ */
+
+.eco-badge-label {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 380px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.eco-badge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.declared-unit {
+  font-size: 0.85em;
+  color: #64748b;
+}
+
+.eco-score-badge {
+  min-width: 90px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.score-value {
+  font-size: 1.8em;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.score-unit {
+  font-size: 0.7em;
+  opacity: 0.9;
+  margin-top: 0;
+}
+
+.score-label {
+  font-size: 0.65em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+  opacity: 0.95;
+}
+
+/* Impact Breakdown */
+.eco-breakdown {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.eco-metric {
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.eco-metric:last-child {
+  border-bottom: none;
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.metric-name {
+  font-size: 0.9em;
+  color: #475569;
+  font-weight: 500;
+}
+
+.metric-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.metric-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.metric-value {
+  font-size: 1.4em;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.metric-unit {
+  font-size: 0.8em;
+  color: #64748b;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.submetrics {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #e2e8f0;
+}
+
+.submetric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.85em;
+}
+
+.submetric-name {
+  color: #64748b;
+}
+
+.submetric-value {
+  color: #475569;
+  font-weight: 500;
+}
+
+/* Composition Section */
+.eco-composition {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.composition-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.composition-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.composition-item {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  align-items: center;
+  gap: 10px;
+}
+
+.material-name {
+  font-size: 0.85em;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.material-bar-wrapper {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.material-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.material-percent {
+  font-size: 0.85em;
+  color: #64748b;
+  text-align: right;
+}
+
+/* Percentile Chart */
+.percentile-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.percentile-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.percentile-bar-container {
+  margin-bottom: 10px;
+}
+
+.percentile-bar {
+  position: relative;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.percentile-zones {
+  display: flex;
+  height: 100%;
+}
+
+.percentile-zones .zone {
+  flex: 1;
+}
+
+.zone.excellent { background: #22c55e; }
+.zone.good { background: #84cc16; }
+.zone.average { background: #f59e0b; }
+.zone.below { background: #f97316; }
+.zone.poor { background: #ef4444; }
+
+.percentile-marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 32px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.percentile-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75em;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.percentile-result {
+  font-size: 0.9em;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* ============================================
+   Settings Bar Component (Full Width)
+   ============================================ */
+
+.label-settings-bar {
+  width: 100%;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.settings-bar-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.settings-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.settings-label svg {
+  opacity: 0.7;
+}
+
+.settings-divider {
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+}
+
+.style-toggle,
+.verbosity-toggle {
+  display: flex;
+  gap: 4px;
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.style-btn,
+.verbosity-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.style-btn .btn-icon,
+.verbosity-btn .btn-icon {
+  font-size: 1em;
+}
+
+.style-btn:hover,
+.verbosity-btn:hover {
+  color: #475569;
+  background: #f8fafc;
+}
+
+.style-btn.active,
+.verbosity-btn.active {
+  background: #3b82f6;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
+}
+
+.style-btn.active:hover,
+.verbosity-btn.active:hover {
+  background: #2563eb;
+  color: white;
+}
+
+/* Legacy dropdown support (hidden by default) */
+.label-settings-toggle {
+  display: none;
+}
+
+/* Dark Mode for Settings Bar */
+.dark .label-settings-bar {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+  border-color: #334155;
+}
+
+.dark .settings-label {
+  color: #94a3b8;
+}
+
+.dark .settings-divider {
+  background: #334155;
+}
+
+.dark .style-toggle,
+.dark .verbosity-toggle {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark .style-btn,
+.dark .verbosity-btn {
+  color: #94a3b8;
+}
+
+.dark .style-btn:hover,
+.dark .verbosity-btn:hover {
+  color: #f1f5f9;
+  background: #1e293b;
+}
+
+.dark .style-btn.active,
+.dark .verbosity-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Responsive Settings Bar */
+@media (max-width: 640px) {
+  .label-settings-bar {
+    padding: 12px 14px;
+  }
+
+  .settings-bar-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .settings-group {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .settings-divider {
+    display: none;
+  }
+
+  .style-toggle,
+  .verbosity-toggle {
+    flex: 1;
+  }
+
+  .style-btn,
+  .verbosity-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.8em;
+  }
+}
+
+/* ============================================
+   Calculator Styles
+   ============================================ */
+
+.product-calculator,
+.travel-calculator {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.calculator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.calculator-title {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95em;
+}
+
+.calculator-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calc-row label {
+  font-size: 0.85em;
+  color: #64748b;
+  min-width: 100px;
+}
+
+.calc-row input[type="number"],
+.calc-row select {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.calc-row input[type="number"]:focus,
+.calc-row select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+}
+
+.calculator-results {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.9em;
+}
+
+.result-row.primary {
+  background: #f0f9ff;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 6px -4px;
+}
+
+.result-row.primary .result-label,
+.result-row.primary .result-value {
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.result-row.savings .result-value {
+  color: #22c55e;
+}
+
+.result-row.increase .result-value {
+  color: #ef4444;
+}
+
+.result-label {
+  color: #64748b;
+}
+
+.result-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.calculator-note {
+  font-size: 0.75em;
+  color: #94a3b8;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Calculator Unit Dropdown */
+.calculator-unit-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.calculator-unit-dropdown label {
+  font-size: 0.85em;
+  color: #64748b;
+}
+
+.unit-select {
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+}
+
+/* ============================================
+   Product Label FDA Style Enhancements
+   ============================================ */
+
+.product-label.fda-style {
+  background: white;
+  max-width: 350px;
+}
+
+.product-label.fda-style .label-header {
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.product-label.fda-style .label-title {
+  font-size: 1.5em;
+  font-weight: 900;
+  font-family: 'Archivo Black', Arial, sans-serif;
+}
+
+.product-label.fda-style .primary-metric {
+  font-size: 1.1em;
+}
+
+.product-label.fda-style .label-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #000;
+}
+
+.product-label.fda-style .disclaimer {
+  font-size: 0.75em;
+  color: #666;
+  line-height: 1.3;
+}
+
+/* ============================================
+   Dark Mode Support for New Styles
+   ============================================ */
+
+.dark .eco-badge-label {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.dark .product-name {
+  color: #f1f5f9;
+}
+
+.dark .declared-unit {
+  color: #94a3b8;
+}
+
+.dark .eco-breakdown,
+.dark .eco-composition,
+.dark .percentile-chart {
+  background: #1e293b;
+}
+
+.dark .metric-name,
+.dark .material-name {
+  color: #94a3b8;
+}
+
+.dark .metric-value,
+.dark .composition-title,
+.dark .percentile-title {
+  color: #f1f5f9;
+}
+
+.dark .submetric-name,
+.dark .material-percent {
+  color: #64748b;
+}
+
+.dark .submetric-value {
+  color: #94a3b8;
+}
+
+.dark .eco-metric,
+.dark .submetrics {
+  border-color: #334155;
+}
+
+.dark .material-bar-wrapper {
+  background: #334155;
+}
+
+.dark .product-calculator,
+.dark .travel-calculator {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.dark .calculator-title,
+.dark .result-value {
+  color: #f1f5f9;
+}
+
+.dark .calc-row label,
+.dark .result-label {
+  color: #94a3b8;
+}
+
+.dark .calc-row input,
+.dark .calc-row select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .result-row.primary {
+  background: #0f172a;
+}
+
+.dark .result-row.primary .result-label,
+.dark .result-row.primary .result-value {
+  color: #38bdf8;
+}
+
+.dark .calculator-note {
+  color: #64748b;
+  border-color: #334155;
+}
+
+.dark .settings-btn {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+.dark .settings-btn:hover {
+  background: #475569;
+  color: #f1f5f9;
+}
+
+.dark .settings-dropdown {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.dark .settings-section label {
+  color: #94a3b8;
+}
+
+.dark .style-toggle,
+.dark .verbosity-toggle {
+  background: #0f172a;
+}
+
+.dark .style-btn,
+.dark .verbosity-btn {
+  color: #94a3b8;
+}
+
+.dark .style-btn.active,
+.dark .verbosity-btn.active {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+/* ============================================
+   Loading and Error States
+   ============================================ */
+
+.loading,
+.error {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9em;
+}
+
+.error {
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.dark .error {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+/* ============================================
+   Product Details Panel
+   ============================================ */
+
+.product-main-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.product-label-wrapper {
+  flex: 0 0 auto;
+  max-width: 380px;
+}
+
+.product-details-wrapper {
+  flex: 1;
+  min-width: 300px;
+  max-width: 800px;
+}
+
+.product-details-panel {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ============================================
+   Shared Panel Styling
+   ============================================ */
+
+.panel-section,
+.percentile-bar-chart,
+.production-locations,
+.material-composition-section,
+.certifications-section,
+.product-description-section,
+.additional-properties-section,
+.carbon-storage-section,
+.missing-impacts-section,
+.transportation-panel,
+.impact-calculator-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Dark mode for all panel sections */
+.dark .panel-section,
+.dark .percentile-bar-chart,
+.dark .production-locations,
+.dark .material-composition-section,
+.dark .certifications-section,
+.dark .product-description-section,
+.dark .additional-properties-section,
+.dark .carbon-storage-section,
+.dark .missing-impacts-section,
+.dark .transportation-panel,
+.dark .impact-calculator-panel {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* ============================================
+   Product Label Wrapper (Nutrition Label Style)
+   ============================================ */
+
+.product-label-wrapper .nutrition-label,
+.product-label-wrapper .eco-badge-label {
+  background: white;
+}
+
+/* Dark mode for nutrition label */
+.dark .product-label-wrapper .nutrition-label {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.dark .product-label-wrapper .nutrition-label .item-name {
+  color: #f1f5f9;
+}
+
+.dark .product-label-wrapper .nutrition-label .serving-size {
+  color: #e2e8f0;
+}
+
+.dark .product-label-wrapper .nutrition-label .thick-line {
+  border-top-color: #64748b;
+}
+
+.dark .product-label-wrapper .nutrition-label .thin-line {
+  border-top-color: #475569;
+}
+
+.dark .product-label-wrapper .nutrition-label .section-title,
+.dark .product-label-wrapper .nutrition-label .section-title strong {
+  color: #f1f5f9;
+}
+
+.dark .product-label-wrapper .nutrition-label .value {
+  color: #e2e8f0;
+}
+
+.dark .product-label-wrapper .nutrition-label .daily-value {
+  color: #94a3b8;
+}
+
+.dark .product-label-wrapper .nutrition-label .sub-section {
+  color: #cbd5e1;
+}
+
+.dark .product-label-wrapper .nutrition-label .label-footer,
+.dark .product-label-wrapper .nutrition-label .disclaimer {
+  color: #94a3b8;
+}
+
+/* ============================================
+   Food Category Sidebar Dark Mode
+   ============================================ */
+
+.dark #food-category-sidebar {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark #food-category-sidebar h3 {
+  color: #f1f5f9;
+}
+
+.dark .category-item {
+  background: #0f172a;
+  color: #cbd5e1;
+}
+
+.dark .category-item:hover {
+  background: #334155;
+}
+
+.dark .category-item.active {
+  background: #22c55e;
+  color: white;
+}
+
+.dark .category-title {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark .category-title:hover {
+  background-color: #1e3a3a;
+  border-color: #22c55e;
+}
+
+.dark .category-title.active {
+  background-color: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+
+.dark .category-arrow {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.dark .category-arrow:hover {
+  background-color: #1e3a3a;
+  border-color: #22c55e;
+}
+
+.dark .subcategory-list {
+  border-left-color: #334155;
+}
+
+.dark .subcategory-link {
+  color: #94a3b8;
+}
+
+.dark .subcategory-link:hover {
+  background-color: #334155;
+  color: #f1f5f9;
+}
+
+/* ============================================
+   Transportation Panel Specific Styles
+   ============================================ */
+
+.transportation-panel .a4-explanation,
+.impact-calculator-panel .calc-explanation {
+  font-size: 0.85em;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .transportation-panel .a4-explanation,
+.dark .impact-calculator-panel .calc-explanation {
+  color: #94a3b8;
+  border-bottom-color: #334155;
+}
+
+.no-data-msg {
+  font-size: 0.9em;
+  color: #94a3b8;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Breadcrumb */
+.product-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+}
+
+.breadcrumb-item {
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.breadcrumb-item.current {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.breadcrumb-sep {
+  color: #cbd5e1;
+  font-size: 1.2em;
+}
+
+/* Section Headers */
+.section-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.section-header h4 {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Details Columns */
+.details-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.details-column {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Percentile Bar Chart */
+.percentile-bar-chart {
+  /* Uses shared panel styling */
+}
+
+.chart-header {
+  margin-bottom: 16px;
+}
+
+.chart-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 1em;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.chart-subtitle {
+  font-size: 0.8em;
+  color: #64748b;
+}
+
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-row.current-product {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.chart-label {
+  font-size: 0.85em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.chart-row.current-product .chart-label {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.chart-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-bar {
+  height: 20px;
+  border-radius: 4px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.chart-value {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: #1e293b;
+  min-width: 50px;
+}
+
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75em;
+  color: #64748b;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* Production Locations */
+.production-locations {
+  /* Uses shared panel styling */
+}
+
+.locations-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.location-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.location-type {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.location-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.location-address {
+  font-size: 0.9em;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.location-carbon {
+  font-size: 0.85em;
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.location-link {
+  display: inline-block;
+  margin-top: 8px;
+  margin-right: 12px;
+  font-size: 0.85em;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.location-link:hover {
+  text-decoration: underline;
+}
+
+/* Material Composition */
+.material-composition-section {
+  /* Uses shared panel styling */
+}
+
+.composition-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.composition-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.composition-row.packaging {
+  opacity: 0.7;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.material-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.material-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.material-badge {
+  font-size: 0.7em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.material-badge.recycled {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.material-badge.renewable {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.material-badge.packaging {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.material-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.9em;
+}
+
+.material-percent {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.material-mass {
+  color: #64748b;
+}
+
+.material-bar-bg {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.material-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Certifications */
+.certifications-section {
+  /* Uses shared panel styling */
+}
+
+.certifications-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cert-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.cert-card.warning {
+  background: #fef3c7;
+}
+
+.cert-icon {
+  font-size: 1.2em;
+  width: 28px;
+  text-align: center;
+}
+
+.cert-info {
+  flex: 1;
+}
+
+.cert-type {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.9em;
+}
+
+.cert-details {
+  font-size: 0.85em;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.cert-card.warning .cert-details {
+  color: #92400e;
+}
+
+/* Product Description */
+.product-description-section {
+  /* Uses shared panel styling */
+  margin-bottom: 24px;
+}
+
+.manufacturer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mfr-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.brand-name {
+  color: #64748b;
+  font-size: 0.9em;
+}
+
+.description-text {
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Additional Properties */
+.additional-properties-section {
+  /* Uses shared panel styling */
+  margin-top: 24px;
+}
+
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+/* Inline 3-column properties (no panel wrapper) */
+.additional-properties-inline {
+  margin-top: 0;
+}
+
+.details-separator {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 20px 0 16px 0;
+}
+
+.dark .details-separator {
+  border-top-color: #334155;
+}
+
+.properties-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px 24px;
+}
+
+@media (max-width: 768px) {
+  .properties-grid-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .properties-grid-3col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.property-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.property-label {
+  font-size: 0.8em;
+  color: #64748b;
+}
+
+.property-value {
+  font-weight: 500;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+/* Dark Mode for Product Details */
+.dark .product-breadcrumb {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+}
+
+.dark .breadcrumb-item {
+  color: #94a3b8;
+}
+
+.dark .breadcrumb-item.current {
+  color: #f1f5f9;
+}
+
+.dark .breadcrumb-sep {
+  color: #475569;
+}
+
+.dark .section-header {
+  border-color: #334155;
+}
+
+.dark .section-header h4 {
+  color: #f1f5f9;
+}
+
+/* Dark mode for individual panels now handled by shared selector above */
+
+.dark .chart-header h4,
+.dark .chart-value,
+.dark .location-name,
+.dark .material-name,
+.dark .material-percent,
+.dark .cert-type,
+.dark .mfr-name,
+.dark .property-value {
+  color: #f1f5f9;
+}
+
+.dark .chart-subtitle,
+.dark .chart-label,
+.dark .location-type,
+.dark .location-address,
+.dark .material-mass,
+.dark .cert-details,
+.dark .brand-name,
+.dark .property-label {
+  color: #94a3b8;
+}
+
+.dark .location-card,
+.dark .cert-card {
+  background: #0f172a;
+}
+
+.dark .cert-card.warning {
+  background: #422006;
+}
+
+.dark .material-bar-bg,
+.dark .chart-legend,
+.dark .chart-row.current-product,
+.dark .composition-row.packaging {
+  border-color: #334155;
+}
+
+.dark .material-bar-bg {
+  background: #334155;
+}
+
+.dark .description-text {
+  color: #cbd5e1;
+}
+
+/* ============================================
+   Info Icons and Tooltips (Click-based, inline below)
+   ============================================ */
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  color: #94a3b8;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.info-icon:hover {
+  color: #3b82f6;
+}
+
+.info-icon.active {
+  color: #3b82f6;
+}
+
+.info-icon svg {
+  display: block;
+}
+
+.info-tooltip {
+  display: none;
+  position: relative;
+  margin-top: 8px;
+  margin-left: -130px;
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: 400;
+  line-height: 1.5;
+  width: 260px;
+  max-width: 90vw;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Arrow pointing UP at the info icon */
+.info-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-bottom-color: #1e293b;
+}
+
+/* Show tooltip when info-icon has active class */
+.info-icon.active .info-tooltip {
+  display: block;
+}
+
+/* Z-Score Indicator */
+.zscore-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.zscore-label {
+  font-size: 0.85em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+
+.zscore-value {
+  font-size: 1.4em;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.zscore-value.better {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.zscore-value.worse {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.zscore-value.average {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.zscore-desc {
+  font-size: 0.85em;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Percentile Badge */
+.chart-percentile-badge {
+  font-size: 0.75em;
+  padding: 2px 8px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Carbon Storage Section */
+.carbon-storage-section {
+  /* Uses shared panel styling */
+}
+
+.carbon-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.carbon-metric {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.carbon-metric .metric-label {
+  font-size: 0.9em;
+  color: #64748b;
+  min-width: 160px;
+}
+
+.carbon-metric .metric-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.carbon-metric .metric-value.positive {
+  color: #22c55e;
+}
+
+.carbon-metric .metric-value.negative {
+  color: #64748b;
+}
+
+.carbon-metric .metric-desc {
+  font-size: 0.8em;
+  color: #94a3b8;
+  width: 100%;
+  margin-left: 168px;
+}
+
+/* Missing Impacts Section */
+.missing-impacts-section {
+  /* Uses shared panel styling */
+}
+
+.impacts-coverage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.coverage-bar {
+  flex: 1;
+  height: 8px;
+  background: #fee2e2;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.coverage-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.coverage-text {
+  font-size: 0.85em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.impacts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.impacts-list .list-label {
+  font-size: 0.8em;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.impact-tag {
+  font-size: 0.75em;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.impact-tag.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.impact-tag.missing {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Location Owner */
+.location-owner {
+  font-size: 0.85em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+/* Benchmark Chart Enhancements */
+.benchmark-chart .chart-row {
+  padding: 4px 0;
+}
+
+.benchmark-chart .chart-row:nth-child(5) {
+  border-top: 1px dashed #e2e8f0;
+  border-bottom: 1px dashed #e2e8f0;
+  padding: 8px 0;
+  margin: 4px 0;
+  background: #fefce8;
+  border-radius: 4px;
+}
+
+/* Dark Mode for New Elements */
+.dark .info-tooltip {
+  background: #0f172a;
+  border: 1px solid #475569;
+}
+
+/* Dark mode arrow with border effect - uses layered pseudo-element technique */
+.dark .info-tooltip::before {
+  border-bottom-color: #0f172a;
+}
+
+/* Arrow border in dark mode - outer arrow for border effect */
+.dark .info-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-bottom-color: #475569;
+  margin-bottom: 1px;
+}
+
+.dark .zscore-indicator {
+  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+}
+
+.dark .zscore-value.better {
+  background: #14532d;
+  color: #86efac;
+}
+
+.dark .zscore-value.worse {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.dark .zscore-value.average {
+  background: #78350f;
+  color: #fcd34d;
+}
+
+/* Dark mode handled by shared panel selector */
+
+.dark .carbon-metric .metric-label {
+  color: #94a3b8;
+}
+
+.dark .carbon-metric .metric-value {
+  color: #f1f5f9;
+}
+
+.dark .carbon-metric .metric-value.positive {
+  color: #86efac;
+}
+
+.dark .coverage-bar {
+  background: #7f1d1d;
+}
+
+.dark .impact-tag.available {
+  background: #14532d;
+  color: #86efac;
+}
+
+.dark .impact-tag.missing {
+  background: #334155;
+  color: #94a3b8;
+}
+
+.dark .benchmark-chart .chart-row:nth-child(5) {
+  background: #422006;
+  border-color: #78350f;
+}
+
+.dark .chart-percentile-badge {
+  background: #1d4ed8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .product-main-content {
+    flex-direction: column;
+  }
+
+  .product-label-wrapper,
+  .product-details-wrapper {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .details-columns {
+    flex-direction: column;
+  }
+
+  .details-column {
+    min-width: 100%;
+  }
+
+  .chart-row {
+    grid-template-columns: 80px 1fr;
+  }
+
+  .info-tooltip {
+    left: 0;
+    transform: translateX(0);
+    width: 200px;
+  }
+
+  .info-tooltip::after {
+    left: 20px;
+  }
+
+  .zscore-indicator {
+    flex-wrap: wrap;
+  }
+
+  .carbon-metric .metric-desc {
+    margin-left: 0;
+  }
+}

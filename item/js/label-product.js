@@ -1,0 +1,1603 @@
+// label-product.js - Product Impact Label Rendering
+// Displays environmental impact data from product YAML files in FDA or Badge style
+
+// ============================================
+// Product Label Rendering
+// ============================================
+
+function renderProductLabel(profileObject, quantity = 1, options = {}) {
+    const settings = typeof getLabelSettings === "function" ? getLabelSettings() : { style: "fda", verbosity: "medium" };
+    const style = options.style || settings.style;
+    const verbosity = options.verbosity || settings.verbosity;
+
+    if (style === "badge") {
+        return renderProductBadgeStyle(profileObject, quantity, verbosity);
+    }
+    return renderProductFDAStyle(profileObject, quantity, verbosity);
+}
+
+// ============================================
+// FDA Nutrition Facts Style
+// ============================================
+
+function renderProductFDAStyle(profileObject, quantity = 1, verbosity = "medium") {
+    const div = document.createElement("div");
+    div.className = "nutrition-label product-label fda-style";
+
+    const declaredUnit = profileObject.declaredUnit || "unit";
+
+    // Header
+    div.innerHTML = `
+        <div class="label-header">
+            <div class="label-title">Environmental Impact Facts</div>
+        </div>
+        <div class="item-label-header">
+            <div class="item-name">${profileObject.itemName || "Product"}</div>
+        </div>
+        <hr class="thick-line">
+        <div class="serving-size">Impact Per ${quantity > 1 ? quantity + " " : ""}${declaredUnit}</div>
+        <hr class="thin-line">
+    `;
+
+    // Filter sections based on verbosity
+    const sectionsToShow = filterSectionsByVerbosity(profileObject.sections, verbosity);
+
+    sectionsToShow.forEach(section => {
+        const sectionDiv = renderFDASection(section, quantity);
+        div.appendChild(sectionDiv);
+        const hr = document.createElement("hr");
+        hr.className = "thin-line";
+        div.appendChild(hr);
+    });
+
+    // Footer with benchmark info
+    if (verbosity !== "simple") {
+        const footer = document.createElement("div");
+        footer.className = "label-footer";
+        footer.innerHTML = `
+            <div class="disclaimer">
+                * Percent of Average Impact based on industry benchmarks.
+                <br>Lower values indicate better environmental performance.
+            </div>
+        `;
+        div.appendChild(footer);
+    }
+
+    return div;
+}
+
+function renderFDASection(section, quantity) {
+    const val = section.value * quantity;
+    const unit = section.unit || getUnit(section.name);
+    const formattedVal = formatValue(val, section.name, section.decimals || 2);
+    const percentOfAvg = section.percentOfAverage ? Math.round(section.percentOfAverage * quantity) : null;
+
+    const sectionDiv = document.createElement("div");
+    sectionDiv.className = "nutrition-section";
+
+    // Check if this is a primary/important metric
+    const isPrimary = section.primary || section.name.toLowerCase().includes("global warming");
+
+    // Get appropriate tooltip for this metric
+    let tooltip = "";
+    const nameLower = section.name.toLowerCase();
+    if (nameLower.includes("global warming") || nameLower.includes("gwp")) {
+        tooltip = createInfoIcon(METRIC_TOOLTIPS.gwp, 'tip-gwp-label');
+    } else if (nameLower.includes("uncertainty")) {
+        tooltip = createInfoIcon(METRIC_TOOLTIPS.uncertainty, 'tip-uncertainty-label');
+    }
+
+    sectionDiv.innerHTML = `
+        <div class="section-title ${isPrimary ? 'primary-metric' : ''}">
+            <span>
+                ${isPrimary ? '<strong>' : ''}${section.name}${isPrimary ? '</strong>' : ''}
+                ${tooltip}
+                <span class="value">${formattedVal}${unit}</span>
+            </span>
+            <span class="daily-value">${percentOfAvg ? percentOfAvg + '%*' : ''}</span>
+        </div>
+    `;
+
+    // Subsections
+    if (section.subsections && section.subsections.length > 0) {
+        section.subsections.forEach(subsection => {
+            const subVal = subsection.value * quantity;
+            const subUnit = subsection.unit || getUnit(subsection.name);
+            const subFormattedVal = formatValue(subVal, subsection.name, subsection.decimals || 2);
+            const subPercent = subsection.percentOfAverage ? Math.round(subsection.percentOfAverage * quantity) : null;
+
+            const subDiv = document.createElement("div");
+            subDiv.className = "sub-section";
+            subDiv.innerHTML = `
+                <span>${subsection.name}</span>
+                <span class="value">${subFormattedVal}${subUnit}</span>
+                <span class="daily-value">${subPercent ? subPercent + '%*' : ''}</span>
+            `;
+            sectionDiv.appendChild(subDiv);
+        });
+    }
+
+    return sectionDiv;
+}
+
+// ============================================
+// Environmental Badge Style
+// ============================================
+
+function renderProductBadgeStyle(profileObject, quantity = 1, verbosity = "medium") {
+    const div = document.createElement("div");
+    div.className = "eco-badge-label product-label badge-style";
+
+    const declaredUnit = profileObject.declaredUnit || "unit";
+
+    // Get primary GWP for the main badge
+    const primaryGWP = profileObject.sections.find(s =>
+        s.name.toLowerCase().includes("global warming") && s.primary
+    );
+    const gwpValue = primaryGWP ? primaryGWP.value * quantity : 0;
+    const rating = getImpactRating(gwpValue, "gwp");
+
+    // Header with eco score badge
+    div.innerHTML = `
+        <div class="eco-badge-header">
+            <div class="product-info">
+                <div class="product-name">${profileObject.itemName || "Product"}</div>
+                <div class="declared-unit">Per ${quantity > 1 ? quantity + " " : ""}${declaredUnit}</div>
+            </div>
+            <div class="eco-score-badge" style="background-color: ${rating.color}">
+                <div class="score-value">${formatValue(gwpValue, "gwp", 1)}</div>
+                <div class="score-unit">kgCO2e</div>
+                <div class="score-label">${rating.label}</div>
+            </div>
+        </div>
+    `;
+
+    // Impact breakdown section
+    const breakdownDiv = document.createElement("div");
+    breakdownDiv.className = "eco-breakdown";
+
+    // Filter sections based on verbosity
+    const sectionsToShow = filterSectionsByVerbosity(profileObject.sections, verbosity);
+
+    sectionsToShow.forEach(section => {
+        const metricDiv = renderBadgeMetric(section, quantity);
+        breakdownDiv.appendChild(metricDiv);
+    });
+
+    div.appendChild(breakdownDiv);
+
+    // Composition section (if available)
+    if (profileObject.composition && profileObject.composition.length > 0 && verbosity !== "simple") {
+        const compositionDiv = document.createElement("div");
+        compositionDiv.className = "eco-composition";
+        compositionDiv.innerHTML = `<div class="composition-title">Material Composition</div>`;
+
+        const barsDiv = document.createElement("div");
+        barsDiv.className = "composition-bars";
+
+        profileObject.composition.forEach(material => {
+            const barDiv = document.createElement("div");
+            barDiv.className = "composition-item";
+            barDiv.innerHTML = `
+                <div class="material-name">${material.name}</div>
+                <div class="material-bar-wrapper">
+                    <div class="material-bar" style="width: ${material.percent}%; background-color: ${getMaterialColor(material.name)}"></div>
+                </div>
+                <div class="material-percent">${material.percent.toFixed(1)}%</div>
+            `;
+            barsDiv.appendChild(barDiv);
+        });
+
+        compositionDiv.appendChild(barsDiv);
+        div.appendChild(compositionDiv);
+    }
+
+    // Percentile comparison (if available)
+    if (profileObject.percentiles && verbosity === "detailed") {
+        const percentileDiv = renderPercentileChart(profileObject);
+        div.appendChild(percentileDiv);
+    }
+
+    return div;
+}
+
+function renderBadgeMetric(section, quantity) {
+    const val = section.value * quantity;
+    const unit = section.unit || "";
+    const rating = section.metricType ? getImpactRating(val, section.metricType) : null;
+
+    const metricDiv = document.createElement("div");
+    metricDiv.className = "eco-metric";
+
+    const isPrimary = section.primary;
+
+    if (isPrimary && rating) {
+        metricDiv.innerHTML = `
+            <div class="metric-header">
+                <span class="metric-name">${section.name}</span>
+                <span class="metric-indicator" style="background-color: ${rating.color}"></span>
+            </div>
+            <div class="metric-value-row">
+                <span class="metric-value">${formatValue(val, section.name, 2)}</span>
+                <span class="metric-unit">${unit}</span>
+            </div>
+            ${section.subsections && section.subsections.length > 0 ? renderBadgeSubmetrics(section.subsections, quantity) : ''}
+        `;
+    } else {
+        metricDiv.innerHTML = `
+            <div class="metric-row">
+                <span class="metric-name">${section.name}</span>
+                <span class="metric-value">${formatValue(val, section.name, 2)}${unit}</span>
+            </div>
+            ${section.subsections && section.subsections.length > 0 ? renderBadgeSubmetrics(section.subsections, quantity) : ''}
+        `;
+    }
+
+    return metricDiv;
+}
+
+function renderBadgeSubmetrics(subsections, quantity) {
+    let html = '<div class="submetrics">';
+    subsections.forEach(sub => {
+        const val = sub.value * quantity;
+        const unit = sub.unit || "";
+        html += `
+            <div class="submetric-row">
+                <span class="submetric-name">${sub.name}</span>
+                <span class="submetric-value">${formatValue(val, sub.name, 2)}${unit}</span>
+            </div>
+        `;
+    });
+    html += '</div>';
+    return html;
+}
+
+function renderPercentileChart(profileObject) {
+    const div = document.createElement("div");
+    div.className = "percentile-chart";
+
+    const percentiles = profileObject.percentiles || {};
+    const currentGWP = profileObject.sections.find(s => s.name.toLowerCase().includes("global warming") && s.primary)?.value || 0;
+
+    // Find where current value falls
+    let currentPercentile = 50;
+    if (percentiles.p10 && currentGWP <= percentiles.p10) currentPercentile = 10;
+    else if (percentiles.p20 && currentGWP <= percentiles.p20) currentPercentile = 20;
+    else if (percentiles.p50 && currentGWP <= percentiles.p50) currentPercentile = 50;
+    else if (percentiles.p90 && currentGWP <= percentiles.p90) currentPercentile = 90;
+    else currentPercentile = 95;
+
+    const rating = getPercentileRating(currentPercentile);
+
+    div.innerHTML = `
+        <div class="percentile-title">Category Comparison</div>
+        <div class="percentile-bar-container">
+            <div class="percentile-bar">
+                <div class="percentile-marker" style="left: ${currentPercentile}%; background-color: ${rating.color}"></div>
+                <div class="percentile-zones">
+                    <div class="zone excellent" style="width: 20%"></div>
+                    <div class="zone good" style="width: 20%"></div>
+                    <div class="zone average" style="width: 20%"></div>
+                    <div class="zone below" style="width: 20%"></div>
+                    <div class="zone poor" style="width: 20%"></div>
+                </div>
+            </div>
+            <div class="percentile-labels">
+                <span>Better</span>
+                <span>Worse</span>
+            </div>
+        </div>
+        <div class="percentile-result" style="color: ${rating.color}">
+            This product is in the <strong>${rating.label}</strong> for its category
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function filterSectionsByVerbosity(sections, verbosity) {
+    if (!sections) return [];
+
+    switch (verbosity) {
+        case "simple":
+            // Only primary metrics
+            return sections.filter(s => s.primary);
+
+        case "medium":
+            // Primary + important secondary metrics
+            return sections.filter(s => s.primary || s.importance === "high" || s.importance === "medium");
+
+        case "detailed":
+        default:
+            // All metrics
+            return sections;
+    }
+}
+
+function getMaterialColor(materialName) {
+    const name = materialName.toLowerCase();
+    if (name.includes("wool") || name.includes("cotton") || name.includes("natural")) return "#22c55e";
+    if (name.includes("recycled")) return "#84cc16";
+    if (name.includes("polyester") || name.includes("plastic") || name.includes("synthetic")) return "#f59e0b";
+    if (name.includes("metal") || name.includes("steel") || name.includes("aluminum")) return "#6366f1";
+    if (name.includes("concrete") || name.includes("cement")) return "#94a3b8";
+    return "#8b5cf6";
+}
+
+// ============================================
+// Product Calculator with Unit Dropdown
+// ============================================
+
+function setupProductCalculator(epdData, profileObject, parentEl) {
+    const container = parentEl || document.getElementById("product-label");
+    if (!container) return;
+
+    const settings = typeof getLabelSettings === "function" ? getLabelSettings() : { calculatorUnit: "declared" };
+
+    const baseGwp = parseNumeric(epdData.gwp);
+    const massPerUnit = parseNumeric(epdData.mass_per_declared_unit);
+    const declaredUnit = epdData.declared_unit || epdData.category_declared_unit || "unit";
+    const pricePerUnit = parseNumeric(epdData.price_per_unit) || 100; // Default price if not specified
+
+    if (!isFinite(baseGwp)) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "product-calculator";
+    wrapper.innerHTML = `
+        <div class="calculator-header">
+            <span class="calculator-title">Impact Calculator</span>
+        </div>
+        <div class="calculator-controls">
+            <div class="calc-row">
+                <label>Quantity:</label>
+                <input type="number" class="quantity-input" value="1" min="0.1" step="0.1">
+            </div>
+            <div class="calc-row">
+                <label>Calculate per:</label>
+                <select class="unit-select">
+                    <option value="declared" ${settings.calculatorUnit === 'declared' ? 'selected' : ''}>Declared Unit (${declaredUnit})</option>
+                    <option value="per_kg" ${settings.calculatorUnit === 'per_kg' ? 'selected' : ''}>Per Kg</option>
+                    <option value="per_1000" ${settings.calculatorUnit === 'per_1000' ? 'selected' : ''}>Per $1000</option>
+                </select>
+            </div>
+        </div>
+        <div class="calculator-results"></div>
+    `;
+
+    container.appendChild(wrapper);
+
+    const quantityInput = wrapper.querySelector(".quantity-input");
+    const unitSelect = wrapper.querySelector(".unit-select");
+    const resultsDiv = wrapper.querySelector(".calculator-results");
+
+    function recalculate() {
+        const qty = parseFloat(quantityInput.value) || 1;
+        const unit = unitSelect.value;
+
+        let adjustedGwp = baseGwp;
+        let unitLabel = declaredUnit;
+
+        switch (unit) {
+            case "per_kg":
+                if (isFinite(massPerUnit) && massPerUnit > 0) {
+                    adjustedGwp = baseGwp / massPerUnit;
+                    unitLabel = "kg";
+                }
+                break;
+            case "per_1000":
+                if (pricePerUnit > 0) {
+                    adjustedGwp = (baseGwp / pricePerUnit) * 1000;
+                    unitLabel = "$1000";
+                }
+                break;
+            default:
+                unitLabel = declaredUnit;
+        }
+
+        const totalGwp = adjustedGwp * qty;
+
+        resultsDiv.innerHTML = `
+            <div class="result-row primary">
+                <span class="result-label">Total GWP:</span>
+                <span class="result-value">${formatKg(totalGwp)} kgCO2e</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Per ${unitLabel}:</span>
+                <span class="result-value">${formatKg(adjustedGwp)} kgCO2e</span>
+            </div>
+            ${isFinite(massPerUnit) && unit === "declared" ? `
+            <div class="result-row">
+                <span class="result-label">Total Mass:</span>
+                <span class="result-value">${formatKg(massPerUnit * qty)} kg</span>
+            </div>
+            ` : ''}
+        `;
+
+        // Save unit preference
+        if (typeof updateLabelSetting === "function") {
+            updateLabelSetting("calculatorUnit", unit);
+        }
+    }
+
+    quantityInput.addEventListener("input", recalculate);
+    unitSelect.addEventListener("change", recalculate);
+
+    recalculate();
+
+    return wrapper;
+}
+
+// ============================================
+// Travel Distance Calculator (Enhanced)
+// ============================================
+
+function setupTravelDistanceCalculatorEnhanced(epdData, parentEl) {
+    const container = parentEl || document.getElementById("product-label");
+    if (!container) return;
+
+    const baseGwp = parseNumeric(epdData.gwp);
+    const massPerDeclaredUnit = parseNumeric(epdData.mass_per_declared_unit);
+    const defaultDistance = epdData.category
+        ? parseNumeric(epdData.category.default_distance)
+        : NaN;
+
+    if (!isFinite(baseGwp) || !isFinite(massPerDeclaredUnit) || !isFinite(defaultDistance)) {
+        return;
+    }
+
+    const EMISSION_FACTOR = 0.062;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "travel-calculator";
+    wrapper.innerHTML = `
+        <div class="calculator-header">
+            <span class="calculator-title">Transportation Impact (A4)</span>
+        </div>
+        <div class="calculator-controls">
+            <div class="calc-row">
+                <label>Travel distance (km):</label>
+                <input type="number" class="distance-input" value="${defaultDistance.toFixed(0)}" min="0" step="10">
+            </div>
+        </div>
+        <div class="travel-results"></div>
+        <div class="calculator-note">
+            Emission factor: 0.062 kgCO2e/ton-km (truck transport)
+        </div>
+    `;
+
+    container.appendChild(wrapper);
+
+    const distanceInput = wrapper.querySelector(".distance-input");
+    const resultsDiv = wrapper.querySelector(".travel-results");
+
+    function recalc() {
+        const d = Math.max(0, parseFloat(distanceInput.value) || 0);
+
+        const defaultA4 = (defaultDistance * massPerDeclaredUnit * EMISSION_FACTOR) / 1000;
+        const actualA4 = (d * massPerDeclaredUnit * EMISSION_FACTOR) / 1000;
+        const adjustedGwp = baseGwp + (actualA4 - defaultA4);
+        const savings = defaultA4 - actualA4;
+
+        resultsDiv.innerHTML = `
+            <div class="result-row">
+                <span class="result-label">Base GWP (A1-A3):</span>
+                <span class="result-value">${formatKg(baseGwp)} kgCO2e</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Default transport (${defaultDistance.toFixed(0)} km):</span>
+                <span class="result-value">${formatKg(defaultA4)} kgCO2e</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">Your transport (${d.toFixed(0)} km):</span>
+                <span class="result-value">${formatKg(actualA4)} kgCO2e</span>
+            </div>
+            <div class="result-row primary">
+                <span class="result-label">Adjusted Total (A1-A4):</span>
+                <span class="result-value">${formatKg(adjustedGwp)} kgCO2e</span>
+            </div>
+            <div class="result-row ${savings >= 0 ? 'savings' : 'increase'}">
+                <span class="result-label">${savings >= 0 ? 'Savings' : 'Increase'} vs default:</span>
+                <span class="result-value">${formatKg(Math.abs(savings))} kgCO2e</span>
+            </div>
+        `;
+    }
+
+    distanceInput.addEventListener("input", recalc);
+    recalc();
+
+    return wrapper;
+}
+
+// ============================================
+// Main Product Label Loader
+// ============================================
+
+async function loadProductLabel(region, category, file, container) {
+    if (!container) container = document.getElementById("product-label");
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading">Loading product data...</div>';
+
+    try {
+        const yamlText = await fetchText(file.download_url);
+        const data = jsyaml.load(yamlText);
+
+        const profile = createProductProfileObject(data);
+
+        container.innerHTML = "";
+
+        // Settings toggle
+        const settingsContainer = document.createElement("div");
+        settingsContainer.id = "product-settings-container";
+        container.appendChild(settingsContainer);
+
+        createSettingsToggle("product-settings-container", (newSettings) => {
+            // Re-render label with new settings
+            const labelContainer = container.querySelector(".product-label");
+            if (labelContainer) {
+                const newLabel = renderProductLabel(profile, 1, newSettings);
+                labelContainer.replaceWith(newLabel);
+            }
+        });
+
+        // Main label
+        const label = renderProductLabel(profile, 1);
+        container.appendChild(label);
+
+        // Calculators
+        setupProductCalculator(data, profile, container);
+        setupTravelDistanceCalculatorEnhanced(data, container);
+
+    } catch (e) {
+        console.error("Error loading product label:", e);
+        container.innerHTML = '<div class="error">Error loading product data. Please try again.</div>';
+    }
+}
+
+// ============================================
+// Text Formatting Utilities
+// ============================================
+
+function cleanText(text) {
+    if (!text || typeof text !== "string") return text;
+    return text
+        .replace(/\\u2019/g, "'")
+        .replace(/\\u201c/g, '"')
+        .replace(/\\u201d/g, '"')
+        .replace(/\\u2026/g, "...")
+        .replace(/\\u00ae/g, "\u00ae")
+        .replace(/\\u00a0/g, " ")
+        .replace(/\\n/g, " ")
+        .replace(/\\\\/g, "")
+        .replace(/\\"/g, '"')
+        .replace(/\\'/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// ============================================
+// OpenEPD Category Breadcrumb
+// ============================================
+
+function renderCategoryBreadcrumb(data) {
+    const div = document.createElement("div");
+    div.className = "product-breadcrumb";
+
+    // Build breadcrumb from openepd_name or category hierarchy
+    const parts = [];
+
+    // Try openepd_name first (usually contains full hierarchy)
+    if (data.openepd_name) {
+        const cleaned = cleanText(data.openepd_name);
+        // Split on common separators
+        if (cleaned.includes(">>")) {
+            parts.push(...cleaned.split(">>").map(s => s.trim()));
+        } else if (cleaned.includes(">")) {
+            parts.push(...cleaned.split(">").map(s => s.trim()));
+        } else if (cleaned.includes("/")) {
+            parts.push(...cleaned.split("/").map(s => s.trim()));
+        } else {
+            parts.push(cleaned);
+        }
+    }
+
+    // Add category name if different
+    const categoryName = data.category?.name || data.category_name;
+    if (categoryName && !parts.includes(categoryName)) {
+        parts.push(cleanText(categoryName));
+    }
+
+    // Add product name at the end
+    const productName = data.name || data.product_name;
+    if (productName && !parts.includes(productName)) {
+        parts.push(cleanText(productName));
+    }
+
+    if (parts.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = parts.map((part, i) => {
+        const isLast = i === parts.length - 1;
+        return `<span class="breadcrumb-item ${isLast ? 'current' : ''}">${part}</span>`;
+    }).join('<span class="breadcrumb-sep">\u203a</span>');
+
+    return div;
+}
+
+// ============================================
+// Info Icon Tooltip Helper
+// ============================================
+
+function createInfoIcon(tooltipText, tooltipId) {
+    const id = tooltipId || 'tooltip-' + Math.random().toString(36).substr(2, 9);
+    return `<span class="info-icon" data-tooltip-id="${id}" aria-label="More information">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+        </svg>
+        <span class="info-tooltip" id="${id}">${tooltipText}</span>
+    </span>`;
+}
+
+// Tooltip definitions for various metrics
+const METRIC_TOOLTIPS = {
+    gwp: "Global Warming Potential (GWP) measures the total greenhouse gas emissions in kgCO2e. This includes all emissions from raw material extraction (A1), transport to factory (A2), and manufacturing (A3).",
+    gwp_z: "Z-score indicates how this product compares to the category average. Negative values are better than average, positive values are worse. A Z-score of -1 means the product is 1 standard deviation below (better than) average.",
+    percentile: "Percentiles show the distribution of GWP across all products in this category. The 10th percentile means only 10% of products have lower emissions (better). The 90th percentile means 90% of products have lower emissions.",
+    uncertainty: "Uncertainty-adjusted values account for data quality and measurement variability. Conservative estimates assume worst-case scenarios; best practice assumes optimal conditions.",
+    biogenic_carbon: "Biogenic carbon is CO2 absorbed by plants during growth. Products with high biogenic carbon (like wood) can store carbon, partially offsetting emissions.",
+    transport_a4: "A4 stage covers transportation from factory to construction site. The base GWP only includes A1-A3 (cradle-to-gate). Actual transport distance affects total lifecycle emissions.",
+    declared_unit: "The declared unit is the standard measurement basis for comparing products in this category (e.g., 1 m², 1 kg, 1000 sf).",
+    carbon_intensity: "Grid electricity carbon intensity varies by location. Manufacturing in regions with cleaner grids results in lower product emissions.",
+    pct10: "10th percentile - Only 10% of products in this category have lower GWP. This represents best-in-class performance.",
+    pct50: "50th percentile (median) - Half of products have higher GWP, half have lower. This represents typical category performance.",
+    pct90: "90th percentile - 90% of products have lower GWP. Products above this are among the highest emitters in the category."
+};
+
+// ============================================
+// Industry Benchmark Percentile Chart (Full)
+// ============================================
+
+function renderPercentileBarChart(data) {
+    const div = document.createElement("div");
+    div.className = "percentile-bar-chart";
+
+    // Extract all percentile values (pct10 through pct90)
+    const percentileData = [
+        { pct: 10, value: toNumber(data.gwp_per_category_declared_unit_10p) || toNumber(data.pct10_gwp) },
+        { pct: 20, value: toNumber(data.gwp_per_category_declared_unit_20p) || toNumber(data.pct20_gwp) },
+        { pct: 30, value: toNumber(data.gwp_per_category_declared_unit_30p) || toNumber(data.pct30_gwp) },
+        { pct: 40, value: toNumber(data.gwp_per_category_declared_unit_40p) || toNumber(data.pct40_gwp) },
+        { pct: 50, value: toNumber(data.gwp_per_category_declared_unit_50p) || toNumber(data.pct50_gwp) },
+        { pct: 60, value: toNumber(data.gwp_per_category_declared_unit_60p) || toNumber(data.pct60_gwp) },
+        { pct: 70, value: toNumber(data.gwp_per_category_declared_unit_70p) || toNumber(data.pct70_gwp) },
+        { pct: 80, value: toNumber(data.gwp_per_category_declared_unit_80p) || toNumber(data.pct80_gwp) },
+        { pct: 90, value: toNumber(data.gwp_per_category_declared_unit_90p) || toNumber(data.pct90_gwp) }
+    ].filter(p => p.value !== null);
+
+    const currentGwp = toNumber(data.gwp) || toNumber(data.gwp_per_category_declared_unit);
+    const gwpZ = toNumber(data.gwp_z);
+
+    if (percentileData.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    const maxVal = Math.max(...percentileData.map(p => p.value), currentGwp || 0) * 1.1;
+
+    // Color gradient from green to red
+    const getPercentileColor = (pct) => {
+        if (pct <= 20) return "#22c55e";
+        if (pct <= 40) return "#84cc16";
+        if (pct <= 60) return "#f59e0b";
+        if (pct <= 80) return "#f97316";
+        return "#ef4444";
+    };
+
+    // Determine where current product falls in percentiles
+    let productPercentile = "N/A";
+    if (currentGwp) {
+        for (let i = 0; i < percentileData.length; i++) {
+            if (currentGwp <= percentileData[i].value) {
+                productPercentile = `≤${percentileData[i].pct}th`;
+                break;
+            }
+        }
+        if (productPercentile === "N/A" && percentileData.length > 0) {
+            productPercentile = `>${percentileData[percentileData.length - 1].pct}th`;
+        }
+    }
+
+    div.innerHTML = `
+        <div class="chart-header">
+            <h4>Industry Benchmark Percentiles ${createInfoIcon(METRIC_TOOLTIPS.percentile, 'tip-percentile')}</h4>
+            <span class="chart-subtitle">GWP distribution across category (kgCO2e per declared unit)</span>
+        </div>
+
+        ${gwpZ !== null ? `
+        <div class="zscore-indicator">
+            <span class="zscore-label">Z-Score ${createInfoIcon(METRIC_TOOLTIPS.gwp_z, 'tip-zscore')}</span>
+            <span class="zscore-value ${gwpZ < 0 ? 'better' : gwpZ > 0 ? 'worse' : 'average'}">${gwpZ > 0 ? '+' : ''}${gwpZ.toFixed(2)}</span>
+            <span class="zscore-desc">${gwpZ < -0.5 ? 'Better than average' : gwpZ > 0.5 ? 'Worse than average' : 'Near average'}</span>
+        </div>
+        ` : ''}
+
+        <div class="chart-container benchmark-chart">
+            ${percentileData.map(p => `
+                <div class="chart-row">
+                    <span class="chart-label">
+                        ${p.pct}th
+                        ${p.pct === 10 ? createInfoIcon(METRIC_TOOLTIPS.pct10, 'tip-pct10') : ''}
+                        ${p.pct === 50 ? createInfoIcon(METRIC_TOOLTIPS.pct50, 'tip-pct50') : ''}
+                        ${p.pct === 90 ? createInfoIcon(METRIC_TOOLTIPS.pct90, 'tip-pct90') : ''}
+                    </span>
+                    <div class="chart-bar-wrapper">
+                        <div class="chart-bar" style="width: ${(p.value / maxVal) * 100}%; background-color: ${getPercentileColor(p.pct)}"></div>
+                        <span class="chart-value">${p.value.toFixed(2)}</span>
+                    </div>
+                </div>
+            `).join('')}
+            ${currentGwp ? `
+                <div class="chart-row current-product">
+                    <span class="chart-label">This Product</span>
+                    <div class="chart-bar-wrapper">
+                        <div class="chart-bar" style="width: ${(currentGwp / maxVal) * 100}%; background-color: #3b82f6"></div>
+                        <span class="chart-value">${currentGwp.toFixed(2)}</span>
+                        <span class="chart-percentile-badge">${productPercentile}</span>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+        <div class="chart-legend">
+            <span class="legend-item"><span class="legend-color" style="background:#22c55e"></span>Best (10-20th)</span>
+            <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span>Average (40-60th)</span>
+            <span class="legend-item"><span class="legend-color" style="background:#ef4444"></span>Worst (80-90th)</span>
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Carbon Storage & Biogenic Carbon
+// ============================================
+
+function renderCarbonStorageSection(data) {
+    const div = document.createElement("div");
+    div.className = "carbon-storage-section";
+
+    const biogenicZ = toNumber(data.biogenic_embodied_carbon_z);
+    const storedCarbonZ = toNumber(data.stored_carbon_z);
+    const useStoredCarbon = data.use_stored_carbon;
+    const biogenicCarbon = toNumber(data.biogenic_embodied_carbon);
+
+    if (biogenicZ === null && storedCarbonZ === null && biogenicCarbon === null) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Carbon Storage ${createInfoIcon(METRIC_TOOLTIPS.biogenic_carbon, 'tip-biogenic')}</h4>
+        </div>
+        <div class="carbon-metrics">
+            ${biogenicCarbon !== null ? `
+                <div class="carbon-metric">
+                    <span class="metric-label">Biogenic Carbon</span>
+                    <span class="metric-value">${biogenicCarbon.toFixed(4)} kgCO2e</span>
+                </div>
+            ` : ''}
+            ${biogenicZ !== null ? `
+                <div class="carbon-metric">
+                    <span class="metric-label">Biogenic Carbon Z-Score</span>
+                    <span class="metric-value ${biogenicZ > 0 ? 'positive' : 'negative'}">${biogenicZ > 0 ? '+' : ''}${biogenicZ.toFixed(4)}</span>
+                    <span class="metric-desc">${biogenicZ > 0 ? 'Above average carbon storage' : 'Below average carbon storage'}</span>
+                </div>
+            ` : ''}
+            ${storedCarbonZ !== null ? `
+                <div class="carbon-metric">
+                    <span class="metric-label">Stored Carbon Z-Score</span>
+                    <span class="metric-value ${storedCarbonZ > 0 ? 'positive' : 'negative'}">${storedCarbonZ > 0 ? '+' : ''}${storedCarbonZ.toFixed(4)}</span>
+                </div>
+            ` : ''}
+            ${useStoredCarbon !== undefined ? `
+                <div class="carbon-metric">
+                    <span class="metric-label">Stored Carbon Included</span>
+                    <span class="metric-value">${useStoredCarbon ? 'Yes' : 'No'}</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Missing Impact Categories Warning
+// ============================================
+
+function renderMissingImpacts(data) {
+    const div = document.createElement("div");
+    div.className = "missing-impacts-section";
+
+    // Check which impact categories are missing
+    const impacts = [
+        { key: "odp", name: "Ozone Depletion (ODP)", value: data.odp || data.ozone_depletion },
+        { key: "ap", name: "Acidification (AP)", value: data.ap || data.acidification },
+        { key: "ep_fresh", name: "Freshwater Eutrophication", value: data.ep_fresh || data.eutrophication_fresh },
+        { key: "ep_marine", name: "Marine Eutrophication", value: data.ep_marine || data.eutrophication_marine },
+        { key: "ep_terrestrial", name: "Terrestrial Eutrophication", value: data.ep_terrestrial },
+        { key: "pocp", name: "Smog Formation (POCP)", value: data.pocp || data.smog_formation }
+    ];
+
+    const available = impacts.filter(i => i.value !== undefined && i.value !== null);
+    const missing = impacts.filter(i => i.value === undefined || i.value === null);
+
+    // Only show if there are missing impacts
+    if (missing.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Environmental Impact Coverage ${createInfoIcon("EPDs may not include all environmental impact categories. GWP (carbon footprint) is the most commonly reported metric.", 'tip-impacts')}</h4>
+        </div>
+        <div class="impacts-coverage">
+            <div class="coverage-bar">
+                <div class="coverage-fill" style="width: ${(available.length / impacts.length) * 100}%"></div>
+            </div>
+            <span class="coverage-text">${available.length} of ${impacts.length} impact categories reported</span>
+        </div>
+        ${available.length > 0 ? `
+            <div class="impacts-list available">
+                <span class="list-label">Available:</span>
+                ${available.map(i => `<span class="impact-tag available">${i.name}</span>`).join('')}
+            </div>
+        ` : ''}
+        <div class="impacts-list missing">
+            <span class="list-label">Not reported:</span>
+            ${missing.map(i => `<span class="impact-tag missing">${i.name}</span>`).join('')}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Production Locations
+// ============================================
+
+function renderProductionLocations(data) {
+    const div = document.createElement("div");
+    div.className = "production-locations";
+
+    const locations = [];
+
+    // Extract plant/manufacturing location
+    if (data.plant_or_group) {
+        const plant = data.plant_or_group;
+        locations.push({
+            type: "Manufacturing Plant",
+            name: cleanText(plant.name || plant.plant_name || ""),
+            address: cleanText(plant.address || ""),
+            city: cleanText(plant.city || ""),
+            state: cleanText(plant.state || plant.province || ""),
+            country: cleanText(plant.country || ""),
+            latitude: plant.latitude || plant.lat,
+            longitude: plant.longitude || plant.lng || plant.lon,
+            carbonIntensity: toNumber(plant.electricity_carbon_intensity) || toNumber(plant.carbon_intensity),
+            owned_by: cleanText(plant.owned_by || "")
+        });
+    }
+
+    // Check for plants array
+    if (data.plants && Array.isArray(data.plants)) {
+        data.plants.forEach(plant => {
+            locations.push({
+                type: "Manufacturing Plant",
+                name: cleanText(plant.name || ""),
+                address: cleanText(plant.address || ""),
+                city: cleanText(plant.city || ""),
+                state: cleanText(plant.state || ""),
+                country: cleanText(plant.country || ""),
+                latitude: plant.latitude,
+                longitude: plant.longitude,
+                carbonIntensity: toNumber(plant.electricity_carbon_intensity)
+            });
+        });
+    }
+
+    // Check for geography/location fields
+    if (data.geography || data.location) {
+        const geo = data.geography || data.location;
+        if (typeof geo === "string") {
+            locations.push({ type: "Region", name: cleanText(geo) });
+        } else if (typeof geo === "object") {
+            locations.push({
+                type: "Region",
+                name: cleanText(geo.name || geo.region || ""),
+                country: cleanText(geo.country || "")
+            });
+        }
+    }
+
+    // Manufacturer info
+    if (data.manufacturer || data.mfr) {
+        const mfr = data.manufacturer || data.mfr;
+        if (typeof mfr === "object") {
+            locations.push({
+                type: "Manufacturer",
+                name: cleanText(mfr.name || mfr.legal_name || ""),
+                address: cleanText(mfr.address || ""),
+                country: cleanText(mfr.country || ""),
+                website: mfr.website || mfr.web_url
+            });
+        }
+    }
+
+    if (locations.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Production & Origin ${createInfoIcon("Manufacturing location affects product carbon footprint due to local grid electricity carbon intensity and transportation distances.", 'tip-origin')}</h4>
+        </div>
+        <div class="locations-grid">
+            ${locations.map(loc => `
+                <div class="location-card">
+                    <div class="location-type">${loc.type}</div>
+                    ${loc.name ? `<div class="location-name">${loc.name}</div>` : ''}
+                    ${loc.owned_by ? `<div class="location-owner">Owned by: ${loc.owned_by}</div>` : ''}
+                    ${loc.address || loc.city || loc.state || loc.country ? `
+                        <div class="location-address">
+                            ${[loc.address, loc.city, loc.state, loc.country].filter(Boolean).join(", ")}
+                        </div>
+                    ` : ''}
+                    ${loc.carbonIntensity ? `
+                        <div class="location-carbon">
+                            <span class="carbon-icon">\u26a1</span>
+                            Grid: ${loc.carbonIntensity} kgCO2e/MWh
+                            ${createInfoIcon(METRIC_TOOLTIPS.carbon_intensity, 'tip-carbon-intensity-' + Math.random().toString(36).substr(2, 5))}
+                        </div>
+                    ` : ''}
+                    ${loc.website ? `
+                        <a href="${loc.website}" target="_blank" class="location-link">Website \u2197</a>
+                    ` : ''}
+                    ${loc.latitude && loc.longitude ? `
+                        <a href="https://maps.google.com/?q=${loc.latitude},${loc.longitude}" target="_blank" class="location-link">View Map \u2197</a>
+                    ` : ''}
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Material Composition
+// ============================================
+
+function renderMaterialComposition(data) {
+    const div = document.createElement("div");
+    div.className = "material-composition-section";
+
+    const materials = [];
+
+    // Check multiple possible fields for composition
+    const sources = [
+        data.composition,
+        data.materials,
+        data.material_composition,
+        data.components
+    ];
+
+    sources.forEach(source => {
+        if (!source) return;
+
+        if (Array.isArray(source)) {
+            source.forEach(item => {
+                materials.push({
+                    name: cleanText(item.name || item.material || item.component || "Unknown"),
+                    percent: toNumber(item.percent) || toNumber(item.percentage) || toNumber(item.mass_fraction) * 100,
+                    mass: toNumber(item.mass) || toNumber(item.weight),
+                    recycled: item.recycled || item.is_recycled,
+                    renewable: item.renewable || item.is_renewable
+                });
+            });
+        } else if (typeof source === "object") {
+            Object.entries(source).forEach(([name, value]) => {
+                if (typeof value === "object") {
+                    materials.push({
+                        name: cleanText(name),
+                        percent: toNumber(value.percent) || toNumber(value.percentage),
+                        mass: toNumber(value.mass),
+                        recycled: value.recycled,
+                        renewable: value.renewable
+                    });
+                } else {
+                    materials.push({
+                        name: cleanText(name),
+                        percent: toNumber(value)
+                    });
+                }
+            });
+        }
+    });
+
+    // Also check for packaging info
+    if (data.packaging) {
+        const pkg = data.packaging;
+        if (Array.isArray(pkg)) {
+            pkg.forEach(item => {
+                materials.push({
+                    name: cleanText(item.name || item.material || "Packaging"),
+                    percent: toNumber(item.percent),
+                    mass: toNumber(item.mass),
+                    isPackaging: true
+                });
+            });
+        }
+    }
+
+    if (materials.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    // Sort by percent descending
+    materials.sort((a, b) => (b.percent || 0) - (a.percent || 0));
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Material Composition ${createInfoIcon("Material breakdown shows the components of this product. Recycled and renewable materials generally have lower environmental impact.", 'tip-materials')}</h4>
+        </div>
+        <div class="composition-table">
+            ${materials.map(mat => `
+                <div class="composition-row ${mat.isPackaging ? 'packaging' : ''}">
+                    <div class="material-info">
+                        <span class="material-name">${mat.name}</span>
+                        ${mat.recycled ? '<span class="material-badge recycled">\u267b Recycled</span>' : ''}
+                        ${mat.renewable ? '<span class="material-badge renewable">\ud83c\udf3f Renewable</span>' : ''}
+                        ${mat.isPackaging ? '<span class="material-badge packaging">\ud83d\udce6 Packaging</span>' : ''}
+                    </div>
+                    <div class="material-stats">
+                        ${mat.percent ? `<span class="material-percent">${mat.percent.toFixed(1)}%</span>` : ''}
+                        ${mat.mass ? `<span class="material-mass">${mat.mass.toFixed(2)} kg</span>` : ''}
+                    </div>
+                    ${mat.percent ? `
+                        <div class="material-bar-bg">
+                            <div class="material-bar-fill" style="width: ${mat.percent}%; background-color: ${getMaterialColor(mat.name)}"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Certifications & Verification
+// ============================================
+
+function renderCertifications(data) {
+    const div = document.createElement("div");
+    div.className = "certifications-section";
+
+    const certs = [];
+
+    // EPD verification
+    if (data.third_party_verified || data.externally_verified) {
+        certs.push({
+            type: "Third-Party Verified",
+            icon: "\u2713",
+            details: data.third_party_verifier || data.verifier || ""
+        });
+    }
+
+    // Program operator
+    if (data.program_operator || data.program_operator_name) {
+        certs.push({
+            type: "Program Operator",
+            icon: "\ud83c\udfe2",
+            details: cleanText(data.program_operator?.name || data.program_operator_name || "")
+        });
+    }
+
+    // Standards compliance
+    if (data.standard || data.pcr || data.lcia_method) {
+        certs.push({
+            type: "Standard",
+            icon: "\ud83d\udcdc",
+            details: cleanText(data.standard || data.pcr?.name || data.lcia_method || "")
+        });
+    }
+
+    // Validity dates
+    const issueDate = data.date_of_issue || data.issue_date;
+    const expiryDate = data.date_validity_ends || data.valid_until || data.expiry_date;
+    if (issueDate || expiryDate) {
+        const formatDate = (d) => {
+            if (!d) return "";
+            const date = new Date(d);
+            return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+        };
+        certs.push({
+            type: "Validity Period",
+            icon: "\ud83d\udcc5",
+            details: `${formatDate(issueDate)} \u2013 ${formatDate(expiryDate)}`
+        });
+    }
+
+    // Warnings/flags
+    if (data.warnings && Array.isArray(data.warnings) && data.warnings.length > 0) {
+        certs.push({
+            type: "Data Warnings",
+            icon: "\u26a0\ufe0f",
+            details: data.warnings.map(w => cleanText(w.message || w)).join("; "),
+            isWarning: true
+        });
+    }
+
+    if (certs.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Certifications & Verification ${createInfoIcon("Third-party verification ensures EPD data accuracy. Program operators maintain quality standards for environmental claims.", 'tip-certs')}</h4>
+        </div>
+        <div class="certifications-grid">
+            ${certs.map(cert => `
+                <div class="cert-card ${cert.isWarning ? 'warning' : ''}">
+                    <span class="cert-icon">${cert.icon}</span>
+                    <div class="cert-info">
+                        <div class="cert-type">${cert.type}</div>
+                        ${cert.details ? `<div class="cert-details">${cert.details}</div>` : ''}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Product Description
+// ============================================
+
+function renderProductDescription(data) {
+    const div = document.createElement("div");
+    div.className = "product-description-section";
+
+    const description = cleanText(data.description || data.product_description || data.short_description || "");
+    const manufacturer = cleanText(data.manufacturer?.name || data.mfr?.name || data.manufacturer_name || "");
+    const brand = cleanText(data.brand || data.brand_name || "");
+
+    if (!description && !manufacturer) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Product Details</h4>
+        </div>
+        <div class="description-content">
+            ${manufacturer || brand ? `
+                <div class="manufacturer-info">
+                    ${manufacturer ? `<span class="mfr-name">${manufacturer}</span>` : ''}
+                    ${brand && brand !== manufacturer ? `<span class="brand-name">${brand}</span>` : ''}
+                </div>
+            ` : ''}
+            ${description ? `<p class="description-text">${description}</p>` : ''}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Additional Properties
+// ============================================
+
+function renderAdditionalPropertiesInline(data) {
+    // Returns inline 3-column content for additional properties (no panel wrapper)
+    const div = document.createElement("div");
+    div.className = "additional-properties-inline";
+
+    const properties = [];
+
+    // Biogenic carbon
+    if (data.biogenic_embodied_carbon_z !== undefined) {
+        properties.push({
+            label: "Biogenic Embodied Carbon",
+            value: toNumber(data.biogenic_embodied_carbon_z)?.toFixed(4) || data.biogenic_embodied_carbon_z
+        });
+    }
+
+    // Declared unit
+    if (data.declared_unit || data.category_declared_unit) {
+        properties.push({
+            label: "Declared Unit",
+            value: data.declared_unit || data.category_declared_unit
+        });
+    }
+
+    // Reference service life
+    if (data.reference_service_life) {
+        properties.push({
+            label: "Reference Service Life",
+            value: `${data.reference_service_life} years`
+        });
+    }
+
+    // Box ID / UUID
+    if (data.box_id) {
+        properties.push({
+            label: "Box ID",
+            value: data.box_id
+        });
+    }
+
+    // EPD Type
+    if (data.epd_type || data.type) {
+        properties.push({
+            label: "EPD Type",
+            value: cleanText(data.epd_type || data.type)
+        });
+    }
+
+    // Data source
+    if (data.data_source || data.source) {
+        properties.push({
+            label: "Data Source",
+            value: cleanText(data.data_source || data.source)
+        });
+    }
+
+    if (properties.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    div.innerHTML = `
+        <hr class="details-separator">
+        <div class="properties-grid-3col">
+            ${properties.map(prop => `
+                <div class="property-item">
+                    <span class="property-label">${prop.label}</span>
+                    <span class="property-value">${prop.value}</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Complete Product Details Panel
+// ============================================
+
+function renderProductDetailsPanel(data) {
+    const panel = document.createElement("div");
+    panel.className = "product-details-panel";
+
+    // Note: Breadcrumb is rendered at the top level in label.js, not here
+
+    // Product description
+    panel.appendChild(renderProductDescription(data));
+
+    // Two-column layout for charts and locations
+    const columnsDiv = document.createElement("div");
+    columnsDiv.className = "details-columns";
+
+    const leftCol = document.createElement("div");
+    leftCol.className = "details-column";
+    leftCol.appendChild(renderPercentileBarChart(data));
+    leftCol.appendChild(renderCarbonStorageSection(data));
+    leftCol.appendChild(renderMissingImpacts(data)); // Environmental Impact Coverage after Carbon Storage
+    leftCol.appendChild(renderMaterialComposition(data));
+
+    const rightCol = document.createElement("div");
+    rightCol.className = "details-column";
+    rightCol.appendChild(renderProductionLocations(data));
+    rightCol.appendChild(renderCertifications(data));
+
+    columnsDiv.appendChild(leftCol);
+    columnsDiv.appendChild(rightCol);
+    panel.appendChild(columnsDiv);
+
+    // Additional properties inline at bottom (3 columns with separator)
+    panel.appendChild(renderAdditionalPropertiesInline(data));
+
+    return panel;
+}
+
+// Enhanced panel with calculators integrated into columns
+function renderProductDetailsPanelWithCalculators(data, profile) {
+    const panel = document.createElement("div");
+    panel.className = "product-details-panel";
+
+    // Product description
+    panel.appendChild(renderProductDescription(data));
+
+    // Two-column layout
+    const columnsDiv = document.createElement("div");
+    columnsDiv.className = "details-columns";
+
+    // LEFT COLUMN: Percentile chart, Transportation, Carbon Storage, Impact Coverage, Materials
+    const leftCol = document.createElement("div");
+    leftCol.className = "details-column";
+    leftCol.appendChild(renderPercentileBarChart(data));
+    leftCol.appendChild(renderTransportationPanel(data));
+    leftCol.appendChild(renderCarbonStorageSection(data));
+    leftCol.appendChild(renderMissingImpacts(data)); // Environmental Impact Coverage after Carbon Storage
+    leftCol.appendChild(renderMaterialComposition(data));
+
+    // RIGHT COLUMN: Impact Calculator, Locations, Certifications
+    const rightCol = document.createElement("div");
+    rightCol.className = "details-column";
+    rightCol.appendChild(renderImpactCalculatorPanel(data, profile));
+    rightCol.appendChild(renderProductionLocations(data));
+    rightCol.appendChild(renderCertifications(data));
+
+    columnsDiv.appendChild(leftCol);
+    columnsDiv.appendChild(rightCol);
+    panel.appendChild(columnsDiv);
+
+    // Additional properties inline at bottom (3 columns with separator)
+    panel.appendChild(renderAdditionalPropertiesInline(data));
+
+    return panel;
+}
+
+// ============================================
+// Transportation Panel (moved to column)
+// ============================================
+
+function renderTransportationPanel(data) {
+    const div = document.createElement("div");
+    div.className = "panel-section transportation-panel";
+
+    const baseGwp = parseNumeric(data.gwp) ||
+        parseNumeric(data.gwp_per_category_declared_unit) ||
+        parseNumeric(data.gwp_per_declared_unit);
+
+    const massPerDeclaredUnit = parseNumeric(data.mass_per_declared_unit) ||
+        parseNumeric(data.mass);
+
+    let defaultDistance = NaN;
+    if (data.category && typeof data.category === "object") {
+        defaultDistance = parseNumeric(data.category.default_distance);
+    }
+    if (!isFinite(defaultDistance)) {
+        defaultDistance = parseNumeric(data.category_default_distance) ||
+            parseNumeric(data.default_distance);
+    }
+
+    // If missing required data, show informational message
+    if (!isFinite(baseGwp) || !isFinite(massPerDeclaredUnit) || !isFinite(defaultDistance)) {
+        div.innerHTML = `
+            <div class="section-header">
+                <h4>Transportation to Site ${createInfoIcon(METRIC_TOOLTIPS.transport_a4, 'tip-transport')}</h4>
+            </div>
+            <div class="a4-explanation">
+                A4 refers to the transport stage from factory to construction site in lifecycle assessment.
+            </div>
+            <p class="no-data-msg">Transportation calculation requires GWP, mass, and default distance data.</p>
+        `;
+        return div;
+    }
+
+    const EMISSION_FACTOR = 0.062;
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Transportation to Site ${createInfoIcon(METRIC_TOOLTIPS.transport_a4, 'tip-transport')}</h4>
+        </div>
+        <div class="a4-explanation">
+            A4 refers to the transport stage from factory to construction site in lifecycle assessment.
+        </div>
+        <div class="calc-row">
+            <label>Travel distance (km):</label>
+            <input type="number" class="transport-distance-input" value="${defaultDistance.toFixed(0)}" min="0" step="10">
+        </div>
+        <div class="transport-results"></div>
+        <div class="calculator-note">
+            Emission factor: 0.062 kgCO2e/ton-km (truck transport)
+        </div>
+    `;
+
+    // Setup calculation after DOM is ready
+    setTimeout(() => {
+        const distanceInput = div.querySelector(".transport-distance-input");
+        const resultsDiv = div.querySelector(".transport-results");
+
+        if (!distanceInput || !resultsDiv) return;
+
+        function recalc() {
+            const d = Math.max(0, parseFloat(distanceInput.value) || 0);
+            const defaultA4 = (defaultDistance * massPerDeclaredUnit * EMISSION_FACTOR) / 1000;
+            const actualA4 = (d * massPerDeclaredUnit * EMISSION_FACTOR) / 1000;
+            const adjustedGwp = baseGwp + (actualA4 - defaultA4);
+            const savings = defaultA4 - actualA4;
+
+            resultsDiv.innerHTML = `
+                <div class="result-row">
+                    <span class="result-label">Base GWP (A1-A3):</span>
+                    <span class="result-value">${formatKg(baseGwp)} kgCO2e</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Default transport (${defaultDistance.toFixed(0)} km):</span>
+                    <span class="result-value">${formatKg(defaultA4)} kgCO2e</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Your transport (${d.toFixed(0)} km):</span>
+                    <span class="result-value">${formatKg(actualA4)} kgCO2e</span>
+                </div>
+                <div class="result-row primary">
+                    <span class="result-label">Adjusted Total:</span>
+                    <span class="result-value">${formatKg(adjustedGwp)} kgCO2e</span>
+                </div>
+                <div class="result-row ${savings >= 0 ? 'savings' : 'increase'}">
+                    <span class="result-label">${savings >= 0 ? 'Savings' : 'Increase'} vs default:</span>
+                    <span class="result-value">${formatKg(Math.abs(savings))} kgCO2e</span>
+                </div>
+            `;
+        }
+
+        distanceInput.addEventListener("input", recalc);
+        recalc();
+    }, 0);
+
+    return div;
+}
+
+// ============================================
+// Impact Calculator Panel (moved to column)
+// ============================================
+
+function renderImpactCalculatorPanel(data, profile) {
+    const div = document.createElement("div");
+    div.className = "panel-section impact-calculator-panel";
+
+    const baseGwp = parseNumeric(data.gwp) ||
+        parseNumeric(data.gwp_per_category_declared_unit);
+    const massPerUnit = parseNumeric(data.mass_per_declared_unit);
+    const declaredUnit = data.declared_unit || data.category_declared_unit ||
+        (data.category && data.category.declared_unit) || "unit";
+    const pricePerUnit = parseNumeric(data.price_per_unit) || 100;
+
+    if (!isFinite(baseGwp)) {
+        div.innerHTML = `
+            <div class="section-header">
+                <h4>Impact Calculator ${createInfoIcon("Calculate total environmental impact based on quantity and different unit bases.", 'tip-calc')}</h4>
+            </div>
+            <p class="no-data-msg">Calculator requires GWP data.</p>
+        `;
+        return div;
+    }
+
+    const settings = typeof getLabelSettings === "function" ? getLabelSettings() : { calculatorUnit: "declared" };
+
+    div.innerHTML = `
+        <div class="section-header">
+            <h4>Impact Calculator ${createInfoIcon("Calculate total environmental impact based on quantity and different unit bases.", 'tip-calc')}</h4>
+        </div>
+        <div class="calculator-controls">
+            <div class="calc-row">
+                <label>Quantity:</label>
+                <input type="number" class="calc-quantity-input" value="1" min="0.1" step="0.1">
+            </div>
+            <div class="calc-row">
+                <label>Calculate per:</label>
+                <select class="calc-unit-select">
+                    <option value="declared" ${settings.calculatorUnit === 'declared' ? 'selected' : ''}>Declared Unit (${declaredUnit})</option>
+                    <option value="per_kg" ${settings.calculatorUnit === 'per_kg' ? 'selected' : ''}>Per Kg</option>
+                    <option value="per_1000" ${settings.calculatorUnit === 'per_1000' ? 'selected' : ''}>Per $1000</option>
+                </select>
+            </div>
+        </div>
+        <div class="calc-results"></div>
+    `;
+
+    setTimeout(() => {
+        const quantityInput = div.querySelector(".calc-quantity-input");
+        const unitSelect = div.querySelector(".calc-unit-select");
+        const resultsDiv = div.querySelector(".calc-results");
+
+        if (!quantityInput || !unitSelect || !resultsDiv) return;
+
+        function recalculate() {
+            const qty = parseFloat(quantityInput.value) || 1;
+            const unit = unitSelect.value;
+
+            let adjustedGwp = baseGwp;
+            let unitLabel = declaredUnit;
+
+            switch (unit) {
+                case "per_kg":
+                    if (isFinite(massPerUnit) && massPerUnit > 0) {
+                        adjustedGwp = baseGwp / massPerUnit;
+                        unitLabel = "kg";
+                    }
+                    break;
+                case "per_1000":
+                    if (pricePerUnit > 0) {
+                        adjustedGwp = (baseGwp / pricePerUnit) * 1000;
+                        unitLabel = "$1000";
+                    }
+                    break;
+                default:
+                    unitLabel = declaredUnit;
+            }
+
+            const totalGwp = adjustedGwp * qty;
+
+            resultsDiv.innerHTML = `
+                <div class="result-row primary">
+                    <span class="result-label">Total GWP:</span>
+                    <span class="result-value">${formatKg(totalGwp)} kgCO2e</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Per ${unitLabel}:</span>
+                    <span class="result-value">${formatKg(adjustedGwp)} kgCO2e</span>
+                </div>
+                ${isFinite(massPerUnit) && unit === "declared" ? `
+                <div class="result-row">
+                    <span class="result-label">Total Mass:</span>
+                    <span class="result-value">${formatKg(massPerUnit * qty)} kg</span>
+                </div>
+                ` : ''}
+            `;
+
+            if (typeof updateLabelSetting === "function") {
+                updateLabelSetting("calculatorUnit", unit);
+            }
+        }
+
+        quantityInput.addEventListener("input", recalculate);
+        unitSelect.addEventListener("change", recalculate);
+        recalculate();
+    }, 0);
+
+    return div;
+}
+
+// ============================================
+// Export for module systems (optional)
+// ============================================
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        renderProductLabel,
+        renderProductFDAStyle,
+        renderProductBadgeStyle,
+        setupProductCalculator,
+        setupTravelDistanceCalculatorEnhanced,
+        loadProductLabel,
+        renderProductDetailsPanel,
+        renderCategoryBreadcrumb,
+        renderPercentileBarChart,
+        renderProductionLocations,
+        renderMaterialComposition,
+        renderCertifications,
+        cleanText
+    };
+}

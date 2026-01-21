@@ -349,23 +349,79 @@ async function loadYAMLProfile(region, category, file) {
     const yamlText = await fetchText(file.download_url);
     const data = jsyaml.load(yamlText);
 
-    const profile = createProfileObject(data);
-    
+    // Use the comprehensive profile object creator from layout-product.js
+    const profile = typeof createProductProfileObject === "function"
+        ? createProductProfileObject(data)
+        : createProfileObject(data);
+
     const uuidListContainer = document.getElementById("product-container");
     if (uuidListContainer) {
-        uuidListContainer.innerHTML = "";  
+        uuidListContainer.innerHTML = "";
         uuidListContainer.style.display = "none";
     }
-    
+
     const container = document.getElementById("product-label");
     if (!container) return;
 
-    // Clear old content and render the main product impact label
+    // Clear old content
     container.innerHTML = "";
-    container.appendChild(renderNutritionLabel(profile, 1, false));
 
-    // travel-distance calculator
-    setupTravelDistanceCalculator(data, container);
+    // Add breadcrumb at the very top (outside all other containers)
+    if (typeof renderCategoryBreadcrumb === "function") {
+        container.appendChild(renderCategoryBreadcrumb(data));
+    }
+
+    // Add settings toggle if function exists
+    if (typeof createSettingsToggle === "function") {
+        const settingsDiv = document.createElement("div");
+        settingsDiv.id = "product-settings-container";
+        container.appendChild(settingsDiv);
+
+        createSettingsToggle("product-settings-container", (newSettings) => {
+            // Re-render label with new settings
+            reRenderProductLabel(profile, data, container, newSettings);
+        });
+    }
+
+    // Create a flex container for label and details side by side
+    const mainContent = document.createElement("div");
+    mainContent.className = "product-main-content";
+
+    // Render the product impact label using new label-product.js if available
+    const labelWrapper = document.createElement("div");
+    labelWrapper.className = "product-label-wrapper";
+    if (typeof renderProductLabel === "function") {
+        labelWrapper.appendChild(renderProductLabel(profile, 1));
+    } else {
+        labelWrapper.appendChild(renderNutritionLabel(profile, 1, false));
+    }
+    mainContent.appendChild(labelWrapper);
+
+    // Render comprehensive product details panel with calculators integrated
+    if (typeof renderProductDetailsPanelWithCalculators === "function") {
+        const detailsWrapper = document.createElement("div");
+        detailsWrapper.className = "product-details-wrapper";
+        detailsWrapper.appendChild(renderProductDetailsPanelWithCalculators(data, profile));
+        mainContent.appendChild(detailsWrapper);
+    } else if (typeof renderProductDetailsPanel === "function") {
+        const detailsWrapper = document.createElement("div");
+        detailsWrapper.className = "product-details-wrapper";
+        detailsWrapper.appendChild(renderProductDetailsPanel(data));
+        mainContent.appendChild(detailsWrapper);
+    }
+
+    container.appendChild(mainContent);
+}
+
+function reRenderProductLabel(profile, data, container, settings) {
+    // Find and remove old label
+    const oldLabel = container.querySelector(".product-label, .nutrition-label:not(.aggregate)");
+    if (oldLabel) {
+        const newLabel = typeof renderProductLabel === "function"
+            ? renderProductLabel(profile, 1, settings)
+            : renderNutritionLabel(profile, 1, false);
+        oldLabel.replaceWith(newLabel);
+    }
 }
 
 // Travel distance calculator based on the YAML spec in products.md
@@ -373,15 +429,27 @@ function setupTravelDistanceCalculator(epdData, parentEl) {
     const container = parentEl || document.getElementById("product-label");
     if (!container) return;
 
-    // Pull values from the EPD YAML
-    const baseGwp = parseNumeric(epdData.gwp); // e.g., "468 kgCO2e"
-    const massPerDeclaredUnit = parseNumeric(epdData.mass_per_declared_unit); // e.g., "357.43 kg"
-    const defaultDistance = epdData.category
-        ? parseNumeric(epdData.category.default_distance) // e.g., "1647.968 km"
-        : NaN;
+    // Pull values from the EPD YAML - try multiple possible field names
+    const baseGwp = parseNumeric(epdData.gwp) ||
+        parseNumeric(epdData.gwp_per_category_declared_unit) ||
+        parseNumeric(epdData.gwp_per_declared_unit);
+
+    const massPerDeclaredUnit = parseNumeric(epdData.mass_per_declared_unit) ||
+        parseNumeric(epdData.mass);
+
+    // Try nested category object first, then flattened fields
+    let defaultDistance = NaN;
+    if (epdData.category && typeof epdData.category === "object") {
+        defaultDistance = parseNumeric(epdData.category.default_distance);
+    }
+    if (!isFinite(defaultDistance)) {
+        defaultDistance = parseNumeric(epdData.category_default_distance) ||
+            parseNumeric(epdData.default_distance);
+    }
 
     // If any core field is missing, skip the calculator
     if (!isFinite(baseGwp) || !isFinite(massPerDeclaredUnit) || !isFinite(defaultDistance)) {
+        console.log("Travel calculator missing data:", { baseGwp, massPerDeclaredUnit, defaultDistance });
         return;
     }
 
@@ -750,7 +818,23 @@ function renderMenuLabels() {
     const container = document.getElementById("menu-container");
     if (container) {
         container.innerHTML = "";
-        
+
+        // Add settings toggle for food labels (only once at the top)
+        if (menuItems.length > 0 && typeof createSettingsToggle === "function") {
+            const existingSettings = document.getElementById("food-settings-container");
+            if (!existingSettings) {
+                const settingsDiv = document.createElement("div");
+                settingsDiv.id = "food-settings-container";
+                settingsDiv.style.marginBottom = "15px";
+                container.appendChild(settingsDiv);
+
+                createSettingsToggle("food-settings-container", (newSettings) => {
+                    // Re-render all labels with new settings
+                    renderMenuLabels();
+                });
+            }
+        }
+
         // Only show aggregate if there are menu items
         if (menuItems.length > 0) {
             updateAggregateProfile();
@@ -881,10 +965,19 @@ function removeFromMenu(index) {
     renderMenuLabels();
 }
 
-function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, itemIndex = null) {
+function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, itemIndex = null, options = {}) {
+    const settings = typeof getLabelSettings === "function" ? getLabelSettings() : { style: "fda", verbosity: "medium" };
+    const style = options.style || settings.style;
+
+    // Use badge style if selected (for food labels too)
+    if (style === "badge" && !isAggregate) {
+        return renderFoodBadgeStyle(profileObject, quantity);
+    }
+
+    // Default FDA style
     const div = document.createElement("div");
-    div.className = isAggregate ? "nutrition-label aggregate" : "nutrition-label";
-  
+    div.className = isAggregate ? "nutrition-label aggregate fda-style" : "nutrition-label fda-style";
+
     // Header section with item name only — no quantity or X button
     div.innerHTML = `
       <div class="item-label-header">
@@ -894,13 +987,13 @@ function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, 
       <div class="serving-size">Amount Per Serving</div>
       <hr class="thin-line">
     `;
-  
+
     profileObject.sections.forEach(section => {
       const val = (section.value * quantity);
       const unit = getUnit(section.name);
       const formattedVal = formatValue(val, section.name);
       const dailyValue = section.dailyValue ? Math.round(section.dailyValue * quantity) : null;
-  
+
       const sectionDiv = document.createElement("div");
       sectionDiv.className = "nutrition-section";
       sectionDiv.innerHTML = `
@@ -909,14 +1002,14 @@ function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, 
           <span class="daily-value">${dailyValue ? dailyValue + '%' : ''}</span>
         </div>
       `;
-  
+
       if (section.subsections) {
         section.subsections.forEach(subsection => {
           const subVal = (subsection.value * quantity);
           const subUnit = getUnit(subsection.name);
           const subFormattedVal = formatValue(subVal, subsection.name);
           const subDailyValue = subsection.dailyValue ? Math.round(subsection.dailyValue * quantity) : null;
-  
+
           const subSectionDiv = document.createElement("div");
           subSectionDiv.className = "sub-section";
           subSectionDiv.innerHTML = `
@@ -927,13 +1020,160 @@ function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, 
           sectionDiv.appendChild(subSectionDiv);
         });
       }
-  
+
       div.appendChild(sectionDiv);
       div.appendChild(document.createElement('hr')).classList.add('thin-line');
     });
-  
+
     return div;
-  }
+}
+
+// Environmental Badge Style for Food Labels
+function renderFoodBadgeStyle(profileObject, quantity = 1) {
+    const div = document.createElement("div");
+    div.className = "eco-badge-label food-label badge-style";
+
+    // Get calories for the main badge
+    const caloriesSection = profileObject.sections.find(s =>
+        s.name.toLowerCase().includes("calories") && !s.name.toLowerCase().includes("from fat")
+    );
+    const calories = caloriesSection ? caloriesSection.value * quantity : 0;
+
+    // Determine calorie rating
+    const calorieRating = getCalorieRating(calories);
+
+    div.innerHTML = `
+        <div class="eco-badge-header">
+            <div class="product-info">
+                <div class="product-name">${profileObject.itemName}</div>
+                <div class="declared-unit">Per ${quantity > 1 ? quantity + " " : ""}Serving</div>
+            </div>
+            <div class="eco-score-badge" style="background-color: ${calorieRating.color}">
+                <div class="score-value">${Math.round(calories)}</div>
+                <div class="score-unit">kcal</div>
+                <div class="score-label">${calorieRating.label}</div>
+            </div>
+        </div>
+    `;
+
+    // Nutrient breakdown
+    const breakdownDiv = document.createElement("div");
+    breakdownDiv.className = "eco-breakdown";
+
+    // Group nutrients into categories
+    const macros = profileObject.sections.filter(s =>
+        ["total fat", "total carbohydrate", "protein"].some(n => s.name.toLowerCase().includes(n))
+    );
+
+    const minerals = profileObject.sections.filter(s =>
+        ["sodium", "potassium", "calcium", "iron"].some(n => s.name.toLowerCase().includes(n))
+    );
+
+    const vitamins = profileObject.sections.filter(s =>
+        s.name.toLowerCase().includes("vitamin")
+    );
+
+    // Macronutrients section
+    if (macros.length > 0) {
+        const macroSection = document.createElement("div");
+        macroSection.innerHTML = '<div class="metric-header"><span class="metric-name" style="font-weight:600">Macronutrients</span></div>';
+
+        macros.forEach(section => {
+            const val = section.value * quantity;
+            const unit = getUnit(section.name);
+            const dailyPct = section.dailyValue ? Math.round(section.dailyValue * quantity) : null;
+            const rating = getNutrientRating(section.name, dailyPct);
+
+            const metricDiv = document.createElement("div");
+            metricDiv.className = "eco-metric";
+            metricDiv.innerHTML = `
+                <div class="metric-row">
+                    <span class="metric-name">${section.name}</span>
+                    <span class="metric-indicator" style="background-color: ${rating.color}"></span>
+                    <span class="metric-value">${formatValue(val, section.name)}${unit}</span>
+                    ${dailyPct ? `<span class="metric-unit">(${dailyPct}% DV)</span>` : ''}
+                </div>
+            `;
+
+            // Subsections
+            if (section.subsections && section.subsections.length > 0) {
+                const subsDiv = document.createElement("div");
+                subsDiv.className = "submetrics";
+                section.subsections.forEach(sub => {
+                    const subVal = sub.value * quantity;
+                    const subUnit = getUnit(sub.name);
+                    subsDiv.innerHTML += `
+                        <div class="submetric-row">
+                            <span class="submetric-name">${sub.name}</span>
+                            <span class="submetric-value">${formatValue(subVal, sub.name)}${subUnit}</span>
+                        </div>
+                    `;
+                });
+                metricDiv.appendChild(subsDiv);
+            }
+
+            macroSection.appendChild(metricDiv);
+        });
+
+        breakdownDiv.appendChild(macroSection);
+    }
+
+    // Minerals section
+    if (minerals.length > 0) {
+        const mineralSection = document.createElement("div");
+        mineralSection.style.marginTop = "12px";
+        mineralSection.innerHTML = '<div class="metric-header"><span class="metric-name" style="font-weight:600">Minerals</span></div>';
+
+        minerals.forEach(section => {
+            const val = section.value * quantity;
+            const unit = getUnit(section.name);
+            const dailyPct = section.dailyValue ? Math.round(section.dailyValue * quantity) : null;
+
+            mineralSection.innerHTML += `
+                <div class="eco-metric">
+                    <div class="metric-row">
+                        <span class="metric-name">${section.name}</span>
+                        <span class="metric-value">${formatValue(val, section.name)}${unit}</span>
+                        ${dailyPct ? `<span class="metric-unit">(${dailyPct}% DV)</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        breakdownDiv.appendChild(mineralSection);
+    }
+
+    div.appendChild(breakdownDiv);
+
+    return div;
+}
+
+// Rating helpers for food badge style
+function getCalorieRating(calories) {
+    if (calories <= 100) return { level: "low", color: "#22c55e", label: "Low Cal" };
+    if (calories <= 300) return { level: "moderate", color: "#f59e0b", label: "Moderate" };
+    if (calories <= 500) return { level: "high", color: "#f97316", label: "High Cal" };
+    return { level: "very-high", color: "#ef4444", label: "Very High" };
+}
+
+function getNutrientRating(name, dailyPct) {
+    const n = name.toLowerCase();
+    if (!dailyPct) return { color: "#94a3b8" };
+
+    // For "bad" nutrients (fat, sodium, sugar), lower is better
+    if (n.includes("fat") || n.includes("sodium") || n.includes("sugar") || n.includes("cholesterol")) {
+        if (dailyPct <= 5) return { color: "#22c55e" };
+        if (dailyPct <= 15) return { color: "#84cc16" };
+        if (dailyPct <= 25) return { color: "#f59e0b" };
+        return { color: "#ef4444" };
+    }
+
+    // For "good" nutrients (fiber, vitamins, minerals), higher is better
+    if (dailyPct >= 20) return { color: "#22c55e" };
+    if (dailyPct >= 10) return { color: "#84cc16" };
+    if (dailyPct >= 5) return { color: "#f59e0b" };
+    return { color: "#94a3b8" };
+}
   
 /*
 function renderNutritionLabel(profileObject, quantity = 1, isAggregate = false, itemIndex = null) {
