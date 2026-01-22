@@ -109,14 +109,14 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 /* USDA Search and Menu Styles */
-#usda-search-div {
+#search-div {
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid #ccc;
 }
 
-#usda-search-input {
-    padding: 5px;
+#search-input {
+    padding: 8px 12px;
     border: 1px solid #ccc;
     margin-right: 10px;
 }
@@ -383,6 +383,24 @@ input[type=number]::-webkit-outer-spin-button {
     background-color: #1e7e34;
 }
 
+.add-initial-food-btn {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-initial-food-btn:hover {
+    background-color: #2563eb;
+}
+
+.add-initial-food-btn:active {
+    background-color: #1d4ed8;
+}
+
 /* Menu Item Styling */
 .menu-item-header {
     display: flex;
@@ -396,8 +414,9 @@ input[type=number]::-webkit-outer-spin-button {
   color: white;
   border: none;
   border-radius: 3px;
-  padding: 3px 6px;
+  padding: 8px 15px;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .remove-item-btn:hover {
@@ -507,7 +526,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .dark #search-results-container,
-.dark #usda-search-div {
+.dark #search-div {
   border: 1px solid #666;
   background: #1e293b;
 }
@@ -2604,6 +2623,7 @@ input[type=number]::-webkit-outer-spin-button {
 /* Country dropdown styling */
 #country-dropdown {
   padding: 8px 12px;
+  padding-right: 32px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: white;
@@ -2612,6 +2632,9 @@ input[type=number]::-webkit-outer-spin-button {
   cursor: pointer;
   transition: all 0.2s;
   outline: none;
+  -webkit-appearance: auto;
+  -moz-appearance: auto;
+  appearance: auto;
 }
 
 #country-dropdown:hover {

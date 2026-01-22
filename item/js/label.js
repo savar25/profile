@@ -109,7 +109,7 @@ function parseNumeric(value) {
 async function loadMenu() {
     let hash = (typeof getHash === "function") ? getHash() : getUrlHash();
 
-    const searchDiv = document.getElementById("usda-search-div");
+    const searchDiv = document.getElementById("search-div");
     const searchResultsContainer = document.getElementById("search-results-container");
     const menuContainer = document.getElementById("menu-container");
     const header = document.getElementById("page-header");
@@ -134,18 +134,32 @@ async function loadMenu() {
         menuContainer.style.display = "none";
 
         // Show categories or specific product
-        if (!hash.id) {
+        if (hash.id) {
+            // Has product ID - load specific product and hide sidebar
+            if (sidebar) sidebar.style.display = "none";
+            await loadProductByCountryAndId(hash.country, hash.id);
+        } else {
             // No specific product ID - show product categories and sidebar
             loadProductCategorySidebar();
             if (sidebar) sidebar.style.display = "block";
             const productContainer = document.getElementById("product-container");
             const productLabel = document.getElementById("product-label");
             if (productContainer) productContainer.style.display = "none";
-            if (productLabel) productLabel.innerHTML = "";
-        } else if (hash.country && hash.id) {
-            // Has product ID - load specific product and hide sidebar
-            if (sidebar) sidebar.style.display = "none";
-            await loadProductByCountryAndId(hash.country, hash.id);
+
+            // If cat parameter exists, load that subcategory
+            if (hash.cat) {
+                await selectProductSubcategory(selectedCountry, hash.cat);
+            } else {
+                // Load first subcategory if no cat or id specified
+                const categories = PRODUCT_CATEGORIES[selectedCountry] || PRODUCT_CATEGORIES.US;
+                if (categories.length > 0 && categories[0].subcategories && categories[0].subcategories.length > 0) {
+                    const firstSubcat = categories[0].subcategories[0];
+                    // Update hash with first subcategory
+                    if (typeof goHash === "function") {
+                        goHash({ cat: firstSubcat });
+                    }
+                }
+            }
         }
         return;
     }
@@ -156,6 +170,14 @@ async function loadMenu() {
     if (searchResultsContainer) searchResultsContainer.style.display = "";
     if (menuContainer) menuContainer.style.display = "";
     loadFoodCategorySidebar();
+
+    // Show sidebar if no specific food id in hash
+    if (!hash.id) {
+        if (sidebar) sidebar.style.display = "block";
+    } else {
+        if (sidebar) sidebar.style.display = "none";
+    }
+
     loadSampleFood();
     displayInitialFoodItems();
 }
@@ -587,7 +609,12 @@ function loadProductCategorySidebar() {
                 subcatLink.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    selectProductSubcategory(selectedCountry, subcatName);
+                    // Update hash with cat parameter
+                    if (typeof goHash === "function") {
+                        goHash({ cat: subcatName });
+                    } else if (typeof updateHash === "function") {
+                        updateHash({ cat: subcatName }, true);
+                    }
                 };
 
                 subcatItem.appendChild(subcatLink);
@@ -598,6 +625,37 @@ function loadProductCategorySidebar() {
         categoryContainer.appendChild(subcategoryList);
         categoryList.appendChild(categoryContainer);
     });
+
+    // Highlight active subcategory based on hash
+    const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+    if (hash.cat) {
+        highlightActiveSubcategory(hash.cat);
+    }
+}
+
+function highlightActiveSubcategory(activeCat) {
+    // Remove active class from all subcategory links
+    document.querySelectorAll('.subcategory-link').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    // Add active class to the matching subcategory
+    const activeLink = document.querySelector(`.subcategory-link[data-subcategory-name="${activeCat}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+
+        // Also expand the parent category
+        const subcategoryList = activeLink.closest('.subcategory-list');
+        if (subcategoryList) {
+            subcategoryList.style.display = 'block';
+            const categoryTitle = subcategoryList.previousElementSibling.querySelector('.category-title');
+            if (categoryTitle) {
+                categoryTitle.classList.add('active');
+                const arrow = categoryTitle.querySelector('.toggle-arrow');
+                if (arrow) arrow.classList.add('open');
+            }
+        }
+    }
 }
 
 function selectFoodCategory(queryString, element) {
@@ -1210,7 +1268,7 @@ function loadSampleFood() {
 }
 
 function addUSDASearchBar() {
-    let searchDiv = document.getElementById("usda-search-div");
+    let searchDiv = document.getElementById("search-div");
     if (!searchDiv) return;
 
     if (!searchDiv.innerHTML.trim()) {
@@ -1221,12 +1279,12 @@ function addUSDASearchBar() {
         searchDiv.style.marginBottom = "1em";
         searchDiv.innerHTML = `
             <select id="country-dropdown" style="margin-right: 10px;">
-                <option value="US" ${selectedCountry === 'US' ? 'selected' : ''}>America</option>
+                <option value="US" ${selectedCountry === 'US' ? 'selected' : ''}>US</option>
                 <option value="IN" ${selectedCountry === 'IN' ? 'selected' : ''}>India</option>
             </select>
-            <input type="text" id="usda-search-input" placeholder="${placeholder}" style="width:300px;">
-            <button id="usda-search-button">Search</button>
-            <button id="usda-clear-button">Clear Results</button>
+            <input type="text" id="search-input" placeholder="${placeholder}" style="width:300px;">
+            <button id="usda-search-button" class="add-to-menu-btn">Search</button>
+            <button id="usda-clear-button" class="remove-item-btn">Clear</button>
         `;
 
         // Add country dropdown change handler
@@ -1240,6 +1298,12 @@ function addUSDASearchBar() {
                 } else if (typeof updateHash === "function") {
                     updateHash({ country: selectedCountry }, true);
                 }
+
+                // Trigger search for India when on food menu (not product menu)
+                const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+                if (hash.layout !== "product" && selectedCountry === "IN") {
+                    searchUSDAFood("India");
+                }
             });
         }
     }
@@ -1247,7 +1311,7 @@ function addUSDASearchBar() {
     // Event listeners for search functionality
     document.addEventListener('click', (e) => {
         if (e.target && e.target.id === 'usda-search-button') {
-            const query = document.getElementById("usda-search-input").value.trim();
+            const query = document.getElementById("search-input").value.trim();
             const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
             if (hash.layout === "product") {
                 // Product search - not implemented yet
@@ -1261,7 +1325,7 @@ function addUSDASearchBar() {
         }
     });
     document.addEventListener("keypress", function(e) {
-        if (e.target && e.target.id === "usda-search-input" && e.key === "Enter") {
+        if (e.target && e.target.id === "search-input" && e.key === "Enter") {
             const btn = document.getElementById("usda-search-button");
             if (btn) btn.click();
         }
@@ -1397,7 +1461,7 @@ function displayInitialFoodItems() {
                     <br><small>Brand: ${food.brandOwner || 'Generic'}</small>
                     <br><small>Category: ${food.foodCategory || 'N/A'}</small>
                 </div>
-                <button class="add-initial-food-btn" data-index="${index}">Search Item</button>
+                <button class="add-initial-food-btn" data-index="${index}">View</button>
             `;
             container.appendChild(resultDiv);
         });

@@ -95,7 +95,7 @@ function toggleCategorySidebar() {
   border: none;
   font-size: 32px;
   line-height: 1;
-  color: #666;
+  color: #999;
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -279,6 +279,13 @@ function toggleCategorySidebar() {
   padding-left: 15px;
 }
 
+.subcategory-link.active {
+  background-color: #e5e7eb;
+  color: #333;
+  font-weight: bold;
+  padding-left: 15px;
+}
+
 .dark .subcategory-link {
   color: #cbd5e1;
 }
@@ -287,11 +294,12 @@ function toggleCategorySidebar() {
   background-color: #475569;
   color: #f1f5f9;
 }
-</style>
 
-<script>
-loadMarkdown("README.md", "readmeDiv", "_parent");
-</script>
+.dark .subcategory-link.active {
+  background-color: #0f172a;
+  color: white;
+}
+</style>
 
 </head>
 
@@ -316,7 +324,7 @@ loadMarkdown("README.md", "readmeDiv", "_parent");
       <div id="category-list"></div>
     </div>
     <div style="overflow: auto;">
-      <div id="usda-search-div"></div>
+      <div id="search-div"></div>
       <div id="search-results-container"></div>
       <div id="menu-container"></div>
       <div id="product-container"></div>
