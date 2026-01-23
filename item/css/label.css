@@ -226,7 +226,8 @@ input[type=number]::-webkit-outer-spin-button {
 /* When search results are standalone (no menu to the right), span full width */
 #search-results-container:only-child,
 .menu-with-search-layout:has(> .menu-layout-wrapper:empty) > #search-results-container,
-.menu-with-search-layout > #search-results-container:first-child:last-child {
+.menu-with-search-layout > #search-results-container:first-child:last-child,
+#search-results-container.no-menu-items {
     width: 100%;
     max-width: none;
 }
@@ -366,6 +367,26 @@ input[type=number]::-webkit-outer-spin-button {
 
 .search-result-item:hover {
     background-color: #f0f8ff;
+}
+
+/* Initial food items - clickable */
+.initial-food-item {
+    cursor: pointer;
+}
+
+.initial-food-item .toggle-arrow {
+    font-size: 32px;
+    color: #666;
+    transition: transform 0.2s;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.expanded-search-results {
+    margin-left: 20px;
+    padding: 10px;
+    border-left: 3px solid #4CAF50;
+    background-color: #f9f9f9;
 }
 
 .food-info {
@@ -568,6 +589,15 @@ input[type=number]::-webkit-outer-spin-button {
 
 .dark .food-info small {
   color: #cbd5e1;
+}
+
+.dark .initial-food-item .toggle-arrow {
+  color: #94a3b8;
+}
+
+.dark .expanded-search-results {
+  background-color: #1e293b;
+  border-left-color: #10b981;
 }
 
 .dark .close-search-btn {
@@ -1524,6 +1554,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .panel-section,
 .percentile-bar-chart,
+.boxplot-chart-section,
 .production-locations,
 .material-composition-section,
 .certifications-section,
@@ -1542,6 +1573,7 @@ input[type=number]::-webkit-outer-spin-button {
 /* Dark mode for all panel sections */
 .dark .panel-section,
 .dark .percentile-bar-chart,
+.dark .boxplot-chart-section,
 .dark .production-locations,
 .dark .material-composition-section,
 .dark .certifications-section,
@@ -1830,6 +1862,8 @@ input[type=number]::-webkit-outer-spin-button {
 /* Percentile Bar Chart */
 .percentile-bar-chart {
   /* Uses shared panel styling */
+  margin-top: 0;
+  position: relative;
 }
 
 .chart-header {
@@ -1912,6 +1946,316 @@ input[type=number]::-webkit-outer-spin-button {
   align-items: center;
   gap: 6px;
   font-size: 0.75em;
+  color: #64748b;
+}
+
+/* Vertical Bar Chart */
+.vertical-bar-chart-wrapper {
+  position: relative;
+  margin: 20px 0;
+}
+
+.vertical-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 10px;
+  height: 250px;
+  padding: 0 10px;
+  position: relative;
+  z-index: 1;
+  margin-top: 50px;
+}
+
+.vertical-bar-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 80px;
+}
+
+.vertical-bar {
+  width: 100%;
+  max-width: 60px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  min-height: 10px;
+}
+
+.vertical-bar-value {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+.vertical-bar-label {
+  font-size: 0.75em;
+  color: #64748b;
+  margin-top: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Product Marker */
+.product-marker {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.marker-line {
+  width: 3px;
+  background: #3b82f6;
+  border-radius: 2px;
+  margin: 0 auto;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.marker-label {
+  position: absolute;
+  bottom: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3b82f6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 0.75em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.marker-label::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid #3b82f6;
+}
+
+.marker-value {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.marker-text {
+  font-size: 0.9em;
+}
+
+
+.chart-note {
+  margin-top: 70px;
+  padding: 10px;
+  background: #f8fafc;
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+}
+
+.chart-note small {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Dark mode for vertical bars */
+.dark .vertical-bar-value {
+  color: #f1f5f9;
+}
+
+.dark .vertical-bar-label {
+  color: #94a3b8;
+}
+
+.dark .chart-note {
+  background: #0f172a;
+  border-left-color: #60a5fa;
+}
+
+.dark .chart-note small {
+  color: #94a3b8;
+}
+
+.dark .marker-line {
+  background: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.5);
+}
+
+.dark .marker-label {
+  background: #60a5fa;
+}
+
+.dark .marker-label::after {
+  border-bottom-color: #60a5fa;
+}
+
+/* Charts Wrapper - stacked vertically */
+.charts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.charts-wrapper .percentile-bar-chart,
+.charts-wrapper .boxplot-chart-section {
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  padding: 15px 0;
+  background: transparent;
+}
+
+/* Boxplot Chart Styles */
+.boxplot-chart-section {
+  margin-top: 0;
+}
+
+.boxplot-container {
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.boxplot-svg-combined {
+  width: 100%;
+  max-width: 700px;
+  height: auto;
+}
+
+.boxplot-legend {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.boxplot-legend .legend-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 8px;
+}
+
+.boxplot-legend .legend-box {
+  display: inline-block;
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.boxplot-legend .legend-line {
+  display: inline-block;
+  width: 20px;
+  height: 3px;
+}
+
+.boxplot-legend .legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.gwp-metrics-summary {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.gwp-metrics-summary h5 {
+  margin: 0 0 15px 0;
+  font-size: 1.1em;
+  color: #334155;
+  font-weight: 600;
+}
+
+.dark .boxplot-svg-combined text {
+  fill: #f1f5f9;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-item .metric-label {
+  font-size: 0.75em;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.metric-item .metric-value {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.metric-item .metric-value.better {
+  color: #22c55e;
+}
+
+.metric-item .metric-value.worse {
+  color: #ef4444;
+}
+
+.metric-item .metric-value.average {
+  color: #f59e0b;
+}
+
+.metric-item .metric-desc {
+  font-size: 0.7em;
+  color: #94a3b8;
+}
+
+/* Dark mode for boxplot */
+.dark .boxplot-legend,
+.dark .gwp-metrics-summary {
+  border-top-color: #475569;
+}
+
+.dark .gwp-metrics-summary h5 {
+  color: #f1f5f9;
+}
+
+.dark .metric-item {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+.dark .metric-item .metric-label {
+  color: #94a3b8;
+}
+
+.dark .metric-item .metric-value {
+  color: #f1f5f9;
+}
+
+.dark .metric-item .metric-desc {
   color: #64748b;
 }
 
@@ -2351,6 +2695,17 @@ input[type=number]::-webkit-outer-spin-button {
   background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.zscore-behind-bars {
+  position: absolute;
+  width: 100%;
+  z-index: 0;
+  top: 100px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 0;
 }
 
 .zscore-label {

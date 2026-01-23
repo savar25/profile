@@ -1,4 +1,4 @@
-Are we using: [raw yaml path for Accostic Ceilings](https://raw.githubusercontent.com/ModelEarth/products-data/refs/heads/main/US/Acoustical_Ceilings/61a3d3f6469b4e9baa9da7605650a63d.yaml)?
+[View Product Details](/profile/item/#layout=product&cat=Cement&country=US&id=364d42325e1e4c64944d4b1f1cab70b7) - [Accostic Ceilings YAML](https://raw.githubusercontent.com/ModelEarth/products-data/refs/heads/main/US/Acoustical_Ceilings/61a3d3f6469b4e9baa9da7605650a63d.yaml) - [About YAML File Structure](../../../products)
 
 The model.earth label builder is similar to a [Nutritionix Label](https://model.earth/data-commons/docs/food/), but it's easier to reuse since the layout object is built from YAML by a javascript template that combines Food YAML and Daily Recommended YAML to create Profile Object json. [View JavaScript](https://github.com/ModelEarth/profile/blob/main/item/js/label.js)
 

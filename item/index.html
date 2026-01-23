@@ -53,6 +53,214 @@ function updateYAMLSourceLink() {
   }
 }
 
+// Menu Set Management
+const MENU_SETS_KEY = 'profile-menu-sets';
+const CURRENT_MENU_KEY = 'profile-current-menu';
+
+function getMenuSets() {
+  const stored = localStorage.getItem(MENU_SETS_KEY);
+  return stored ? JSON.parse(stored) : { 'menu-1': { name: 'Menu 1', items: [] } };
+}
+
+function saveMenuSets(sets) {
+  localStorage.setItem(MENU_SETS_KEY, JSON.stringify(sets));
+}
+
+function getCurrentMenuId() {
+  return localStorage.getItem(CURRENT_MENU_KEY) || 'menu-1';
+}
+
+function setCurrentMenuId(id) {
+  localStorage.setItem(CURRENT_MENU_KEY, id);
+}
+
+function getCurrentMenu() {
+  const sets = getMenuSets();
+  const currentId = getCurrentMenuId();
+  return sets[currentId] || { name: 'Menu 1', items: [] };
+}
+
+function saveCurrentMenuItems(items) {
+  const sets = getMenuSets();
+  const currentId = getCurrentMenuId();
+  if (!sets[currentId]) {
+    sets[currentId] = { name: 'Menu ' + (Object.keys(sets).length + 1), items: [] };
+  }
+  sets[currentId].items = items;
+  saveMenuSets(sets);
+}
+
+function updateMenuSelector() {
+  const selector = document.getElementById('menu-set-selector');
+  if (!selector) return;
+
+  const sets = getMenuSets();
+  const currentId = getCurrentMenuId();
+
+  // Clear and rebuild options
+  selector.innerHTML = '';
+
+  Object.keys(sets).forEach(id => {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = sets[id].name;
+    if (id === currentId) option.selected = true;
+    selector.appendChild(option);
+  });
+
+  // Add "Add New Menu" option
+  const addOption = document.createElement('option');
+  addOption.value = 'add-new';
+  addOption.textContent = '+ Add New Menu';
+  selector.appendChild(addOption);
+}
+
+function handleMenuSelectorChange(event) {
+  const value = event.target.value;
+
+  if (value === 'add-new') {
+    const name = prompt('Enter new menu name:');
+    if (name) {
+      const sets = getMenuSets();
+      const newId = 'menu-' + Date.now();
+      sets[newId] = { name: name, items: [] };
+      saveMenuSets(sets);
+      setCurrentMenuId(newId);
+      updateMenuSelector();
+      loadCurrentMenuItems();
+    } else {
+      // Restore previous selection
+      event.target.value = getCurrentMenuId();
+    }
+  } else {
+    setCurrentMenuId(value);
+    loadCurrentMenuItems();
+  }
+}
+
+function loadCurrentMenuItems() {
+  const menu = getCurrentMenu();
+  // Clear current display
+  const menuContainer = document.getElementById('menu-container');
+  if (menuContainer) {
+    menuContainer.innerHTML = '';
+  }
+
+  // TODO: Reload menu items from menu.items array
+  console.log('Loading menu items:', menu.items);
+  checkMenuItemsDisplay();
+}
+
+function toggleMenuOptions() {
+  const dropdown = document.getElementById('menu-options-dropdown');
+  if (dropdown) {
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function editMenuDetails() {
+  const sets = getMenuSets();
+  const currentId = getCurrentMenuId();
+  const currentMenu = sets[currentId];
+
+  const newName = prompt('Enter menu name:', currentMenu.name);
+  if (newName && newName !== currentMenu.name) {
+    currentMenu.name = newName;
+    saveMenuSets(sets);
+    updateMenuSelector();
+  }
+
+  toggleMenuOptions();
+}
+
+function deleteCurrentMenu() {
+  const sets = getMenuSets();
+  const currentId = getCurrentMenuId();
+
+  if (Object.keys(sets).length === 1) {
+    alert('Cannot delete the last menu.');
+    toggleMenuOptions();
+    return;
+  }
+
+  if (confirm('Are you sure you want to delete "' + sets[currentId].name + '"?')) {
+    delete sets[currentId];
+    saveMenuSets(sets);
+
+    // Switch to first available menu
+    const firstId = Object.keys(sets)[0];
+    setCurrentMenuId(firstId);
+    updateMenuSelector();
+    loadCurrentMenuItems();
+  }
+
+  toggleMenuOptions();
+}
+
+function checkMenuItemsDisplay() {
+  const searchResults = document.getElementById('search-results-container');
+  const menuContainer = document.getElementById('menu-container');
+
+  if (!searchResults || !menuContainer) return;
+
+  const hasMenuItems = menuContainer.children.length > 0 &&
+                       menuContainer.querySelector('.menu-layout-wrapper, .menu-label, .aggregate');
+
+  if (hasMenuItems) {
+    searchResults.classList.remove('no-menu-items');
+  } else {
+    searchResults.classList.add('no-menu-items');
+  }
+}
+
+// Initialize menu selector on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    updateMenuSelector();
+    const selector = document.getElementById('menu-set-selector');
+    if (selector) {
+      selector.addEventListener('change', handleMenuSelectorChange);
+    }
+    checkMenuItemsDisplay();
+    observeMenuChanges();
+  });
+} else {
+  updateMenuSelector();
+  const selector = document.getElementById('menu-set-selector');
+  if (selector) {
+    selector.addEventListener('change', handleMenuSelectorChange);
+  }
+  checkMenuItemsDisplay();
+  observeMenuChanges();
+}
+
+// Observe menu container for changes to update search results width
+function observeMenuChanges() {
+  const menuContainer = document.getElementById('menu-container');
+  if (!menuContainer) return;
+
+  const observer = new MutationObserver(function() {
+    checkMenuItemsDisplay();
+  });
+
+  observer.observe(menuContainer, {
+    childList: true,
+    subtree: true
+  });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const optionsBtn = document.getElementById('menu-options-btn');
+  const dropdown = document.getElementById('menu-options-dropdown');
+
+  if (dropdown && optionsBtn &&
+      !optionsBtn.contains(event.target) &&
+      !dropdown.contains(event.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
 function toggleCategorySidebar() {
   const sidebar = document.getElementById("category-sidebar");
   if (sidebar) {
@@ -104,6 +312,17 @@ function toggleCategorySidebar() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Menu options button - smaller version */
+#menu-options-btn {
+  padding: 5px 6px;
+}
+
+#menu-options-btn .menu-icon {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .dark .menu-toggle-btn {
@@ -334,13 +553,30 @@ function toggleCategorySidebar() {
 <body>
 <div class="content contentpadding large-list" style="max-width: 1500px;">
 
-  <p>Toggle between <a href="">Nutrition Layout</a> and <a href="#layout=product">Product Layout</a></p>
+  <p><b>Item Profiles:</b> <a href="">Healthy Meals</a> and <a href="#layout=product">Building Materials</a></p>
 
-  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-    <button id="menu-toggle-btn" class="menu-toggle-btn" onclick="toggleCategorySidebar()" title="Toggle categories menu">
-      <i class="material-icons menu-icon">menu</i>
-    </button>
-    <h1 id="page-header" style="margin: 0;">Nutritious Meal Planner</h1>
+  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <button id="menu-toggle-btn" class="menu-toggle-btn" onclick="toggleCategorySidebar()" title="Toggle categories menu">
+        <i class="material-icons menu-icon">menu</i>
+      </button>
+      <h1 id="page-header" style="margin: 0;">Nutritious Meal Planner</h1>
+    </div>
+    <div style="display: flex; align-items: flex-start; gap: 5px;">
+      <select id="menu-set-selector" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="menu-1">Menu 1</option>
+        <option value="add-new">+ Add New Menu</option>
+      </select>
+      <div style="position: relative;">
+        <button id="menu-options-btn" class="menu-toggle-btn" onclick="toggleMenuOptions()" title="Menu options">
+          <i class="material-icons menu-icon">more_vert</i>
+        </button>
+        <div id="menu-options-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000; min-width: 150px;">
+          <a href="#" onclick="editMenuDetails(); return false;" style="display: block; padding: 10px 15px; text-decoration: none; color: #333; white-space: nowrap;">Edit Menu Details</a>
+          <a href="#" onclick="deleteCurrentMenu(); return false;" style="display: block; padding: 10px 15px; text-decoration: none; color: #d32f2f; border-top: 1px solid #eee; white-space: nowrap;">Delete Menu</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div style="overflow: auto;">
@@ -362,7 +598,7 @@ function toggleCategorySidebar() {
 
   <br>
   <hr>
-  <p><a href="about">About Profiles</a> | <a href="#" id="yaml-source-link" target="_blank" style="display: none;">YAML Source</a></p>
+  <p><a href="../../products/">About Product Profiles</a> | <a href="#" id="yaml-source-link" target="_blank" style="display: none;">YAML Source</a></p>
 
 </div>
 </body>

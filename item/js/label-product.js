@@ -669,17 +669,17 @@ function renderPercentileBarChart(data) {
     const div = document.createElement("div");
     div.className = "percentile-bar-chart";
 
-    // Extract all percentile values (pct10 through pct90)
+    // Extract all percentile values (pct10 through pct90) - check category too
     const percentileData = [
-        { pct: 10, value: toNumber(data.gwp_per_category_declared_unit_10p) || toNumber(data.pct10_gwp) },
-        { pct: 20, value: toNumber(data.gwp_per_category_declared_unit_20p) || toNumber(data.pct20_gwp) },
-        { pct: 30, value: toNumber(data.gwp_per_category_declared_unit_30p) || toNumber(data.pct30_gwp) },
-        { pct: 40, value: toNumber(data.gwp_per_category_declared_unit_40p) || toNumber(data.pct40_gwp) },
-        { pct: 50, value: toNumber(data.gwp_per_category_declared_unit_50p) || toNumber(data.pct50_gwp) },
-        { pct: 60, value: toNumber(data.gwp_per_category_declared_unit_60p) || toNumber(data.pct60_gwp) },
-        { pct: 70, value: toNumber(data.gwp_per_category_declared_unit_70p) || toNumber(data.pct70_gwp) },
-        { pct: 80, value: toNumber(data.gwp_per_category_declared_unit_80p) || toNumber(data.pct80_gwp) },
-        { pct: 90, value: toNumber(data.gwp_per_category_declared_unit_90p) || toNumber(data.pct90_gwp) }
+        { pct: 10, value: toNumber(data.gwp_per_category_declared_unit_10p) || toNumber(data.pct10_gwp) || toNumber(data.category && data.category.pct10_gwp) },
+        { pct: 20, value: toNumber(data.gwp_per_category_declared_unit_20p) || toNumber(data.pct20_gwp) || toNumber(data.category && data.category.pct20_gwp) },
+        { pct: 30, value: toNumber(data.gwp_per_category_declared_unit_30p) || toNumber(data.pct30_gwp) || toNumber(data.category && data.category.pct30_gwp) },
+        { pct: 40, value: toNumber(data.gwp_per_category_declared_unit_40p) || toNumber(data.pct40_gwp) || toNumber(data.category && data.category.pct40_gwp) },
+        { pct: 50, value: toNumber(data.gwp_per_category_declared_unit_50p) || toNumber(data.pct50_gwp) || toNumber(data.category && data.category.pct50_gwp) },
+        { pct: 60, value: toNumber(data.gwp_per_category_declared_unit_60p) || toNumber(data.pct60_gwp) || toNumber(data.category && data.category.pct60_gwp) },
+        { pct: 70, value: toNumber(data.gwp_per_category_declared_unit_70p) || toNumber(data.pct70_gwp) || toNumber(data.category && data.category.pct70_gwp) },
+        { pct: 80, value: toNumber(data.gwp_per_category_declared_unit_80p) || toNumber(data.pct80_gwp) || toNumber(data.category && data.category.pct80_gwp) },
+        { pct: 90, value: toNumber(data.gwp_per_category_declared_unit_90p) || toNumber(data.pct90_gwp) || toNumber(data.category && data.category.pct90_gwp) }
     ].filter(p => p.value !== null);
 
     const currentGwp = toNumber(data.gwp) || toNumber(data.gwp_per_category_declared_unit);
@@ -715,6 +715,31 @@ function renderPercentileBarChart(data) {
         }
     }
 
+    // Function to calculate marker position
+    const getProductMarkerPosition = (gwp, data) => {
+        if (!gwp || data.length === 0) return 0;
+
+        // Find which percentiles the product falls between
+        for (let i = 0; i < data.length - 1; i++) {
+            if (gwp >= data[i].value && gwp <= data[i + 1].value) {
+                // Interpolate position between these two bars
+                const barWidth = 100 / (data.length + 1); // +1 for spacing
+                const basePosition = (i + 0.5) * barWidth;
+                const range = data[i + 1].value - data[i].value;
+                const offset = ((gwp - data[i].value) / range) * barWidth;
+                return basePosition + offset;
+            }
+        }
+
+        // If below first percentile
+        if (gwp < data[0].value) {
+            return (100 / (data.length + 1)) * 0.5 * (gwp / data[0].value);
+        }
+
+        // If above last percentile
+        return 100 - (100 / (data.length + 1)) * 0.5;
+    };
+
     div.innerHTML = `
         <div class="chart-header">
             <h4>Industry Benchmark Percentiles ${createInfoIcon(METRIC_TOOLTIPS.percentile, 'tip-percentile')}</h4>
@@ -722,43 +747,216 @@ function renderPercentileBarChart(data) {
         </div>
 
         ${gwpZ !== null ? `
-        <div class="zscore-indicator">
+        <div class="zscore-indicator zscore-behind-bars">
             <span class="zscore-label">Z-Score ${createInfoIcon(METRIC_TOOLTIPS.gwp_z, 'tip-zscore')}</span>
             <span class="zscore-value ${gwpZ < 0 ? 'better' : gwpZ > 0 ? 'worse' : 'average'}">${gwpZ > 0 ? '+' : ''}${gwpZ.toFixed(2)}</span>
             <span class="zscore-desc">${gwpZ < -0.5 ? 'Better than average' : gwpZ > 0.5 ? 'Worse than average' : 'Near average'}</span>
         </div>
         ` : ''}
 
-        <div class="chart-container benchmark-chart">
-            ${percentileData.map(p => `
-                <div class="chart-row">
-                    <span class="chart-label">
-                        ${p.pct}th
-                        ${p.pct === 10 ? createInfoIcon(METRIC_TOOLTIPS.pct10, 'tip-pct10') : ''}
-                        ${p.pct === 50 ? createInfoIcon(METRIC_TOOLTIPS.pct50, 'tip-pct50') : ''}
-                        ${p.pct === 90 ? createInfoIcon(METRIC_TOOLTIPS.pct90, 'tip-pct90') : ''}
-                    </span>
-                    <div class="chart-bar-wrapper">
-                        <div class="chart-bar" style="width: ${(p.value / maxVal) * 100}%; background-color: ${getPercentileColor(p.pct)}"></div>
-                        <span class="chart-value">${p.value.toFixed(2)}</span>
+        <div class="vertical-bar-chart-wrapper">
+            <div class="vertical-bar-chart">
+                ${percentileData.map(p => `
+                    <div class="vertical-bar-column">
+                        <span class="vertical-bar-value">${p.value.toFixed(0)}</span>
+                        <div class="vertical-bar" style="height: ${(p.value / maxVal) * 200}px; background-color: ${getPercentileColor(p.pct)}"></div>
+                        <span class="vertical-bar-label">${p.pct}th</span>
                     </div>
-                </div>
-            `).join('')}
+                `).join('')}
+            </div>
             ${currentGwp ? `
-                <div class="chart-row current-product">
-                    <span class="chart-label">This Product</span>
-                    <div class="chart-bar-wrapper">
-                        <div class="chart-bar" style="width: ${(currentGwp / maxVal) * 100}%; background-color: #3b82f6"></div>
-                        <span class="chart-value">${currentGwp.toFixed(2)}</span>
-                        <span class="chart-percentile-badge">${productPercentile}</span>
+                <div class="product-marker" style="left: ${getProductMarkerPosition(currentGwp, percentileData)}%;">
+                    <div class="marker-line" style="height: ${(currentGwp / maxVal) * 200 + 30}px;"></div>
+                    <div class="marker-label">
+                        <span class="marker-value">${currentGwp.toFixed(0)}</span>
+                        <span class="marker-text">This Product (${productPercentile})</span>
                     </div>
                 </div>
             ` : ''}
+        </div>
+
+        <div class="chart-note">
+            <small><strong>Note:</strong> This chart displays percentiles 10th through 90th, representing incremental benchmarks in the product category. The 90th percentile indicates that 90% of products perform at or below this level, while the remaining 10% have higher environmental impact. A 100th percentile value would simply be the maximum observed in the dataset and is less useful for comparison than the 90th percentile benchmark.</small>
         </div>
         <div class="chart-legend">
             <span class="legend-item"><span class="legend-color" style="background:#22c55e"></span>Best (10-20th)</span>
             <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span>Average (40-60th)</span>
             <span class="legend-item"><span class="legend-color" style="background:#ef4444"></span>Worst (80-90th)</span>
+        </div>
+    `;
+
+    return div;
+}
+
+// ============================================
+// Boxplot Chart
+// ============================================
+
+function renderBoxplotChart(data) {
+    const div = document.createElement("div");
+    div.className = "boxplot-chart-section";
+
+    // Extract all percentile values - check both top level and category
+    const percentileData = [
+        { pct: 10, value: toNumber(data.pct10_gwp || (data.category && data.category.pct10_gwp)) },
+        { pct: 20, value: toNumber(data.pct20_gwp || (data.category && data.category.pct20_gwp)) },
+        { pct: 30, value: toNumber(data.pct30_gwp || (data.category && data.category.pct30_gwp)) },
+        { pct: 40, value: toNumber(data.pct40_gwp || (data.category && data.category.pct40_gwp)) },
+        { pct: 50, value: toNumber(data.pct50_gwp || (data.category && data.category.pct50_gwp)) },
+        { pct: 60, value: toNumber(data.pct60_gwp || (data.category && data.category.pct60_gwp)) },
+        { pct: 70, value: toNumber(data.pct70_gwp || (data.category && data.category.pct70_gwp)) },
+        { pct: 80, value: toNumber(data.pct80_gwp || (data.category && data.category.pct80_gwp)) },
+        { pct: 90, value: toNumber(data.pct90_gwp || (data.category && data.category.pct90_gwp)) }
+    ].filter(p => p.value !== null);
+
+    if (percentileData.length === 0) {
+        div.style.display = "none";
+        return div;
+    }
+
+    const values = percentileData.map(p => p.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const q1 = percentileData.find(p => p.pct === 20)?.value || min;
+    const median = percentileData.find(p => p.pct === 50)?.value || ((min + max) / 2);
+    const q3 = percentileData.find(p => p.pct === 80)?.value || max;
+
+    const currentGwp = toNumber(data.gwp) || toNumber(data.gwp_per_category_declared_unit);
+    const gwpPerKg = toNumber(data.gwp_per_kg);
+
+    const range = max - min;
+    const chartMin = min - (range * 0.1);
+    const chartMax = max + (range * 0.1);
+    const chartRange = chartMax - chartMin;
+
+    // Calculate positions as percentages
+    const getPosition = (val) => ((val - chartMin) / chartRange) * 100;
+
+    const categoryName = data.category?.name || data.category_name || "Category";
+    const productName = data.name || data.product_name || "This Product";
+
+    div.innerHTML = `
+        <div class="chart-header">
+            <h3>GWP Distribution Boxplot</h3>
+            <span class="chart-subtitle">Shows quartiles and range across category (kgCO2e)</span>
+        </div>
+
+        <div class="boxplot-container">
+            <svg class="boxplot-svg-combined" viewBox="0 0 500 240" preserveAspectRatio="xMidYMid meet">
+                <!-- All Products Label -->
+                <text x="10" y="20" font-size="14" fill="#334155" font-weight="600">All Products in ${categoryName}</text>
+
+                <!-- All Products Boxplot -->
+                <!-- Whisker line (min to max) -->
+                <line x1="${getPosition(min) * 4.6 + 20}" y1="70"
+                      x2="${getPosition(max) * 4.6 + 20}" y2="70"
+                      stroke="#666" stroke-width="2"/>
+
+                <!-- Min whisker -->
+                <line x1="${getPosition(min) * 4.6 + 20}" y1="55"
+                      x2="${getPosition(min) * 4.6 + 20}" y2="85"
+                      stroke="#666" stroke-width="2"/>
+
+                <!-- Max whisker -->
+                <line x1="${getPosition(max) * 4.6 + 20}" y1="55"
+                      x2="${getPosition(max) * 4.6 + 20}" y2="85"
+                      stroke="#666" stroke-width="2"/>
+
+                <!-- Box (Q1 to Q3) -->
+                <rect x="${getPosition(q1) * 4.6 + 20}" y="45"
+                      width="${(getPosition(q3) - getPosition(q1)) * 4.6}" height="50"
+                      fill="#3b82f6" fill-opacity="0.3" stroke="#3b82f6" stroke-width="2"/>
+
+                <!-- Median line -->
+                <line x1="${getPosition(median) * 4.6 + 20}" y1="45"
+                      x2="${getPosition(median) * 4.6 + 20}" y2="95"
+                      stroke="#ef4444" stroke-width="3"/>
+
+                <!-- Category Labels -->
+                <text x="${getPosition(min) * 4.6 + 20}" y="110" text-anchor="middle" font-size="11" fill="#666">
+                    ${min.toFixed(0)}
+                </text>
+                <text x="${getPosition(q1) * 4.6 + 20}" y="35" text-anchor="middle" font-size="11" fill="#666">
+                    Q1: ${q1.toFixed(0)}
+                </text>
+                <text x="${getPosition(median) * 4.6 + 20}" y="35" text-anchor="middle" font-size="11" fill="#ef4444" font-weight="bold">
+                    Median: ${median.toFixed(0)}
+                </text>
+                <text x="${getPosition(q3) * 4.6 + 20}" y="35" text-anchor="middle" font-size="11" fill="#666">
+                    Q3: ${q3.toFixed(0)}
+                </text>
+                <text x="${getPosition(max) * 4.6 + 20}" y="110" text-anchor="middle" font-size="11" fill="#666">
+                    ${max.toFixed(0)}
+                </text>
+
+                ${currentGwp && currentGwp >= chartMin && currentGwp <= chartMax ? `
+                <!-- This Product Label -->
+                <text x="10" y="150" font-size="14" fill="#22c55e" font-weight="600">This Product: ${productName}</text>
+
+                <!-- This Product Boxplot -->
+                <!-- Product value line -->
+                <line x1="${getPosition(currentGwp) * 4.6 + 20}" y1="185"
+                      x2="${getPosition(currentGwp) * 4.6 + 20}" y2="215"
+                      stroke="#22c55e" stroke-width="4"/>
+
+                <!-- Product marker -->
+                <circle cx="${getPosition(currentGwp) * 4.6 + 20}" cy="200" r="8"
+                        fill="#22c55e" stroke="#fff" stroke-width="2"/>
+
+                <!-- Value label -->
+                <text x="${getPosition(currentGwp) * 4.6 + 20}" y="232" text-anchor="middle" font-size="12" fill="#22c55e" font-weight="bold">
+                    ${currentGwp.toFixed(0)} kgCO2e
+                </text>
+                ` : ''}
+            </svg>
+        </div>
+
+        <div class="boxplot-legend">
+            <div class="legend-row">
+                <span class="legend-item"><span class="legend-box" style="background:#3b82f6;opacity:0.3;border:2px solid #3b82f6"></span>Interquartile Range (Q1-Q3)</span>
+                <span class="legend-item"><span class="legend-line" style="background:#ef4444"></span>Median (50th percentile)</span>
+            </div>
+            ${currentGwp ? `
+            <div class="legend-row">
+                <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>This Product: ${currentGwp.toFixed(2)} kgCO2e</span>
+            </div>
+            ` : ''}
+        </div>
+
+        <div class="gwp-metrics-summary">
+            <h5>GWP Metrics Summary</h5>
+            <div class="metrics-grid">
+                ${toNumber(data.gwp) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">Total GWP</span>
+                    <span class="metric-value">${toNumber(data.gwp).toFixed(2)} kgCO2e</span>
+                    <span class="metric-desc">For declared unit</span>
+                </div>
+                ` : ''}
+                ${toNumber(data.gwp_per_category_declared_unit) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">GWP per Category Unit</span>
+                    <span class="metric-value">${toNumber(data.gwp_per_category_declared_unit).toFixed(2)} kgCO2e</span>
+                    <span class="metric-desc">Normalized to category standard</span>
+                </div>
+                ` : ''}
+                ${gwpPerKg !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">GWP per Kilogram</span>
+                    <span class="metric-value">${gwpPerKg.toFixed(4)} kgCO2e/kg</span>
+                    <span class="metric-desc">Per unit mass</span>
+                </div>
+                ` : ''}
+                ${toNumber(data.gwp_z) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">Z-Score</span>
+                    <span class="metric-value ${toNumber(data.gwp_z) < 0 ? 'better' : toNumber(data.gwp_z) > 0 ? 'worse' : 'average'}">
+                        ${toNumber(data.gwp_z) > 0 ? '+' : ''}${toNumber(data.gwp_z).toFixed(2)}
+                    </span>
+                    <span class="metric-desc">${toNumber(data.gwp_z) < -0.5 ? 'Better than average' : toNumber(data.gwp_z) > 0.5 ? 'Worse than average' : 'Near average'}</span>
+                </div>
+                ` : ''}
+            </div>
         </div>
     `;
 
@@ -1210,6 +1408,13 @@ function renderProductDescription(data) {
         div.appendChild(additionalProps);
     }
 
+    // Add charts section
+    const chartsWrapper = document.createElement("div");
+    chartsWrapper.className = "charts-wrapper";
+    chartsWrapper.appendChild(renderPercentileBarChart(data));
+    chartsWrapper.appendChild(renderBoxplotChart(data));
+    div.appendChild(chartsWrapper);
+
     return div;
 }
 
@@ -1311,7 +1516,6 @@ function renderProductDetailsPanel(data) {
 
     const leftCol = document.createElement("div");
     leftCol.className = "details-column";
-    leftCol.appendChild(renderPercentileBarChart(data));
     leftCol.appendChild(renderCarbonStorageSection(data));
     leftCol.appendChild(renderMissingImpacts(data)); // Environmental Impact Coverage after Carbon Storage
     leftCol.appendChild(renderMaterialComposition(data));
@@ -1340,10 +1544,9 @@ function renderProductDetailsPanelWithCalculators(data, profile) {
     const columnsDiv = document.createElement("div");
     columnsDiv.className = "details-columns";
 
-    // LEFT COLUMN: Percentile chart, Transportation, Carbon Storage, Impact Coverage, Materials
+    // LEFT COLUMN: Transportation, Carbon Storage, Impact Coverage, Materials
     const leftCol = document.createElement("div");
     leftCol.className = "details-column";
-    leftCol.appendChild(renderPercentileBarChart(data));
     leftCol.appendChild(renderTransportationPanel(data));
     leftCol.appendChild(renderCarbonStorageSection(data));
     leftCol.appendChild(renderMissingImpacts(data)); // Environmental Impact Coverage after Carbon Storage

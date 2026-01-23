@@ -1310,7 +1310,7 @@ function addUSDASearchBar() {
     });
 }
 
-function searchUSDAFood(query = "apple") {
+function searchUSDAFood(query = "apple", targetContainer = null) {
     const apiKey = "bLecediTVa2sWd8AegmUZ9o7DxYFSYoef9B4i1Ml";
 
     // Add country-specific search terms
@@ -1322,7 +1322,7 @@ function searchUSDAFood(query = "apple") {
     }
 
     const apiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&pageSize=10&pageNumber=1`;
-    fetch(apiUrl)
+    return fetch(apiUrl)
         .then(response => {
             if (!response.ok) {
                 const error = new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -1334,16 +1334,26 @@ function searchUSDAFood(query = "apple") {
         .then(data => {
             if (data.foods && data.foods.length > 0) {
                 searchResults = data.foods;
-                displaySearchResults();
+                if (targetContainer) {
+                    displaySearchResults(targetContainer);
+                } else {
+                    displaySearchResults();
+                }
             } else {
                 console.log('No foods found for query:', searchQuery);
-                clearSearchResults();
+                if (targetContainer) {
+                    targetContainer.innerHTML = "<p>No foods found.</p>";
+                } else {
+                    clearSearchResults();
+                }
             }
         })
         .catch(error => {
             console.error('Error fetching USDA data:', error);
-            const container = document.getElementById("search-results-container");
-            container.style.display = "";
+            const container = targetContainer || document.getElementById("search-results-container");
+            if (!targetContainer) {
+                container.style.display = "";
+            }
             let errorDetails = error.message || "Unknown error";
             let urlLink = '';
             if (error.url) {
@@ -1353,7 +1363,7 @@ function searchUSDAFood(query = "apple") {
             container.innerHTML = `
                 <div class="search-results-header">
                     <h3>Search Error</h3>
-                    <button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>
+                    ${!targetContainer ? '<button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>' : ''}
                 </div>
                 <div class="error-message-container">
                     <p><strong>Reason:</strong> ${errorDetails}</p>
@@ -1364,13 +1374,17 @@ function searchUSDAFood(query = "apple") {
         });
 }
 
-function displaySearchResults() {
-    const container = document.getElementById("search-results-container");
-    container.style.display = "";
+function displaySearchResults(targetContainer = null) {
+    const container = targetContainer || document.getElementById("search-results-container");
+
+    if (!targetContainer) {
+        container.style.display = "";
+    }
+
     container.innerHTML = `
         <div class="search-results-header">
             <h3>Search Results - Click to Add Item:</h3>
-            <button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>
+            ${!targetContainer ? '<button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>' : ''}
         </div>
     `;
 
@@ -1379,9 +1393,9 @@ function displaySearchResults() {
         resultDiv.className = "search-result-item";
         resultDiv.innerHTML = `
             <div class="food-info">
-                <strong>${food.description}</strong>
-                <br><small>Brand: ${food.brandOwner || 'Generic'}</small>
-                <br><small>Category: ${food.foodCategory || 'N/A'}</small>
+                <strong>${food.description}</strong><br>
+                <small>Brand: ${food.brandOwner || 'Generic'}</small><br>
+                <small>Category: ${food.foodCategory || 'N/A'}</small>
             </div>
             <button class="add-to-menu-btn" data-index="${index}">Add</button>
         `;
@@ -1396,7 +1410,9 @@ function displaySearchResults() {
         };
     });
 
-    updateMenuLayout();
+    if (!targetContainer) {
+        updateMenuLayout();
+    }
 }
 
 function clearSearchResults() {
@@ -1433,23 +1449,60 @@ function displayInitialFoodItems() {
         initialFoods.forEach((food, index) => {
             const resultDiv = document.createElement("div");
             resultDiv.className = "search-result-item initial-food-item";
+            resultDiv.dataset.index = index;
             resultDiv.innerHTML = `
                 <div class="food-info">
-                    <strong>${food.description}</strong>
-                    <br><small>Brand: ${food.brandOwner || 'Generic'}</small>
-                    <br><small>Category: ${food.foodCategory || 'N/A'}</small>
+                    <strong>${food.description}</strong><br>
+                    <small>Brand: ${food.brandOwner || 'Generic'} | Category: ${food.foodCategory || 'N/A'}</small>
                 </div>
-                <button class="add-initial-food-btn" data-index="${index}">View</button>
+                <i class="material-icons toggle-arrow">chevron_right</i>
             `;
+
+            // Create a container for the expanded search results
+            const expandedContainer = document.createElement("div");
+            expandedContainer.className = "expanded-search-results";
+            expandedContainer.style.display = "none";
+
             container.appendChild(resultDiv);
+            container.appendChild(expandedContainer);
         });
 
-        // Add event listeners for "Add Item" buttons
-        container.querySelectorAll(".add-initial-food-btn").forEach(button => {
-            button.onclick = function() {
-                const index = parseInt(button.dataset.index);
+        // Add event listeners for clickable items
+        container.querySelectorAll(".initial-food-item").forEach(item => {
+            item.onclick = async function(e) {
+                const index = parseInt(item.dataset.index);
                 const food = initialFoods[index];
-                searchUSDAFood(food.description);
+                const arrow = item.querySelector('.toggle-arrow');
+                const expandedContainer = item.nextElementSibling;
+
+                // Toggle the expanded state
+                if (expandedContainer.style.display === "none") {
+                    // Close any other open items
+                    container.querySelectorAll('.expanded-search-results').forEach(el => {
+                        if (el !== expandedContainer) {
+                            el.style.display = "none";
+                            el.innerHTML = "";
+                        }
+                    });
+                    container.querySelectorAll('.toggle-arrow').forEach(el => {
+                        if (el !== arrow) {
+                            el.textContent = "chevron_right";
+                        }
+                    });
+
+                    // Open this item
+                    arrow.textContent = "expand_more";
+                    expandedContainer.style.display = "block";
+
+                    // Load search results
+                    expandedContainer.innerHTML = "<p>Searching...</p>";
+                    await searchUSDAFood(food.description, expandedContainer);
+                } else {
+                    // Close this item
+                    arrow.textContent = "chevron_right";
+                    expandedContainer.style.display = "none";
+                    expandedContainer.innerHTML = "";
+                }
             };
         });
 
