@@ -2,6 +2,118 @@
 // Displays environmental impact data from product YAML files in FDA or Badge style
 
 // ============================================
+// Helper Functions
+// ============================================
+
+/**
+ * Formats a value that might be an object into a readable string
+ * @param {*} value - The value to format (can be string, object, etc.)
+ * @param {boolean} showKeys - Whether to show keys in the output (default: true)
+ * @returns {string} - Formatted string representation
+ */
+function formatValue_ObjectSafe(value, showKeys = true) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    if (typeof value === 'object' && !Array.isArray(value)) {
+        // Walk through all properties and format as "key: value" pairs
+        const pairs = [];
+        for (const [key, val] of Object.entries(value)) {
+            if (val === null || val === undefined || val === '') continue;
+
+            // Format the key to be more readable (convert snake_case to Title Case)
+            const readableKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            // Recursively format the value
+            let formattedVal;
+            if (typeof val === 'object') {
+                formattedVal = formatValue_ObjectSafe(val, false);
+            } else {
+                formattedVal = String(val);
+            }
+
+            if (formattedVal) {
+                pairs.push(showKeys ? `${readableKey}: ${formattedVal}` : formattedVal);
+            }
+        }
+        return pairs.join(', ');
+    }
+    if (Array.isArray(value)) {
+        return value.map(v => formatValue_ObjectSafe(v, showKeys)).filter(Boolean).join(', ');
+    }
+    return String(value);
+}
+
+/**
+ * Formats owned_by object with expandable details
+ * @param {*} ownedBy - The owned_by value (can be string or object)
+ * @param {string} uniqueId - Unique identifier for expandable section
+ * @returns {string} - HTML string with name, website, and expandable details
+ */
+function formatOwnedBy(ownedBy, uniqueId) {
+    if (!ownedBy) return '';
+
+    // If it's a string, just return it
+    if (typeof ownedBy !== 'object') {
+        return String(ownedBy);
+    }
+
+    const name = ownedBy.name || ownedBy.legal_name || '';
+    const website = ownedBy.website || ownedBy.web_url || ownedBy.url || '';
+
+    // Collect all other fields
+    const otherFields = [];
+    for (const [key, val] of Object.entries(ownedBy)) {
+        if (val === null || val === undefined || val === '') continue;
+        if (key === 'name' || key === 'legal_name' || key === 'website' || key === 'web_url' || key === 'url') continue;
+
+        const readableKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+        // Check if this is an image field
+        const isImage = key.toLowerCase().includes('image') || key.toLowerCase().includes('img') || key.toLowerCase().includes('logo') || key.toLowerCase().includes('photo');
+        // Check if this is a link field
+        const isLink = key.toLowerCase().includes('link') || key.toLowerCase().includes('url');
+        let formattedVal;
+
+        if (isImage && typeof val === 'string') {
+            // Show key as comment/label above image
+            formattedVal = `<div style="color: #64748b; font-size: 0.8em; margin-bottom: 4px;">${readableKey}</div><img src="${val}" alt="${readableKey}" style="max-width: 200px; max-height: 200px; border-radius: 4px; border: 1px solid #e2e8f0;" />`;
+            otherFields.push(`<div style="margin-top: 8px;">${formattedVal}</div>`);
+        } else if (isLink && typeof val === 'string') {
+            // Truncate URL for display
+            const displayUrl = val.length > 40 ? val.substring(0, 37) + '...' : val;
+            formattedVal = `<a href="${val}" target="_blank" class="location-link">${displayUrl} ↗</a>`;
+            otherFields.push(`<div style="font-size: 0.85em; margin-top: 4px;"><strong>${readableKey}:</strong> ${formattedVal}</div>`);
+        } else {
+            formattedVal = String(val);
+            otherFields.push(`<div style="font-size: 0.85em; margin-top: 4px;"><strong>${readableKey}:</strong> ${formattedVal}</div>`);
+        }
+    }
+
+    let html = '';
+
+    // Show name
+    if (name) {
+        html += name;
+    }
+
+    // Show website as link
+    if (website) {
+        html += ` <a href="${website}" target="_blank" class="location-link">Website ↗</a>`;
+    }
+
+    // Add expandable section for other fields
+    if (otherFields.length > 0) {
+        html += ` <span style="cursor: pointer; color: #3b82f6; font-size: 0.9em; margin-left: 8px;" onclick="document.getElementById('${uniqueId}').style.display = document.getElementById('${uniqueId}').style.display === 'none' ? 'block' : 'none'">▼ Details</span>`;
+        html += `<div id="${uniqueId}" style="display: none; margin-top: 8px; padding: 8px; background: #f8fafc; border-radius: 4px; border-left: 3px solid #3b82f6;">`;
+        html += otherFields.join('');
+        html += '</div>';
+    }
+
+    return html;
+}
+
+// ============================================
 // Product Label Rendering
 // ============================================
 
@@ -637,7 +749,7 @@ function renderCategoryBreadcrumb(data) {
 function createInfoIcon(tooltipText, tooltipId) {
     const id = tooltipId || 'tooltip-' + Math.random().toString(36).substr(2, 9);
     return `<span class="info-icon" data-tooltip-id="${id}" aria-label="More information">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M12 16v-4"></path>
             <path d="M12 8h.01"></path>
@@ -748,8 +860,10 @@ function renderPercentileBarChart(data) {
 
         ${gwpZ !== null ? `
         <div class="zscore-indicator zscore-behind-bars">
-            <span class="zscore-label">Z-Score ${createInfoIcon(METRIC_TOOLTIPS.gwp_z, 'tip-zscore')}</span>
-            <span class="zscore-value ${gwpZ < 0 ? 'better' : gwpZ > 0 ? 'worse' : 'average'}">${gwpZ > 0 ? '+' : ''}${gwpZ.toFixed(2)}</span>
+            <div class="zscore-left">
+                <span class="zscore-label">Z-Score ${createInfoIcon(METRIC_TOOLTIPS.gwp_z, 'tip-zscore')}</span>
+                <span class="zscore-value ${gwpZ < 0 ? 'better' : gwpZ > 0 ? 'worse' : 'average'}">${gwpZ > 0 ? '+' : ''}${gwpZ.toFixed(2)}</span>
+            </div>
             <span class="zscore-desc">${gwpZ < -0.5 ? 'Better than average' : gwpZ > 0.5 ? 'Worse than average' : 'Near average'}</span>
         </div>
         ` : ''}
@@ -837,14 +951,17 @@ function renderBoxplotChart(data) {
 
     div.innerHTML = `
         <div class="chart-header">
-            <h3>GWP Distribution Boxplot</h3>
-            <span class="chart-subtitle">Shows quartiles and range across category (kgCO2e)</span>
+            <h3>Greenhouse Warming Potential (GWP)</h3>
+            ${currentGwp ? `
+                <div style="margin-top: 8px; margin-bottom: 12px;">
+                    <div style="font-size: 0.9em; color: #64748b;">All ${categoryName} products compared to</div>
+                    <div style="font-size: 1.05em; font-weight: 600; color: #22c55e;">${productName}</div>
+                </div>
+            ` : ''}
         </div>
 
         <div class="boxplot-container">
-            <svg class="boxplot-svg-combined" viewBox="0 0 500 240" preserveAspectRatio="xMidYMid meet">
-                <!-- All Products Label -->
-                <text x="10" y="20" font-size="14" fill="#334155" font-weight="600">All Products in ${categoryName}</text>
+            <svg class="boxplot-svg-combined" viewBox="0 0 500 130" preserveAspectRatio="xMidYMid meet">
 
                 <!-- All Products Boxplot -->
                 <!-- Whisker line (min to max) -->
@@ -890,25 +1007,25 @@ function renderBoxplotChart(data) {
                 </text>
 
                 ${currentGwp && currentGwp >= chartMin && currentGwp <= chartMax ? `
-                <!-- This Product Label -->
-                <text x="10" y="150" font-size="14" fill="#22c55e" font-weight="600">This Product: ${productName}</text>
-
-                <!-- This Product Boxplot -->
-                <!-- Product value line -->
-                <line x1="${getPosition(currentGwp) * 4.6 + 20}" y1="185"
-                      x2="${getPosition(currentGwp) * 4.6 + 20}" y2="215"
+                <!-- Product value line (overlapping boxplot) -->
+                <line x1="${getPosition(currentGwp) * 4.6 + 20}" y1="45"
+                      x2="${getPosition(currentGwp) * 4.6 + 20}" y2="95"
                       stroke="#22c55e" stroke-width="4"/>
 
                 <!-- Product marker -->
-                <circle cx="${getPosition(currentGwp) * 4.6 + 20}" cy="200" r="8"
+                <circle cx="${getPosition(currentGwp) * 4.6 + 20}" cy="70" r="8"
                         fill="#22c55e" stroke="#fff" stroke-width="2"/>
 
                 <!-- Value label -->
-                <text x="${getPosition(currentGwp) * 4.6 + 20}" y="232" text-anchor="middle" font-size="12" fill="#22c55e" font-weight="bold">
+                <text x="${getPosition(currentGwp) * 4.6 + 20}" y="110" text-anchor="middle" font-size="12" fill="#22c55e" font-weight="bold">
                     ${currentGwp.toFixed(0)} kgCO2e
                 </text>
                 ` : ''}
             </svg>
+        </div>
+
+        <div class="chart-subtitle" style="margin-top: 8px; font-size: 0.85em; color: #64748b; font-style: italic;">
+            Average heat impact of atmosphere pollutants equivalent CO<sub>2</sub> over 100 years.
         </div>
 
         <div class="boxplot-legend">
@@ -916,11 +1033,6 @@ function renderBoxplotChart(data) {
                 <span class="legend-item"><span class="legend-box" style="background:#3b82f6;opacity:0.3;border:2px solid #3b82f6"></span>Interquartile Range (Q1-Q3)</span>
                 <span class="legend-item"><span class="legend-line" style="background:#ef4444"></span>Median (50th percentile)</span>
             </div>
-            ${currentGwp ? `
-            <div class="legend-row">
-                <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>This Product: ${currentGwp.toFixed(2)} kgCO2e</span>
-            </div>
-            ` : ''}
         </div>
 
         <div class="gwp-metrics-summary">
@@ -1092,7 +1204,7 @@ function renderProductionLocations(data) {
             latitude: plant.latitude || plant.lat,
             longitude: plant.longitude || plant.lng || plant.lon,
             carbonIntensity: toNumber(plant.electricity_carbon_intensity) || toNumber(plant.carbon_intensity),
-            owned_by: cleanText(plant.owned_by || "")
+            owned_by: plant.owned_by
         });
     }
 
@@ -1151,11 +1263,11 @@ function renderProductionLocations(data) {
             <h4>Production & Origin ${createInfoIcon("Manufacturing location affects product carbon footprint due to local grid electricity carbon intensity and transportation distances.", 'tip-origin')}</h4>
         </div>
         <div class="locations-grid">
-            ${locations.map(loc => `
+            ${locations.map((loc, index) => `
                 <div class="location-card">
                     <div class="location-type">${loc.type}</div>
                     ${loc.name ? `<div class="location-name">${loc.name}</div>` : ''}
-                    ${loc.owned_by ? `<div class="location-owner">Owned by: ${loc.owned_by}</div>` : ''}
+                    ${loc.owned_by ? `<div class="location-owner">Owned by: ${formatOwnedBy(loc.owned_by, 'owned-details-' + index)}</div>` : ''}
                     ${loc.address || loc.city || loc.state || loc.country ? `
                         <div class="location-address">
                             ${[loc.address, loc.city, loc.state, loc.country].filter(Boolean).join(", ")}

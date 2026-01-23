@@ -1028,6 +1028,12 @@ async function loadYAMLProfile(region, category, file) {
     const yamlText = await fetchText(rawUrl);
     const data = jsyaml.load(yamlText);
 
+    // Update YAML Source link with the category display_name from the loaded YAML
+    const yamlCategory = data.category?.display_name;
+    if (yamlCategory && typeof updateYAMLSourceLink === 'function') {
+        updateYAMLSourceLink(yamlCategory);
+    }
+
     // Use the comprehensive profile object creator from layout-product.js
     const profile = typeof createProductProfileObject === "function"
         ? createProductProfileObject(data)
@@ -2327,6 +2333,14 @@ async function loadProfile() {
                     const yamlText = await fetchText(yamlUrl);
                     sourceData = jsyaml.load(yamlText);
                     console.log("Loaded YAML data:", sourceData);
+
+                    // Update YAML Source link with the category display_name from the YAML file
+                    const yamlCategory = sourceData.category?.display_name;
+                    if (yamlCategory && typeof updateYAMLSourceLink === 'function') {
+                        updateYAMLSourceLink(yamlCategory);
+                    } else {
+                        console.log("Category display_name not found in YAML data");
+                    }
                 } catch (error) {
                     console.error("Error loading YAML:", error);
                     // Fall back to default sample if YAML fails to load
@@ -2346,6 +2360,12 @@ async function loadProfile() {
                     const yamlText = await fetchText(sampleUrl);
                     sourceData = jsyaml.load(yamlText);
                     console.log("Loaded sample YAML data:", sourceData);
+
+                    // Update YAML Source link with the category display_name from the sample YAML
+                    const sampleCategory = sourceData.category?.display_name;
+                    if (sampleCategory && typeof updateYAMLSourceLink === 'function') {
+                        updateYAMLSourceLink(sampleCategory);
+                    }
                 } catch (error) {
                     console.error("Error loading sample YAML:", error);
                     sourceData = {

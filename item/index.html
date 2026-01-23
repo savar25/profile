@@ -19,36 +19,69 @@
 <script type="text/javascript" src="js/label.js"></script>
 <script>
 document.addEventListener('hashChangeEvent', hashChangedMenu, false);
-function hashChangedMenu() {
+function hashChangedMenu(event) {
   console.log("Profile hash changed");
   loadMenu();
-  updateYAMLSourceLink();
+  // Don't update YAML source link here - wait for YAML to load
 }
 loadMenu();
 
-// Wait for DOM to be ready before trying to update the link
+// YAML Source link will be updated after YAML file is loaded with category from file
+// Initialize wrapper as hidden on page load
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateYAMLSourceLink);
+  document.addEventListener('DOMContentLoaded', function() {
+    const wrapper = document.getElementById('yaml-source-wrapper');
+    if (wrapper) wrapper.style.display = 'none';
+  });
 } else {
-  updateYAMLSourceLink();
+  const wrapper = document.getElementById('yaml-source-wrapper');
+  if (wrapper) wrapper.style.display = 'none';
 }
 
-function updateYAMLSourceLink() {
+// Store the initial YAML source link to prevent it from changing when cat changes
+let initialYAMLSource = null;
+
+function updateYAMLSourceLink(categoryFromYAML) {
   const link = document.getElementById('yaml-source-link');
-  if (!link) return;
+  const wrapper = document.getElementById('yaml-source-wrapper');
+
+  if (!link || !wrapper) return;
+
+  // Don't show the link if we don't have a category from the YAML
+  if (!categoryFromYAML || typeof categoryFromYAML !== 'string') {
+    wrapper.style.display = 'none';
+    console.log("YAML Source hidden - waiting for category from YAML file");
+    return;
+  }
 
   const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
 
   // Only show link if we have all required parameters
-  if (hash.layout === "product" && hash.country && hash.cat && hash.id) {
-    // GitHub web view URL for better formatting
-    const githubBase = "https://github.com/ModelEarth/products-data/blob/main";
-    const yamlUrl = `${githubBase}/${hash.country}/${hash.cat}/${hash.id}.yaml`;
-    link.href = yamlUrl;
-    link.style.display = 'inline';
-    console.log("YAML Source link:", yamlUrl);
+  if (hash.layout === "product" && hash.country && hash.id) {
+    const category = categoryFromYAML;
+
+    // Create a unique key based on country and id (not cat, which can change)
+    const sourceKey = `${hash.country}/${hash.id}`;
+
+    // Only update if we don't have an initial source or if the product changed (different country or id)
+    if (!initialYAMLSource || initialYAMLSource.key !== sourceKey) {
+      // GitHub web view URL for better formatting
+      const githubBase = "https://github.com/ModelEarth/products-data/blob/main";
+      const yamlUrl = `${githubBase}/${hash.country}/${category}/${hash.id}.yaml`;
+
+      initialYAMLSource = {
+        key: sourceKey,
+        url: yamlUrl,
+        category: category
+      };
+
+      link.href = yamlUrl;
+      console.log("YAML Source link set with category:", category, "URL:", yamlUrl);
+    }
+
+    wrapper.style.display = 'inline';
   } else {
-    link.style.display = 'none';
+    wrapper.style.display = 'none';
     console.log("YAML Source hidden - missing params:", hash);
   }
 }
@@ -598,7 +631,7 @@ function toggleCategorySidebar() {
 
   <br>
   <hr>
-  <p><a href="../../products/">About Product Profiles</a> | <a href="#" id="yaml-source-link" target="_blank" style="display: none;">YAML Source</a></p>
+  <p><a href="../../products/">About Product Profiles</a><span id="yaml-source-wrapper" style="display: none;"> | <a href="#" id="yaml-source-link" target="_blank">YAML Source</a></span></p>
 
 </div>
 </body>
