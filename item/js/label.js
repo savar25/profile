@@ -178,8 +178,13 @@ async function loadMenu() {
         if (sidebar) sidebar.style.display = "none";
     }
 
-    loadSampleFood();
-    displayInitialFoodItems();
+    // If country is India, trigger India search automatically
+    if (selectedCountry === "IN") {
+        searchUSDAFood("India");
+    } else {
+        // Otherwise show initial food items
+        displayInitialFoodItems();
+    }
 }
 
 const FOOD_CATEGORIES = [
@@ -1430,6 +1435,7 @@ function clearSearchResults() {
 
 function displayInitialFoodItems() {
     const initialFoods = [
+        { description: "Apples, raw (Example)", brandOwner: null, foodCategory: "Fruits and Fruit Juices", isSample: true },
         { description: "Bananas, raw", brandOwner: null, foodCategory: "Fruits and Fruit Juices" },
         { description: "Chicken breast, boneless, skinless, raw", brandOwner: null, foodCategory: "Poultry Products" },
         { description: "Broccoli, raw", brandOwner: null, foodCategory: "Vegetables and Vegetable Products" },
@@ -1470,7 +1476,14 @@ function displayInitialFoodItems() {
         container.querySelectorAll(".add-initial-food-btn").forEach(button => {
             button.onclick = function() {
                 const index = parseInt(button.dataset.index);
-                searchUSDAFood(initialFoods[index].description);
+                const food = initialFoods[index];
+
+                // If it's the sample apple, load the sample directly
+                if (food.isSample) {
+                    loadSampleFood();
+                } else {
+                    searchUSDAFood(food.description);
+                }
             };
         });
 

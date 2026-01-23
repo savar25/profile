@@ -223,6 +223,14 @@ input[type=number]::-webkit-outer-spin-button {
     border-radius: 5px;
 }
 
+/* When search results are standalone (no menu to the right), span full width */
+#search-results-container:only-child,
+.menu-with-search-layout:has(> .menu-layout-wrapper:empty) > #search-results-container,
+.menu-with-search-layout > #search-results-container:first-child:last-child {
+    width: 100%;
+    max-width: none;
+}
+
 /* Hide search container when empty */
 #search-results-container:empty {
     display: none;
