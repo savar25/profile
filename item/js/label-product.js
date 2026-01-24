@@ -749,11 +749,7 @@ function renderCategoryBreadcrumb(data) {
 function createInfoIcon(tooltipText, tooltipId) {
     const id = tooltipId || 'tooltip-' + Math.random().toString(36).substr(2, 9);
     return `<span class="info-icon" data-tooltip-id="${id}" aria-label="More information">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 16v-4"></path>
-            <path d="M12 8h.01"></path>
-        </svg>
+        <span class="material-icons-outlined" style="font-size: 18px;">info</span>
         <span class="info-tooltip" id="${id}">${tooltipText}</span>
     </span>`;
 }
@@ -890,7 +886,7 @@ function renderPercentileBarChart(data) {
         </div>
 
         <div class="chart-note">
-            <small><strong>Note:</strong> This chart displays percentiles 10th through 90th, representing incremental benchmarks in the product category. The 90th percentile indicates that 90% of products perform at or below this level, while the remaining 10% have higher environmental impact. A 100th percentile value would simply be the maximum observed in the dataset and is less useful for comparison than the 90th percentile benchmark.</small>
+            <small><strong>Note:</strong> The 90th percentile indicates that 90% of products perform at or below this level, while the remaining 10% have higher environmental impact. A 100th percentile value would simply be the maximum observed in the dataset and is less useful for comparison than the 90th percentile benchmark.</small>
         </div>
         <div class="chart-legend">
             <span class="legend-item"><span class="legend-color" style="background:#22c55e"></span>Best (10-20th)</span>
@@ -1032,42 +1028,6 @@ function renderBoxplotChart(data) {
             <div class="legend-row">
                 <span class="legend-item"><span class="legend-box" style="background:#3b82f6;opacity:0.3;border:2px solid #3b82f6"></span>Interquartile Range (Q1-Q3)</span>
                 <span class="legend-item"><span class="legend-line" style="background:#ef4444"></span>Median (50th percentile)</span>
-            </div>
-        </div>
-
-        <div class="gwp-metrics-summary">
-            <h5>GWP Metrics Summary</h5>
-            <div class="metrics-grid">
-                ${toNumber(data.gwp) !== null ? `
-                <div class="metric-item">
-                    <span class="metric-label">Total GWP</span>
-                    <span class="metric-value">${toNumber(data.gwp).toFixed(2)} kgCO2e</span>
-                    <span class="metric-desc">For declared unit</span>
-                </div>
-                ` : ''}
-                ${toNumber(data.gwp_per_category_declared_unit) !== null ? `
-                <div class="metric-item">
-                    <span class="metric-label">GWP per Category Unit</span>
-                    <span class="metric-value">${toNumber(data.gwp_per_category_declared_unit).toFixed(2)} kgCO2e</span>
-                    <span class="metric-desc">Normalized to category standard</span>
-                </div>
-                ` : ''}
-                ${gwpPerKg !== null ? `
-                <div class="metric-item">
-                    <span class="metric-label">GWP per Kilogram</span>
-                    <span class="metric-value">${gwpPerKg.toFixed(4)} kgCO2e/kg</span>
-                    <span class="metric-desc">Per unit mass</span>
-                </div>
-                ` : ''}
-                ${toNumber(data.gwp_z) !== null ? `
-                <div class="metric-item">
-                    <span class="metric-label">Z-Score</span>
-                    <span class="metric-value ${toNumber(data.gwp_z) < 0 ? 'better' : toNumber(data.gwp_z) > 0 ? 'worse' : 'average'}">
-                        ${toNumber(data.gwp_z) > 0 ? '+' : ''}${toNumber(data.gwp_z).toFixed(2)}
-                    </span>
-                    <span class="metric-desc">${toNumber(data.gwp_z) < -0.5 ? 'Better than average' : toNumber(data.gwp_z) > 0.5 ? 'Worse than average' : 'Near average'}</span>
-                </div>
-                ` : ''}
             </div>
         </div>
     `;
@@ -1520,14 +1480,78 @@ function renderProductDescription(data) {
         div.appendChild(additionalProps);
     }
 
-    // Add charts section
+    return div;
+}
+
+// ============================================
+// Charts Panel
+// ============================================
+
+function renderChartsPanel(data) {
+    const panel = document.createElement("div");
+    panel.id = "product-charts-panel";
+    panel.className = "panel-section";
+
+    // Add charts section - Boxplot first, then Bar chart
     const chartsWrapper = document.createElement("div");
     chartsWrapper.className = "charts-wrapper";
-    chartsWrapper.appendChild(renderPercentileBarChart(data));
     chartsWrapper.appendChild(renderBoxplotChart(data));
-    div.appendChild(chartsWrapper);
+    chartsWrapper.appendChild(renderPercentileBarChart(data));
+    panel.appendChild(chartsWrapper);
 
-    return div;
+    return panel;
+}
+
+// ============================================
+// GWP Metrics Summary Panel
+// ============================================
+
+function renderGWPMetricsSummaryPanel(data) {
+    const panel = document.createElement("div");
+    panel.id = "gwp-metrics-panel";
+    panel.className = "panel-section";
+
+    const gwpPerKg = toNumber(data.gwp_per_kg);
+
+    panel.innerHTML = `
+        <div class="gwp-metrics-summary">
+            <h5>GWP Metrics Summary</h5>
+            <div class="metrics-grid">
+                ${toNumber(data.gwp) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">Total GWP</span>
+                    <span class="metric-value">${toNumber(data.gwp).toFixed(2)} kgCO2e</span>
+                    <span class="metric-desc">For declared unit</span>
+                </div>
+                ` : ''}
+                ${toNumber(data.gwp_per_category_declared_unit) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">GWP per Category Unit</span>
+                    <span class="metric-value">${toNumber(data.gwp_per_category_declared_unit).toFixed(2)} kgCO2e</span>
+                    <span class="metric-desc">Normalized to category standard</span>
+                </div>
+                ` : ''}
+                ${gwpPerKg !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">GWP per Kilogram</span>
+                    <span class="metric-value">${gwpPerKg.toFixed(4)} kgCO2e/kg</span>
+                    <span class="metric-desc">Per unit mass</span>
+                </div>
+                ` : ''}
+                ${toNumber(data.gwp_z) !== null ? `
+                <div class="metric-item">
+                    <span class="metric-label">Z-Score</span>
+                    <span class="metric-value ${toNumber(data.gwp_z) < 0 ? 'better' : toNumber(data.gwp_z) > 0 ? 'worse' : 'average'}">
+                        ${toNumber(data.gwp_z) > 0 ? '+' : ''}${toNumber(data.gwp_z).toFixed(2)}
+                    </span>
+                    <span class="metric-desc">${toNumber(data.gwp_z) < -0.5 ? 'Better than average' : toNumber(data.gwp_z) > 0.5 ? 'Worse than average' : 'Near average'}</span>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+
+    return panel;
 }
 
 // ============================================
@@ -1641,6 +1665,12 @@ function renderProductDetailsPanel(data) {
     columnsDiv.appendChild(rightCol);
     panel.appendChild(columnsDiv);
 
+    // Add charts panel after details columns
+    panel.appendChild(renderChartsPanel(data));
+
+    // Add GWP metrics summary panel after charts
+    panel.appendChild(renderGWPMetricsSummaryPanel(data));
+
     return panel;
 }
 
@@ -1674,6 +1704,12 @@ function renderProductDetailsPanelWithCalculators(data, profile) {
     columnsDiv.appendChild(leftCol);
     columnsDiv.appendChild(rightCol);
     panel.appendChild(columnsDiv);
+
+    // Add charts panel after details columns
+    panel.appendChild(renderChartsPanel(data));
+
+    // Add GWP metrics summary panel after charts
+    panel.appendChild(renderGWPMetricsSummaryPanel(data));
 
     return panel;
 }

@@ -123,12 +123,13 @@ input[type=number]::-webkit-outer-spin-button {
 
 #usda-search-button {
     padding: 6px 12px;
-    background-color: #007acc;
-    color: white;
-    border: none;
+    border: 1px solid #cbd5e1;
     cursor: pointer;
 }
-
+.dark #usda-search-button {
+  background-color: inherit;
+  border: 1px solid #777;
+}
 .nutrition-label {
     border: 1px solid #000;
     padding: 10px;
@@ -404,22 +405,38 @@ input[type=number]::-webkit-outer-spin-button {
     margin-top: 2px;
 }
 
-.add-to-menu-btn {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 3px;
+/* Shared Search/Clear Button Styles */
+.add-to-menu-btn,
+.remove-item-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.85em;
     cursor: pointer;
-    font-weight: bold;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.add-to-menu-btn:hover {
-    background-color: #218838;
+.add-to-menu-btn {
+    border: 1px solid transparent;
 }
 
-.add-to-menu-btn:active {
-    background-color: #1e7e34;
+.add-to-menu-btn:hover,
+.remove-item-btn:hover {
+    color: #475569;
+    background: #f8fafc;
+}
+
+.add-to-menu-btn:active,
+.remove-item-btn:active {
+    background: #3b82f6;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 .add-initial-food-btn {
@@ -449,17 +466,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .remove-item-btn {
-  background-color: #555;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  padding: 8px 15px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.remove-item-btn:hover {
-    background-color: #c82333;
+  border: 1px solid #cbd5e1;
 }
 
 .menu-label {
@@ -1148,18 +1155,28 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .dark .style-btn,
-.dark .verbosity-btn {
+.dark .verbosity-btn,
+.dark .add-to-menu-btn,
+.dark .remove-item-btn {
   color: #94a3b8;
 }
 
+.dark .remove-item-btn {
+  border-color: #334155;
+}
+
 .dark .style-btn:hover,
-.dark .verbosity-btn:hover {
+.dark .verbosity-btn:hover,
+.dark .add-to-menu-btn:hover,
+.dark .remove-item-btn:hover {
   color: #f1f5f9;
   background: #1e293b;
 }
 
 .dark .style-btn.active,
-.dark .verbosity-btn.active {
+.dark .verbosity-btn.active,
+.dark .add-to-menu-btn:active,
+.dark .remove-item-btn:active {
   background: #3b82f6;
   color: white;
 }
@@ -2113,7 +2130,7 @@ input[type=number]::-webkit-outer-spin-button {
   border: none;
   box-shadow: none;
   margin: 0;
-  padding: 15px 0;
+  padding: 0;
   background: transparent;
 }
 
@@ -2123,7 +2140,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .boxplot-container {
-  padding: 10px 0 5px 0;
+  padding: 0 0 5px 0;
   display: flex;
   justify-content: center;
 }
