@@ -498,7 +498,6 @@ input[type=number]::-webkit-outer-spin-button {
 .remove-item-btn {
     padding: 6px 12px;
     border-radius: 6px;
-    background: transparent;
     color: #64748b;
     font-size: 0.85em;
     cursor: pointer;
@@ -517,6 +516,11 @@ input[type=number]::-webkit-outer-spin-button {
 .remove-item-btn:hover {
     color: #475569;
     background: #f8fafc;
+}
+
+.add-to-menu-btn.btn-success:hover {
+    background: #8da85a;
+    color: white;
 }
 
 .add-to-menu-btn:active,
@@ -1282,6 +1286,11 @@ input[type=number]::-webkit-outer-spin-button {
 .dark .remove-item-btn:hover {
   color: #f1f5f9;
   background: #1e293b;
+}
+
+.dark .add-to-menu-btn.btn-success:hover {
+  background: #8da85a;
+  color: white;
 }
 
 .dark .style-btn.active,

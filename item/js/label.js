@@ -839,7 +839,7 @@ function displayCategoryResults(categoryName) {
                 <br><small>Brand: ${food.brandOwner || 'Generic'}</small>
                 <br><small>Category: ${food.foodCategory || 'N/A'}</small>
             </div>
-            <button class="add-to-menu-btn" data-index="${index}">Add</button>
+            <button class="add-to-menu-btn btn-success" data-index="${index}">Add</button>
         `;
         container.appendChild(resultDiv);
     });
