@@ -679,7 +679,7 @@ async function loadProductLabel(region, category, file, container) {
 
         createSettingsToggle("product-settings-container", (newSettings) => {
             // Re-render label with new settings
-            const labelContainer = container.querySelector(".product-label");
+            const labelContainer = container.querySelector(".product-label-wrapper");
             if (labelContainer) {
                 const newLabel = renderProductLabel(profile, 1, newSettings);
                 labelContainer.replaceWith(newLabel);
@@ -727,7 +727,7 @@ function cleanText(text) {
 
 function renderCategoryBreadcrumb(data) {
     const div = document.createElement("div");
-    div.className = "product-breadcrumb";
+    div.className = "product-title-holder";
 
     // Build breadcrumb from openepd_name or category hierarchy
     const parts = [];
@@ -764,18 +764,20 @@ function renderCategoryBreadcrumb(data) {
         return div;
     }
 
-    div.innerHTML = parts.map((part, i) => {
+    const titleContent = parts.map((part, i) => {
         const isLast = i === parts.length - 1;
         const isCategory = (i === 0 && categoryName && part === cleanText(categoryName));
 
         if (isCategory && !isLast) {
             // Make category a link
             const catValue = categoryName.replace(/\s+/g, '_');
-            return `<a href="#layout=product&cat=${catValue}" class="breadcrumb-item breadcrumb-link">${part}</a>`;
+            return `<a href="#layout=product&cat=${catValue}" class="product-title breadcrumb-link">${part}</a>`;
         } else {
-            return `<span class="breadcrumb-item ${isLast ? 'current' : ''}">${part}</span>`;
+            return `<span class="product-title ${isLast ? 'current' : ''}">${part}</span>`;
         }
-    }).join('<span class="breadcrumb-sep">\u203a</span>');
+    }).join(' ');
+
+    div.innerHTML = `${titleContent}<button class="circular-close-btn" aria-label="Close" title="Close">✕</button>`;
 
     return div;
 }
@@ -1614,7 +1616,7 @@ function renderProductDescription(data, priorityImageUrl = null) {
             <div class="image-gallery" style="display: none;">
                 <div class="gallery-header">
                     <h5>Image Gallery (${galleryImages.length})</h5>
-                    <button class="close-gallery-btn" aria-label="Close gallery" title="Close gallery">✕</button>
+                    <button class="circular-close-btn" aria-label="Close gallery" title="Close gallery">✕</button>
                 </div>
                 <div class="gallery-grid">
                     ${galleryImages.map(img => `
@@ -1658,7 +1660,7 @@ function setupImageNavigation(container, images) {
     const counter = navContainer?.querySelector('.image-counter');
     const viewGalleryBtn = navContainer?.querySelector('.view-gallery-btn');
     const gallery = container.querySelector('.image-gallery');
-    const closeGalleryBtn = container.querySelector('.close-gallery-btn');
+    const closeGalleryBtn = container.querySelector('.circular-close-btn');
 
     if (!navContainer || !imageItem) return;
 

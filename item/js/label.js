@@ -1073,14 +1073,14 @@ async function loadYAMLProfile(region, category, file) {
     mainContent.className = "product-main-content";
 
     // Render the product impact label using new label-product.js if available
-    const labelWrapper = document.createElement("div");
-    labelWrapper.className = "product-label-wrapper";
     if (typeof renderProductLabel === "function") {
-        labelWrapper.appendChild(renderProductLabel(profile, 1));
+        mainContent.appendChild(renderProductLabel(profile, 1));
     } else {
+        const labelWrapper = document.createElement("div");
+        labelWrapper.className = "product-label-wrapper";
         labelWrapper.appendChild(renderNutritionLabel(profile, 1, false));
+        mainContent.appendChild(labelWrapper);
     }
-    mainContent.appendChild(labelWrapper);
 
     // Render comprehensive product details panel with calculators integrated
     if (typeof renderProductDetailsPanelWithCalculators === "function") {
@@ -1099,8 +1099,8 @@ async function loadYAMLProfile(region, category, file) {
 }
 
 function reRenderProductLabel(profile, data, container, settings) {
-    // Find and remove old label
-    const oldLabel = container.querySelector(".product-label, .nutrition-label:not(.aggregate)");
+    // Find and remove old label wrapper
+    const oldLabel = container.querySelector(".product-label-wrapper, .product-label, .nutrition-label:not(.aggregate)");
     if (oldLabel) {
         const newLabel = typeof renderProductLabel === "function"
             ? renderProductLabel(profile, 1, settings)
