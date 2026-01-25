@@ -769,15 +769,20 @@ function renderCategoryBreadcrumb(data) {
         const isCategory = (i === 0 && categoryName && part === cleanText(categoryName));
 
         if (isCategory && !isLast) {
-            // Make category a link
+            // Make category a link with line break after
             const catValue = categoryName.replace(/\s+/g, '_');
-            return `<a href="#layout=product&cat=${catValue}" class="product-title breadcrumb-link">${part}</a>`;
+            return `<a href="#layout=product&cat=${catValue}" class="product-title breadcrumb-link">${part}</a><br>`;
         } else {
-            return `<span class="product-title ${isLast ? 'current' : ''}">${part}</span>`;
+            return `<span class="product-title ${isLast ? 'current' : ''}" style="font-size: 1.3em; font-weight: 500;">${part}</span>`;
         }
     }).join(' ');
 
-    div.innerHTML = `${titleContent}<button class="circular-close-btn" aria-label="Close" title="Close">✕</button>`;
+    div.innerHTML = `
+        <div style="flex: 1;">${titleContent}</div>
+        <button class="circular-close-btn" aria-label="Close" title="Close" onclick="if(typeof goHash === 'function') goHash({}, 'id');">
+            <i class="material-icons">cancel</i>
+        </button>
+    `;
 
     return div;
 }
@@ -1548,6 +1553,25 @@ function extractImagesFromData(data) {
     return uniqueImages;
 }
 
+function formatImageSourcePath(path) {
+    if (path.length <= 25) {
+        return path;
+    }
+
+    // Find the first period
+    let firstPeriodIndex = path.indexOf('.');
+    if (firstPeriodIndex === -1) return path;
+
+    // Find the second period
+    let secondPeriodIndex = path.indexOf('.', firstPeriodIndex + 1);
+
+    // If there's a second period, insert <br> after it
+    // Otherwise, insert <br> after the first period
+    let breakIndex = secondPeriodIndex !== -1 ? secondPeriodIndex : firstPeriodIndex;
+
+    return path.substring(0, breakIndex + 1) + '<br>' + path.substring(breakIndex + 1);
+}
+
 function renderProductDescription(data, priorityImageUrl = null) {
     const div = document.createElement("div");
     div.className = "product-description-section";
@@ -1590,7 +1614,7 @@ function renderProductDescription(data, priorityImageUrl = null) {
             <div class="description-images-nav" id="${uniqueId}">
                 <div class="image-item" data-current-index="0">
                     <img src="${allImages[0].url}" alt="Product image" class="description-image" onerror="this.style.display='none'">
-                    <div class="image-source">${allImages[0].path}</div>
+                    <div class="image-source">${formatImageSourcePath(allImages[0].path)}</div>
                 </div>
                 ${allImages.length > 1 ? `
                     <div class="image-nav-controls">
@@ -1616,13 +1640,15 @@ function renderProductDescription(data, priorityImageUrl = null) {
             <div class="image-gallery" style="display: none;">
                 <div class="gallery-header">
                     <h5>Image Gallery (${galleryImages.length})</h5>
-                    <button class="circular-close-btn" aria-label="Close gallery" title="Close gallery">✕</button>
+                    <button class="circular-close-btn" aria-label="Close gallery" title="Close gallery">
+                        <i class="material-icons">cancel</i>
+                    </button>
                 </div>
                 <div class="gallery-grid">
                     ${galleryImages.map(img => `
                         <div class="gallery-item">
                             <img src="${img.url}" alt="Product image" class="gallery-image" onerror="this.parentElement.style.display='none'">
-                            <div class="gallery-image-source">${img.path}</div>
+                            <div class="gallery-image-source">${formatImageSourcePath(img.path)}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -1670,7 +1696,7 @@ function setupImageNavigation(container, images) {
         const img = images[currentIndex];
         imageItem.innerHTML = `
             <img src="${img.url}" alt="Product image" class="description-image" onerror="this.style.display='none'">
-            <div class="image-source">${img.path}</div>
+            <div class="image-source">${formatImageSourcePath(img.path)}</div>
         `;
         if (counter) counter.textContent = `${currentIndex + 1} / ${images.length}`;
     }

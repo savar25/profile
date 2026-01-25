@@ -125,7 +125,6 @@ async function loadMenu() {
     }
 
     if (hash.layout == "product") {
-        header.textContent = "Product Environmental Impact";
         addUSDASearchBar(); // Show search bar with country dropdown
         searchDiv.style.display = "block";
         searchResultsContainer.style.display = "none";
@@ -163,7 +162,6 @@ async function loadMenu() {
     }
 
     // Food view (no layout parameter)
-    header.textContent = "Nutritious Meal Planner";
     addUSDASearchBar();
     if (searchResultsContainer) searchResultsContainer.style.display = "";
     if (menuContainer) menuContainer.style.display = "";
@@ -1403,7 +1401,7 @@ function displaySearchResults(targetContainer = null) {
                 <small>Brand: ${food.brandOwner || 'Generic'}</small><br>
                 <small>Category: ${food.foodCategory || 'N/A'}</small>
             </div>
-            <button class="add-to-menu-btn" data-index="${index}">Add</button>
+            <button class="add-to-menu-btn btn-success" data-index="${index}">Add</button>
         `;
         container.appendChild(resultDiv);
     });
