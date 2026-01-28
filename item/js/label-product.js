@@ -912,53 +912,24 @@ function renderCategoryBreadcrumb(data) {
     const div = document.createElement("div");
     div.className = "product-title-holder";
 
-    // Build breadcrumb from openepd_name or category hierarchy
-    const parts = [];
+    const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+    const hashCategory = hash && hash.cat ? hash.cat : "";
+    const displayName = cleanText(data.category?.display_name || "");
+    const categoryLabel = displayName || (hashCategory ? hashCategory.replace(/_/g, " ") : "");
 
-    // Try openepd_name first (usually contains full hierarchy)
-    if (data.openepd_name) {
-        const cleaned = cleanText(data.openepd_name);
-        // Split on common separators
-        if (cleaned.includes(">>")) {
-            parts.push(...cleaned.split(">>").map(s => s.trim()));
-        } else if (cleaned.includes(">")) {
-            parts.push(...cleaned.split(">").map(s => s.trim()));
-        } else if (cleaned.includes("/")) {
-            parts.push(...cleaned.split("/").map(s => s.trim()));
-        } else {
-            parts.push(cleaned);
-        }
-    }
+    const productName = cleanText(data.name || data.product_name || "");
 
-    // Add category name if different
-    const categoryName = data.category?.name || data.category_name;
-    if (categoryName && !parts.includes(categoryName)) {
-        parts.push(cleanText(categoryName));
-    }
-
-    // Add product name at the end
-    const productName = data.name || data.product_name;
-    if (productName && !parts.includes(productName)) {
-        parts.push(cleanText(productName));
-    }
-
-    if (parts.length === 0) {
+    if (!categoryLabel) {
         div.style.display = "none";
         return div;
     }
 
-    const titleContent = parts.map((part, i) => {
-        const isLast = i === parts.length - 1;
-        const isCategory = (i === 0 && categoryName && part === cleanText(categoryName));
-
-        if (isCategory && !isLast) {
-            // Make category a link with line break after
-            const catValue = categoryName.replace(/\s+/g, '_');
-            return `<a href="#layout=product&cat=${catValue}" class="product-title breadcrumb-link">${part}</a><br>`;
-        } else {
-            return `<span class="product-title ${isLast ? 'current' : ''}" style="font-size: 1.3em; font-weight: 500;">${part}</span>`;
-        }
-    }).join(' ');
+    const catValue = categoryLabel.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const countryParam = hash && hash.country ? `&country=${hash.country}` : "";
+    const titleContent = `
+        <a href="#layout=product${countryParam}&cat=${catValue}" class="product-title breadcrumb-link">${categoryLabel}</a><br>
+        ${productName ? `<span class="product-title current" style="font-size: 1.3em; font-weight: 500;">${productName}</span>` : ""}
+    `;
 
     div.innerHTML = `
         <div style="flex: 1;">${titleContent}</div>

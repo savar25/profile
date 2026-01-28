@@ -12,11 +12,14 @@ if (typeof jsyaml === "undefined") {
 }
 
 let searchResults = []; // Store current search results
+let lastHashSignature = null;
 
-document.addEventListener("DOMContentLoaded", loadMenu);
-if (document.addEventListener) {
-    document.addEventListener("hashChangeEvent", loadMenu, false);
-}
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.addEventListener) {
+        document.addEventListener("hashChangeEvent", loadMenu, false);
+    }
+    loadMenu();
+});
 
 function parseNumeric(value) {
     if (typeof value === "number") return value;
@@ -25,6 +28,113 @@ function parseNumeric(value) {
         return m ? parseFloat(m[0]) : NaN;
     }
     return NaN;
+}
+
+function parseCSVLine(line) {
+    const regex = /,(?=(?:[^"]*"[^"]*")*[^"]*$)/;
+    return line.split(regex).map(field => field.replace(/^"(.*)"$/, "$1").trim());
+}
+
+function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+    if (!lines.length) return { header: [], rows: [] };
+
+    const header = parseCSVLine(lines[0]);
+    const rows = lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const row = {};
+        header.forEach((key, index) => {
+            row[key] = values[index] ?? "";
+        });
+        return row;
+    });
+    return { header, rows };
+}
+
+function getRowValue(row, keys) {
+    for (const key of keys) {
+        if (row[key] !== undefined && row[key] !== null && row[key] !== "") {
+            return row[key];
+        }
+    }
+    return "";
+}
+
+function buildAllCsvUrl(country) {
+    return `${RAW_BASE}/${country}/all.csv`;
+}
+
+function buildCategoryCsvUrl(country, subcategoryName) {
+    return `${RAW_BASE}/${country}/${country}-${subcategoryName}.csv`;
+}
+
+function renderProductCsvList(container, rows, country, listSourceUrl, titleText = "Products") {
+    container.innerHTML = "";
+    const header = document.createElement("h3");
+    header.textContent = `${titleText} (${rows.length})`;
+    container.appendChild(header);
+
+    const listContainer = document.createElement("div");
+    listContainer.style.marginTop = "1em";
+
+    const table = document.createElement("table");
+    table.className = "product-file-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    ["Name", "GWP"].forEach((label) => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    rows.forEach((row) => {
+        const id = getRowValue(row, ["ID", "id", "Id", "uuid", "UUID"]);
+        const name = getRowValue(row, ["name", "Name"]) || "Unnamed product";
+        const gwp = getRowValue(row, ["gwp", "GWP"]);
+
+        const tr = document.createElement("tr");
+        tr.className = "file-row";
+
+        const nameCell = document.createElement("td");
+        const nameLink = document.createElement("a");
+        const categoryValue = getRowValue(row, ["category", "Category", "cat", "Cat"]);
+        const catParam = categoryValue ? `&cat=${encodeURIComponent(categoryValue)}` : "";
+        nameLink.href = id ? `#layout=product&country=${country}${catParam}&id=${id}` : "#";
+        nameLink.textContent = name;
+        nameCell.appendChild(nameLink);
+        tr.appendChild(nameCell);
+
+        const gwpCell = document.createElement("td");
+        gwpCell.textContent = gwp;
+        tr.appendChild(gwpCell);
+
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    listContainer.appendChild(table);
+
+    if (listSourceUrl) {
+        const listSource = document.createElement("div");
+        listSource.className = "list-source";
+        listSource.innerHTML = `List Source: <a href="${listSourceUrl}" target="_blank" rel="noopener">${listSourceUrl}</a>`;
+        listContainer.appendChild(listSource);
+    }
+
+    container.appendChild(listContainer);
+}
+
+async function loadCsvList(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        return null;
+    }
+    const csvText = await response.text();
+    const parsed = parseCSV(csvText);
+    return parsed.rows;
 }
 
 // function loadMenu() {
@@ -118,11 +228,18 @@ async function loadMenu() {
 
     // Critical fix: DOM not ready when this runs on model.earth
     if (!header) {
+        lastHashSignature = null;
         if (typeof waitForElm === "function") {
             waitForElm("#page-header").then(loadMenu);
         }
         return;
     }
+
+    const hashSignature = JSON.stringify(hash || {});
+    if (hashSignature === lastHashSignature) {
+        return;
+    }
+    lastHashSignature = hashSignature;
 
     // Update selected country from hash
     if (hash.country) {
@@ -139,7 +256,15 @@ async function loadMenu() {
         if (hash.id) {
             // Has product ID - load specific product and hide sidebar
             if (sidebar) sidebar.style.display = "none";
-            await loadProductByCountryAndId(hash.country, hash.id);
+            if (hash.cat) {
+                const container = document.getElementById("product-container");
+                if (container) {
+                    container.innerHTML = `<h3>${hash.country} / ${hash.cat}</h3>`;
+                }
+                await loadYAMLProfile(hash.country, hash.cat, { name: `${hash.id}.yaml` });
+            } else {
+                await loadProductByCountryAndId(hash.country, hash.id);
+            }
         } else {
             // No specific product ID - show product categories and sidebar
             loadProductCategorySidebar();
@@ -152,13 +277,24 @@ async function loadMenu() {
             if (hash.cat) {
                 await selectProductSubcategory(selectedCountry, hash.cat);
             } else {
-                // Load first subcategory if no cat or id specified
-                const categories = PRODUCT_CATEGORIES[selectedCountry] || PRODUCT_CATEGORIES.US;
-                if (categories.length > 0 && categories[0].subcategories && categories[0].subcategories.length > 0) {
-                    const firstSubcat = categories[0].subcategories[0];
-                    // Update hash with first subcategory
-                    if (typeof goHash === "function") {
-                        goHash({ cat: firstSubcat });
+                const allCsvUrl = buildAllCsvUrl(selectedCountry);
+                const allRows = await loadCsvList(allCsvUrl);
+                if (allRows && allRows.length) {
+                    renderProductCsvList(
+                        document.getElementById("product-label"),
+                        allRows,
+                        selectedCountry,
+                        allCsvUrl,
+                        "All Products"
+                    );
+                } else {
+                    // Load first subcategory if no cat or id specified
+                    const categories = PRODUCT_CATEGORIES[selectedCountry] || PRODUCT_CATEGORIES.US;
+                    if (categories.length > 0 && categories[0].subcategories && categories[0].subcategories.length > 0) {
+                        const firstSubcat = categories[0].subcategories[0];
+                        if (typeof goHash === "function") {
+                            goHash({ cat: firstSubcat });
+                        }
                     }
                 }
             }
@@ -686,6 +822,19 @@ async function selectProductSubcategory(country, subcategoryName) {
     container.innerHTML = `<h3>Loading ${subcategoryName.replace(/_/g, " ")} products...</h3>`;
 
     try {
+        const csvUrl = buildCategoryCsvUrl(country, subcategoryName);
+        const csvRows = await loadCsvList(csvUrl);
+        if (csvRows && csvRows.length) {
+            renderProductCsvList(
+                container,
+                csvRows,
+                country,
+                csvUrl,
+                subcategoryName.replace(/_/g, " ")
+            );
+            return;
+        }
+
         const files = await fetchJSONWithAuth(`${API_BASE}/${country}/${subcategoryName}`);
         const yamlFiles = files.filter(x => x.type === "file" && x.name.endsWith(".yaml"));
 

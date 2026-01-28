@@ -58,7 +58,7 @@ function updateYAMLSourceLink(categoryFromYAML) {
 
   // Only show link if we have all required parameters
   if (hash.layout === "product" && hash.country && hash.id) {
-    const category = categoryFromYAML;
+    const category = categoryFromYAML.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
     // Create a unique key based on country and id (not cat, which can change)
     const sourceKey = `${hash.country}/${hash.id}`;
