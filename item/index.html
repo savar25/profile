@@ -351,7 +351,13 @@ function toggleCategorySidebar() {
     <div id="category-sidebar" class="category-sidebar">
       <button class="close-sidebar-btn" onclick="toggleCategorySidebar()" title="Close categories menu">&times;</button>
       <div id="topic-select">
-        <h3>Food Categories</h3>
+        <span id="topic-select-label">Food Categories</span>
+        <span class="topic-select-arrow material-icons">keyboard_arrow_down</span>
+        <div id="topic-select-dropdown" class="topic-select-dropdown">
+          <a href="#" id="topic-food-link">Food Categories</a>
+          <a href="#" id="topic-building-link">Building Materials</a>
+          <a href="#" id="topic-close-link">Close Topic Menu</a>
+        </div>
       </div>
       <div id="category-list"></div>
     </div>

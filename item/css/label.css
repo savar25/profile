@@ -229,9 +229,23 @@
 }
 
 .category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   text-align: left;
   font-size: 0.85em;
   color: #64748b;
+}
+
+.category-header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.category-header-right .style-toggle {
+  margin-left: auto;
 }
 
 .category-link {
@@ -356,9 +370,10 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* USDA Search and Menu Styles */
 #search-div {
-    margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
+    margin: 0 0 12px 0;
+    padding: 0;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -399,7 +414,7 @@ input[type=number]::-webkit-outer-spin-button {
   border: 1px solid #777;
 }
 .nutrition-label {
-    border: 1px solid #000;
+    border: none;
     padding: 10px;
     font-family: Arial, sans-serif;
     max-width: 1200px;
@@ -1131,10 +1146,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .eco-badge-label {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 16px;
-  padding: 20px;
   max-width: 380px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -1418,51 +1430,8 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 /* ============================================
-   Settings Bar Component (Full Width)
+   Toggle Buttons
    ============================================ */
-
-.label-settings-bar {
-  width: 100%;
-  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.settings-bar-content {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.settings-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.settings-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85em;
-  font-weight: 600;
-  color: #64748b;
-  white-space: nowrap;
-}
-
-.settings-label svg {
-  opacity: 0.7;
-}
-
-.settings-divider {
-  width: 1px;
-  height: 32px;
-  background: #e2e8f0;
-}
 
 .style-toggle,
 .verbosity-toggle {
@@ -1515,25 +1484,27 @@ input[type=number]::-webkit-outer-spin-button {
   color: white;
 }
 
-/* Legacy dropdown support (hidden by default) */
-.label-settings-toggle {
-  display: none;
+.sm-btn {
+  padding: 4px 8px;
+  font-size: 0.75em;
 }
 
-/* Dark Mode for Settings Bar */
-.dark .label-settings-bar {
-  background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
-  border-color: #334155;
+@media (max-width: 640px) {
+  .style-toggle,
+  .verbosity-toggle {
+    flex: 1;
+  }
+
+  .style-btn,
+  .verbosity-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.8em;
+  }
 }
 
-.dark .settings-label {
-  color: #94a3b8;
-}
-
-.dark .settings-divider {
-  background: #334155;
-}
-
+/* Dark Mode for Toggles */
 .dark .style-toggle,
 .dark .verbosity-toggle {
   background: #0f172a;
@@ -1570,41 +1541,6 @@ input[type=number]::-webkit-outer-spin-button {
 .dark .remove-item-btn:active {
   background: #3b82f6;
   color: white;
-}
-
-/* Responsive Settings Bar */
-@media (max-width: 640px) {
-  .label-settings-bar {
-    padding: 12px 14px;
-  }
-
-  .settings-bar-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .settings-group {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .settings-divider {
-    display: none;
-  }
-
-  .style-toggle,
-  .verbosity-toggle {
-    flex: 1;
-  }
-
-  .style-btn,
-  .verbosity-btn {
-    flex: 1;
-    justify-content: center;
-    padding: 10px 8px;
-    font-size: 0.8em;
-  }
 }
 
 /* ============================================
@@ -1753,7 +1689,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 .product-label.fda-style {
   background: white;
-  max-width: 350px;
+  max-width: 380px;
 }
 
 .product-label.fda-style .label-header {
@@ -2002,6 +1938,9 @@ input[type=number]::-webkit-outer-spin-button {
 .product-label-wrapper .nutrition-label,
 .product-label-wrapper .eco-badge-label {
   background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   width: 100%;
   max-width: 100%;
 }
@@ -2183,6 +2122,10 @@ input[type=number]::-webkit-outer-spin-button {
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .section-header h4 {
@@ -2190,6 +2133,12 @@ input[type=number]::-webkit-outer-spin-button {
   font-size: 1em;
   font-weight: 600;
   color: #1e293b;
+}
+
+.section-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 /* Details Columns */

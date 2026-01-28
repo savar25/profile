@@ -148,10 +148,76 @@
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 8px 10px;
+  position: relative;
+  cursor: pointer;
+  gap: 8px;
 }
 
 #topic-select h3 {
   margin: 0;
+}
+
+#topic-select-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.topic-select-arrow {
+  font-size: 18px;
+  color: #9ca3af;
+}
+
+.topic-select-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  min-width: 180px;
+  z-index: 10;
+  padding: 6px;
+}
+
+#topic-select.open .topic-select-dropdown {
+  display: block;
+}
+
+.topic-select-dropdown a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #334155;
+  font-size: 0.9em;
+}
+
+.topic-select-dropdown a:hover {
+  background: #f1f5f9;
+}
+
+.dark #topic-select-label {
+  color: #f1f5f9;
+}
+
+.dark .topic-select-arrow {
+  color: #94a3b8;
+}
+
+.dark .topic-select-dropdown {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.dark .topic-select-dropdown a {
+  color: #e2e8f0;
+}
+
+.dark .topic-select-dropdown a:hover {
+  background: #1e293b;
 }
 
 .dark #topic-select {

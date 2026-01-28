@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.addEventListener("hashChangeEvent", loadMenu, false);
     }
     loadMenu();
+    setupTopicSelect();
 });
 
 function parseNumeric(value) {
@@ -28,6 +29,93 @@ function parseNumeric(value) {
         return m ? parseFloat(m[0]) : NaN;
     }
     return NaN;
+}
+
+function updateTopicSelectLinks() {
+    const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+    const country = hash.country || selectedCountry || "";
+    const foodLink = document.getElementById("topic-food-link");
+    const buildingLink = document.getElementById("topic-building-link");
+    const label = document.getElementById("topic-select-label");
+
+    if (foodLink) {
+        foodLink.href = country ? `#country=${country}` : "#";
+    }
+    if (buildingLink) {
+        buildingLink.href = country ? `#layout=product&country=${country}` : "#layout=product";
+    }
+    if (label) {
+        label.textContent = hash.layout === "product" ? "Building Materials" : "Food Categories";
+    }
+}
+
+function clearHashExceptCountry(nextHash) {
+    const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+    const country = hash.country || selectedCountry || "";
+    const keysToRemove = Object.keys(hash || {}).filter((key) => key !== "country");
+    if (typeof goHash === "function") {
+        goHash(nextHash, keysToRemove.join(","));
+    } else if (typeof updateHash === "function") {
+        updateHash(nextHash, true, keysToRemove.join(","));
+    } else {
+        window.location.hash = country ? `country=${country}` : "";
+    }
+}
+
+function setupTopicSelect() {
+    const topicSelect = document.getElementById("topic-select");
+    const foodLink = document.getElementById("topic-food-link");
+    const buildingLink = document.getElementById("topic-building-link");
+    const closeLink = document.getElementById("topic-close-link");
+
+    if (!topicSelect) {
+        return;
+    }
+
+    updateTopicSelectLinks();
+
+    topicSelect.addEventListener("click", (event) => {
+        if (event.target && event.target.closest(".topic-select-dropdown")) {
+            return;
+        }
+        topicSelect.classList.toggle("open");
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!topicSelect.contains(event.target)) {
+            topicSelect.classList.remove("open");
+        }
+    });
+
+    if (foodLink) {
+        foodLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            clearHashExceptCountry({ country: selectedCountry });
+            topicSelect.classList.remove("open");
+        });
+    }
+
+    if (buildingLink) {
+        buildingLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            clearHashExceptCountry({ layout: "product", country: selectedCountry });
+            topicSelect.classList.remove("open");
+        });
+    }
+
+    if (closeLink) {
+        closeLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            topicSelect.classList.remove("open");
+            if (typeof toggleCategorySidebar === "function") {
+                toggleCategorySidebar();
+            }
+        });
+    }
+
+    if (document.addEventListener) {
+        document.addEventListener("hashChangeEvent", updateTopicSelectLinks, false);
+    }
 }
 
 function titleCaseWords(text) {
@@ -497,6 +585,10 @@ const FOOD_CATEGORIES = [
 const PRODUCT_CATEGORIES = {
     US: [
         {
+            name: "Flooring",
+            subcategories: ["Carpet", "Resilient_Flooring", "Ceramic_Tile", "Other_Flooring"]
+        },
+        {
             name: "Structural Materials",
             subcategories: ["Cement", "Ready_Mix", "Flowable_Concrete_Fill", "Autoclaved_Aerated_Concrete",
                           "Brick", "Supplementary_Cementitious_Materials", "Cast_Decks_and_Underlayment", "Aggregates"]
@@ -505,10 +597,6 @@ const PRODUCT_CATEGORIES = {
             name: "Metals",
             subcategories: ["Aluminium", "Aluminium_Extrusions", "Aluminium_Billets", "Aluminium_Sheet_Goods",
                           "Aluminium_Suspension_Assemblies", "Steel", "Coil_Steel"]
-        },
-        {
-            name: "Flooring",
-            subcategories: ["Carpet", "Resilient_Flooring", "Ceramic_Tile", "Other_Flooring"]
         },
         {
             name: "Wall Systems",
@@ -550,16 +638,16 @@ const PRODUCT_CATEGORIES = {
     ],
     IN: [
         {
+            name: "Flooring",
+            subcategories: ["Carpet", "Resilient_Flooring", "Other_Flooring"]
+        },
+        {
             name: "Structural Materials",
             subcategories: ["Cement", "Ready_Mix", "Flowable_Concrete_Fill", "Brick"]
         },
         {
             name: "Metals",
             subcategories: ["Aluminium", "Aluminium_Billets", "Aluminium_Sheet_Goods", "Steel", "Coil_Steel"]
-        },
-        {
-            name: "Flooring",
-            subcategories: ["Carpet", "Resilient_Flooring", "Other_Flooring"]
         },
         {
             name: "Wall Systems",
@@ -1309,18 +1397,6 @@ async function loadYAMLProfile(region, category, file) {
         container.appendChild(renderCategoryBreadcrumb(data));
     }
 
-    // Add settings toggle if function exists
-    if (typeof createSettingsToggle === "function") {
-        const settingsDiv = document.createElement("div");
-        settingsDiv.id = "product-settings-container";
-        container.appendChild(settingsDiv);
-
-        createSettingsToggle("product-settings-container", (newSettings) => {
-            // Re-render label with new settings
-            reRenderProductLabel(profile, data, container, newSettings);
-        });
-    }
-
     // Create a flex container for label and details side by side
     const mainContent = document.createElement("div");
     mainContent.className = "product-main-content";
@@ -1542,9 +1618,9 @@ function addUSDASearchBar() {
                 selectedCountry = this.value;
                 // Update hash with new country
                 if (typeof goHash === "function") {
-                    goHash({ country: selectedCountry });
-                } else if (typeof updateHash === "function") {
-                    updateHash({ country: selectedCountry }, true);
+                    goHash({ country: selectedCountry }, "country,cat,id");
+                } else {
+                    window.location.hash = `country=${selectedCountry}`;
                 }
 
                 // Trigger search for India when on food menu (not product menu)

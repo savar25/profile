@@ -119,6 +119,7 @@ function formatOwnedBy(ownedBy, uniqueId) {
 
 let productImageGalleryList = null;
 let productImageResizeBound = false;
+let badgefirst = true;
 
 function adjustProductImageRect(imageRect, img) {
     if (!imageRect || !img || !img.naturalWidth || !img.naturalHeight) {
@@ -147,9 +148,15 @@ function renderProductLabel(profileObject, quantity = 1, options = {}) {
     const wrapper = document.createElement("div");
     wrapper.className = "product-label-wrapper";
 
-    // Add priority image rectangle if available
+    const badgeWrapper = document.createElement("div");
+    badgeWrapper.id = "itembadge";
+    const badgeContent = style === "badge"
+        ? renderProductBadgeStyle(profileObject, quantity, verbosity)
+        : renderProductFDAStyle(profileObject, quantity, verbosity);
+    badgeWrapper.appendChild(badgeContent);
+
+    const imageRect = document.createElement("div");
     if (profileObject.priorityImage) {
-        const imageRect = document.createElement("div");
         imageRect.className = "product-image-rect";
         const imageLink = document.createElement("a");
         imageLink.href = profileObject.priorityImage.url;
@@ -194,14 +201,18 @@ function renderProductLabel(profileObject, quantity = 1, options = {}) {
         imageLink.appendChild(img);
         imageRect.appendChild(imageLink);
         imageRect.appendChild(imageOverlayBtn);
-        wrapper.appendChild(imageRect);
     }
 
-    // Add the label
-    if (style === "badge") {
-        wrapper.appendChild(renderProductBadgeStyle(profileObject, quantity, verbosity));
+    if (badgefirst) {
+        wrapper.appendChild(badgeWrapper);
+        if (profileObject.priorityImage) {
+            wrapper.appendChild(imageRect);
+        }
     } else {
-        wrapper.appendChild(renderProductFDAStyle(profileObject, quantity, verbosity));
+        if (profileObject.priorityImage) {
+            wrapper.appendChild(imageRect);
+        }
+        wrapper.appendChild(badgeWrapper);
     }
 
     return wrapper;
@@ -347,7 +358,10 @@ function renderProductFDAStyle(profileObject, quantity = 1, verbosity = "medium"
 
     // Header
     div.innerHTML = `
-        ${categoryLink ? `<div class="category-header">${categoryLink}</div>` : ''}
+        <div class="category-header">
+            <div class="category-header-left">${categoryLink || ""}</div>
+            <div class="category-header-right"></div>
+        </div>
         <div class="item-label-header">
             <div class="item-name">${profileObject.itemName || "Product"}</div>
         </div>
@@ -366,6 +380,16 @@ function renderProductFDAStyle(profileObject, quantity = 1, verbosity = "medium"
         hr.className = "thin-line";
         div.appendChild(hr);
     });
+
+    const headerRight = div.querySelector(".category-header-right");
+    if (headerRight && typeof createStyleToggle === "function") {
+        headerRight.appendChild(createStyleToggle((newSettings) => {
+            const container = document.getElementById("product-label");
+            if (container) {
+                reRenderProductLabel(profileObject, profileObject.rawData || {}, container, newSettings);
+            }
+        }));
+    }
 
     // Footer with benchmark info
     if (verbosity !== "simple") {
@@ -462,7 +486,10 @@ function renderProductBadgeStyle(profileObject, quantity = 1, verbosity = "mediu
 
     // Header with product name above eco score badge
     div.innerHTML = `
-        ${categoryLink ? `<div class="category-header">${categoryLink}</div>` : ''}
+        <div class="category-header">
+            <div class="category-header-left">${categoryLink || ""}</div>
+            <div class="category-header-right"></div>
+        </div>
         <div class="eco-badge-header-vertical">
             <div class="product-info">
                 <div class="product-name">${profileObject.itemName || "Product"}</div>
@@ -490,6 +517,16 @@ function renderProductBadgeStyle(profileObject, quantity = 1, verbosity = "mediu
     });
 
     div.appendChild(breakdownDiv);
+
+    const headerRight = div.querySelector(".category-header-right");
+    if (headerRight && typeof createStyleToggle === "function") {
+        headerRight.appendChild(createStyleToggle((newSettings) => {
+            const container = document.getElementById("product-label");
+            if (container) {
+                reRenderProductLabel(profileObject, profileObject.rawData || {}, container, newSettings);
+            }
+        }));
+    }
 
     // Composition section (if available)
     if (profileObject.composition && profileObject.composition.length > 0 && verbosity !== "simple") {
@@ -854,20 +891,6 @@ async function loadProductLabel(region, category, file, container) {
         const profile = createProductProfileObject(data);
 
         container.innerHTML = "";
-
-        // Settings toggle
-        const settingsContainer = document.createElement("div");
-        settingsContainer.id = "product-settings-container";
-        container.appendChild(settingsContainer);
-
-        createSettingsToggle("product-settings-container", (newSettings) => {
-            // Re-render label with new settings
-            const labelContainer = container.querySelector(".product-label-wrapper");
-            if (labelContainer) {
-                const newLabel = renderProductLabel(profile, 1, newSettings);
-                labelContainer.replaceWith(newLabel);
-            }
-        });
 
         // Main label
         const label = renderProductLabel(profile, 1);
@@ -1726,7 +1749,7 @@ function formatImageSourcePath(path) {
     return path.substring(0, breakIndex + 1) + '<br>' + path.substring(breakIndex + 1);
 }
 
-function renderProductDescription(data, priorityImageUrl = null) {
+function renderProductDescription(data, priorityImageUrl = null, profileObject = null) {
     const div = document.createElement("div");
     div.className = "product-description-section";
 
@@ -1824,9 +1847,20 @@ function renderProductDescription(data, priorityImageUrl = null) {
     div.innerHTML = `
         <div class="section-header">
             <h4>Product Details</h4>
+            <div class="section-header-right"></div>
         </div>
         ${contentHTML}
     `;
+
+    const sectionHeaderRight = div.querySelector(".section-header-right");
+    if (sectionHeaderRight && typeof createVerbosityToggle === "function" && profileObject) {
+        sectionHeaderRight.appendChild(createVerbosityToggle((newSettings) => {
+            const container = document.getElementById("product-label");
+            if (container && typeof reRenderProductLabel === "function") {
+                reRenderProductLabel(profileObject, data, container, newSettings);
+            }
+        }));
+    }
 
     // Setup image navigation after DOM insertion
     if (allImages.length > 0) {
@@ -2097,7 +2131,7 @@ function renderProductDetailsPanel(data) {
     const priorityImageUrl = priorityImage ? priorityImage.url : null;
 
     // Product description
-    panel.appendChild(renderProductDescription(data, priorityImageUrl));
+    panel.appendChild(renderProductDescription(data, priorityImageUrl, null));
 
     // Two-column layout for charts and locations
     const columnsDiv = document.createElement("div");
@@ -2137,7 +2171,7 @@ function renderProductDetailsPanelWithCalculators(data, profile) {
     const priorityImageUrl = priorityImage ? priorityImage.url : null;
 
     // Product description
-    panel.appendChild(renderProductDescription(data, priorityImageUrl));
+    panel.appendChild(renderProductDescription(data, priorityImageUrl, profile));
 
     // Two-column layout
     const columnsDiv = document.createElement("div");

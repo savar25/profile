@@ -196,70 +196,62 @@ function createSettingsToggle(containerId, onChange) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const settings = getLabelSettings();
+    const verbosityToggle = createVerbosityToggle(onChange);
+    container.appendChild(verbosityToggle);
+    return verbosityToggle;
+}
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "label-settings-bar";
-    wrapper.innerHTML = `
-        <div class="settings-bar-content">
-            <div class="settings-group">
-                <span class="settings-label">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    Display
-                </span>
-                <div class="style-toggle">
-                    <button class="style-btn ${settings.style === 'fda' ? 'active' : ''}" data-style="fda">
-                        <span class="btn-icon">\u2630</span> Facts Label
-                    </button>
-                    <button class="style-btn ${settings.style === 'badge' ? 'active' : ''}" data-style="badge">
-                        <span class="btn-icon">\ud83c\udf3f</span> Eco Badge
-                    </button>
-                </div>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="settings-group">
-                <span class="settings-label">Detail Level</span>
-                <div class="verbosity-toggle">
-                    <button class="verbosity-btn ${settings.verbosity === 'simple' ? 'active' : ''}" data-verbosity="simple">
-                        Simple
-                    </button>
-                    <button class="verbosity-btn ${settings.verbosity === 'medium' ? 'active' : ''}" data-verbosity="medium">
-                        Medium
-                    </button>
-                    <button class="verbosity-btn ${settings.verbosity === 'detailed' ? 'active' : ''}" data-verbosity="detailed">
-                        Detailed
-                    </button>
-                </div>
-            </div>
-        </div>
+function createStyleToggle(onChange) {
+    const settings = getLabelSettings();
+    const styleToggle = document.createElement("div");
+    styleToggle.className = "style-toggle";
+    styleToggle.innerHTML = `
+        <button class="style-btn sm-btn ${settings.style === 'fda' ? 'active' : ''}" data-style="fda">
+            <span class="btn-icon">\u2630</span> Label
+        </button>
+        <button class="style-btn sm-btn ${settings.style === 'badge' ? 'active' : ''}" data-style="badge">
+            <span class="btn-icon">\ud83c\udf3f</span> Badge
+        </button>
     `;
 
-    container.appendChild(wrapper);
-
-    // Style toggle buttons
-    wrapper.querySelectorAll(".style-btn").forEach(btn => {
+    styleToggle.querySelectorAll(".style-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            wrapper.querySelectorAll(".style-btn").forEach(b => b.classList.remove("active"));
+            styleToggle.querySelectorAll(".style-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             const newSettings = updateLabelSetting("style", btn.dataset.style);
             if (onChange) onChange(newSettings);
         });
     });
 
-    // Verbosity toggle buttons
-    wrapper.querySelectorAll(".verbosity-btn").forEach(btn => {
+    return styleToggle;
+}
+
+function createVerbosityToggle(onChange) {
+    const settings = getLabelSettings();
+    const verbosityToggle = document.createElement("div");
+    verbosityToggle.className = "verbosity-toggle";
+    verbosityToggle.innerHTML = `
+        <button class="verbosity-btn sm-btn ${settings.verbosity === 'simple' ? 'active' : ''}" data-verbosity="simple">
+            Simple
+        </button>
+        <button class="verbosity-btn sm-btn ${settings.verbosity === 'medium' ? 'active' : ''}" data-verbosity="medium">
+            Medium
+        </button>
+        <button class="verbosity-btn sm-btn ${settings.verbosity === 'detailed' ? 'active' : ''}" data-verbosity="detailed">
+            Detailed
+        </button>
+    `;
+
+    verbosityToggle.querySelectorAll(".verbosity-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            wrapper.querySelectorAll(".verbosity-btn").forEach(b => b.classList.remove("active"));
+            verbosityToggle.querySelectorAll(".verbosity-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             const newSettings = updateLabelSetting("verbosity", btn.dataset.verbosity);
             if (onChange) onChange(newSettings);
         });
     });
 
-    return wrapper;
+    return verbosityToggle;
 }
 
 function createCalculatorUnitDropdown(defaultUnit, onChange) {
