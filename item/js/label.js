@@ -30,6 +30,19 @@ function parseNumeric(value) {
     return NaN;
 }
 
+function titleCaseWords(text) {
+    if (!text || typeof text !== "string") return text;
+    const smallWords = new Set(["a", "an", "and", "as", "at", "but", "by", "for", "in", "nor", "of", "on", "or", "per", "the", "to", "vs", "via"]);
+    const words = text.split(/\s+/);
+    return words.map((word, index) => {
+        const cleaned = word.toLowerCase();
+        if (index > 0 && smallWords.has(cleaned)) {
+            return cleaned;
+        }
+        return cleaned.replace(/^[a-z]/, (c) => c.toUpperCase());
+    }).join(" ");
+}
+
 function parseCSVLine(line) {
     const regex = /,(?=(?:[^"]*"[^"]*")*[^"]*$)/;
     return line.split(regex).map(field => field.replace(/^"(.*)"$/, "$1").trim());
@@ -248,7 +261,6 @@ async function loadMenu() {
 
     if (hash.layout == "product") {
         addUSDASearchBar(); // Show search bar with country dropdown
-        searchDiv.style.display = "block";
         searchResultsContainer.style.display = "none";
         menuContainer.style.display = "none";
 
@@ -1046,7 +1058,10 @@ function displayCategoryResults(categoryName) {
     container.style.display = "";
     container.innerHTML = `
         <div class="search-results-header">
-            <h3>${categoryName} - Click to Add Item:</h3>
+            <div class="search-results-header-text">
+                <h3>${titleCaseWords(categoryName)}</h3>
+                <div class="search-results-subtitle">Explore items to add to your nutrition menu.</div>
+            </div>
             <button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>
         </div>
     `;
@@ -1244,8 +1259,27 @@ async function loadProductByCountryAndId(region, id) {
 async function loadYAMLProfile(region, category, file) {
     // Construct raw GitHub URL instead of using API download_url
     const rawUrl = getRawGitHubUrl(region, category, file.name);
-    const yamlText = await fetchText(rawUrl);
-    const data = jsyaml.load(yamlText);
+    let yamlText = "";
+    let data = null;
+    try {
+        yamlText = await fetchText(rawUrl);
+        data = jsyaml.load(yamlText);
+    } catch (error) {
+        console.error("Error loading YAML:", error);
+        const container = document.getElementById("product-label");
+        if (container) {
+            const linkUrl = error && error.url ? error.url : rawUrl;
+            const linkText = getShortUrlName(linkUrl);
+            container.innerHTML = `
+                <div class="error-message-container">
+                    <h3>Error Loading Product</h3>
+                    <p><strong>Reason:</strong> ${error?.message || "Unknown error"}</p>
+                    <p><strong>File not found:</strong> <a href="${linkUrl}" target="_blank">${linkText}</a></p>
+                </div>
+            `;
+        }
+        return;
+    }
 
     // Update YAML Source link with the category display_name from the loaded YAML
     const yamlCategory = data.category?.display_name;
@@ -1481,14 +1515,25 @@ function addUSDASearchBar() {
 
         searchDiv.style.marginBottom = "1em";
         searchDiv.innerHTML = `
-            <select id="country-dropdown" style="margin-right: 10px;">
-                <option value="US" ${selectedCountry === 'US' ? 'selected' : ''}>US</option>
-                <option value="IN" ${selectedCountry === 'IN' ? 'selected' : ''}>India</option>
-            </select>
-            <input type="text" id="search-input" placeholder="${placeholder}" style="width:300px;">
-            <button id="usda-search-button" class="add-to-menu-btn">Search</button>
-            <button id="usda-clear-button" class="remove-item-btn">Clear</button>
+            <div class="search-controls-left">
+                <select id="country-dropdown" style="margin-right: 10px;">
+                    <option value="US" ${selectedCountry === 'US' ? 'selected' : ''}>US</option>
+                    <option value="IN" ${selectedCountry === 'IN' ? 'selected' : ''}>India</option>
+                </select>
+                <input type="text" id="search-input" placeholder="${placeholder}" style="width:300px;">
+                <button id="usda-search-button" class="add-to-menu-btn">Search</button>
+                <button id="usda-clear-button" class="remove-item-btn">Clear</button>
+            </div>
+            <div class="search-controls-right" id="search-controls-right"></div>
         `;
+
+        const rightControls = document.getElementById("search-controls-right");
+        const menuSetSelector = document.getElementById("menu-set-selector");
+        const menuOptionsWrapper = document.getElementById("menu-options-wrapper");
+        if (rightControls) {
+            if (menuSetSelector) rightControls.appendChild(menuSetSelector);
+            if (menuOptionsWrapper) rightControls.appendChild(menuOptionsWrapper);
+        }
 
         // Add country dropdown change handler
         const countryDropdown = document.getElementById("country-dropdown");
@@ -1608,7 +1653,10 @@ function displaySearchResults(targetContainer = null) {
 
     container.innerHTML = `
         <div class="search-results-header">
-            <h3>Search Results - Click to Add Item:</h3>
+            <div class="search-results-header-text">
+                <h3>Search Results</h3>
+                <div class="search-results-subtitle">Explore items to add to your nutrition menu.</div>
+            </div>
             ${!targetContainer ? '<button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>' : ''}
         </div>
     `;
@@ -1666,7 +1714,10 @@ function displayInitialFoodItems() {
         container.style.display = "";
         container.innerHTML = `
             <div class="search-results-header">
-                <h3>Popular Foods - Click to Add Item:</h3>
+                <div class="search-results-header-text">
+                    <h3>Popular Foods</h3>
+                    <div class="search-results-subtitle">Explore items to add to your nutrition menu.</div>
+                </div>
                 <button class="close-search-btn" onclick="closeSearchResults()" title="Close search results">&times;</button>
             </div>
         `;

@@ -12,6 +12,7 @@
 <script type="text/javascript" src="../../localsite/js/localsite.js?showheader=true"></script>
 
 <link type="text/css" rel="stylesheet" href="css/label.css" />
+<link type="text/css" rel="stylesheet" href="css/label-menu.css" />
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
 <script type="text/javascript" src="js/shared.js"></script>
 <script type="text/javascript" src="js/layout-product.js"></script>
@@ -317,308 +318,44 @@ function toggleCategorySidebar() {
 }
 </script>
 
-<style>
-/* Menu toggle button */
-.menu-toggle-btn {
-  background: none;
-  border: 1px solid #999;
-  border-radius: 4px;
-  color: #666;
-  padding: 2px 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.menu-toggle-btn:hover {
-  border-color: #666;
-  background: #f0f0f0;
-  color: #333;
-}
-
-.menu-icon {
-  font-size: 24px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Menu options button - smaller version */
-#menu-options-btn {
-  padding: 5px 6px;
-}
-
-#menu-options-btn .menu-icon {
-  font-size: 18px;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.dark .menu-toggle-btn {
-  border-color: #666;
-  color: #94a3b8;
-}
-
-.dark .menu-toggle-btn:hover {
-  border-color: #94a3b8;
-  background: #475569;
-  color: #f1f5f9;
-}
-
-/* Close sidebar button */
-.close-sidebar-btn {
-  background: none;
-  border: none;
-  font-size: 32px;
-  line-height: 1;
-  color: #999;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.close-sidebar-btn:hover {
-  background: #f0f0f0;
-  color: #333;
-}
-
-.dark .close-sidebar-btn {
-  color: #94a3b8;
-}
-
-.dark .close-sidebar-btn:hover {
-  background: #475569;
-  color: #f1f5f9;
-}
-
-.aggregate {
-  float:right;
-  min-width:260px;
-  margin-left:20px;
-}
-.all-menu-items {
-  overflow:auto;
-  padding: 0px;
-  margin: 0px;
-}
-.menu-label {
-  min-width: 220px;
-  max-width: 250px;
-  float: left;
-  padding: 0px;
-  margin: 0px;
-}
-.category-item {
-  padding: 10px;
-  margin: 5px 0;
-  cursor: pointer;
-  border-radius: 4px;
-  background: #f5f5f5;
-  font-size: 14px;
-  transition: background 0.2s;
-}
-.category-item:hover {
-  background: #e0e0e0;
-}
-.category-item.active {
-  background: #4CAF50;
-  color: white;
-  font-weight: bold;
-}
-.dark .category-item {
-  background: #334155;
-  color: #f1f5f9;
-}
-.dark .category-item:hover {
-  background: #475569;
-}
-.dark .category-item.active {
-  background: #4CAF50;
-  color: white;
-}
-
-/* 2-level menu styles */
-#category-sidebar {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.dark #category-sidebar {
-  background: #1e293b;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.category-header {
-  margin-bottom: 8px;
-}
-
-.category-title {
-  width: 100%;
-  background-color: #f9f9f9;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 500;
-  color: #333;
-  transition: all 0.3s;
-  text-align: left;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.category-title:hover {
-  background-color: #e8f5e9;
-  border-color: #4CAF50;
-}
-
-.category-title.active {
-  background-color: #4CAF50;
-  color: white;
-  border-color: #4CAF50;
-}
-
-.dark .category-title {
-  background-color: #334155;
-  color: #f1f5f9;
-  border-color: #475569;
-}
-
-.dark .category-title:hover {
-  background-color: #475569;
-  border-color: #4CAF50;
-}
-
-.dark .category-title.active {
-  background-color: #4CAF50;
-  color: white;
-  border-color: #4CAF50;
-}
-
-.toggle-arrow {
-  display: inline-block;
-  transition: transform 0.3s;
-  width: 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.toggle-arrow.open {
-  transform: rotate(90deg);
-}
-
-.subcategory-list {
-  display: none;
-  list-style: none;
-  margin-top: 8px;
-  margin-left: 0;
-  padding-left: 15px;
-  border-left: 2px solid #ddd;
-}
-
-.subcategory-list.open {
-  display: block;
-}
-
-.dark .subcategory-list {
-  border-left-color: #475569;
-}
-
-.subcategory-item {
-  margin-bottom: 6px;
-}
-
-.subcategory-link {
-  display: block;
-  padding: 6px 10px;
-  color: #666;
-  text-decoration: none;
-  font-size: 13px;
-  border-radius: 3px;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-
-.subcategory-link:hover {
-  background-color: #f0f0f0;
-  color: #333;
-  padding-left: 15px;
-}
-
-.subcategory-link.active {
-  background-color: #e5e7eb;
-  color: #333;
-  font-weight: bold;
-  padding-left: 15px;
-}
-
-.dark .subcategory-link {
-  color: #cbd5e1;
-}
-
-.dark .subcategory-link:hover {
-  background-color: #475569;
-  color: #f1f5f9;
-}
-
-.dark .subcategory-link.active {
-  background-color: #0f172a;
-  color: white;
-}
-</style>
-
 </head>
 
 <body>
-<div class="content contentpadding large-list" style="max-width: 1500px;">
+<div class="content contentpadding large-list content-wide">
 
-  <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px; justify-content: space-between;">
-    <div style="display: flex; align-items: center; gap: 15px;">
+  <div class="header-row">
+    <div class="header-left">
       <button id="menu-toggle-btn" class="menu-toggle-btn" onclick="toggleCategorySidebar()" title="Toggle categories menu">
         <i class="material-icons menu-icon">menu</i>
       </button>
-      <div id="page-header" style="margin: 0;"><b>Item Profiles:</b> <a href="">Healthy Meals</a> and <a href="#layout=product">Building Materials</a></div>
+      <div id="page-header"><b>Item Profiles:</b> <a href="">Healthy Meals</a> and <a href="#layout=product">Building Materials</a></div>
     </div>
-    <div style="display: flex; align-items: flex-start; gap: 5px;">
-      <select id="menu-set-selector" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px;">
+    <div class="header-right">
+      <select id="menu-set-selector" class="menu-set-selector">
         <option value="menu-1">Menu 1</option>
         <option value="add-new">+ Add New Menu</option>
       </select>
-      <div style="position: relative;">
+      <div id="menu-options-wrapper" class="menu-options-wrapper">
         <button id="menu-options-btn" class="menu-toggle-btn" onclick="toggleMenuOptions()" title="Menu options">
           <i class="material-icons menu-icon">more_vert</i>
         </button>
-        <div id="menu-options-dropdown" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ccc; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000; min-width: 150px;">
-          <a href="#" onclick="editMenuDetails(); return false;" style="display: block; padding: 10px 15px; text-decoration: none; color: #333; white-space: nowrap;">Edit Menu Details</a>
-          <a href="#" onclick="deleteCurrentMenu(); return false;" style="display: block; padding: 10px 15px; text-decoration: none; color: #d32f2f; border-top: 1px solid #eee; white-space: nowrap;">Delete Menu</a>
+        <div id="menu-options-dropdown" class="menu-options-dropdown">
+          <a href="#" onclick="editMenuDetails(); return false;" class="menu-options-link">Edit Menu Details</a>
+          <a href="#" onclick="deleteCurrentMenu(); return false;" class="menu-options-link menu-options-link-delete">Delete Menu</a>
         </div>
       </div>
     </div>
   </div>
 
-  <div style="overflow: auto;">
-    <div id="category-sidebar" style="float: left; width: 250px; margin-right: 20px; display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin: 0;">Food Categories</h3>
-        <button class="close-sidebar-btn" onclick="toggleCategorySidebar()" title="Close categories menu">&times;</button>
+  <div class="content-scroll">
+    <div id="category-sidebar" class="category-sidebar">
+      <button class="close-sidebar-btn" onclick="toggleCategorySidebar()" title="Close categories menu">&times;</button>
+      <div id="topic-select">
+        <h3>Food Categories</h3>
       </div>
       <div id="category-list"></div>
     </div>
-    <div style="overflow: auto;">
+    <div class="content-scroll">
       <div id="search-div"></div>
       <div id="search-results-container"></div>
       <div id="menu-container"></div>
@@ -629,7 +366,7 @@ function toggleCategorySidebar() {
 
   <br>
   <hr>
-  <p><a href="../../products/">About Product Profiles</a><span id="yaml-source-wrapper" style="display: none;"> | <a href="#" id="yaml-source-link" target="_blank">YAML Source</a></span></p>
+  <p><a href="../../products/">About Product Profiles</a><span id="yaml-source-wrapper"> | <a href="#" id="yaml-source-link" target="_blank">YAML Source</a></span></p>
 
 </div>
 </body>

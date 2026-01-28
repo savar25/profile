@@ -359,6 +359,28 @@ input[type=number]::-webkit-outer-spin-button {
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.search-controls-left,
+.search-controls-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.search-controls-left {
+  flex: 1;
+}
+
+#menu-options-wrapper {
+  border: none;
+  padding: 0;
+  position: relative;
 }
 
 #search-input {
@@ -520,10 +542,29 @@ input[type=number]::-webkit-outer-spin-button {
     margin-bottom: 15px;
 }
 
+.search-results-header-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    flex: 1;
+}
+
 .search-results-header h3 {
     margin: 0;
     font-size: 1.2em;
     flex: 1;
+}
+
+.search-results-subtitle {
+    font-size: 0.85em;
+    font-weight: normal;
+    color: #64748b;
+    margin-top: 0;
+}
+
+.dark .search-results-subtitle {
+    color: #94a3b8;
 }
 
 .close-search-btn {
@@ -555,17 +596,17 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* Error message styling */
 .error-message-container {
-    color: #d32f2f;
+    color: #b45309;
     padding: 20px;
-    background: #ffebee;
-    border: 1px solid #ef5350;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
     border-radius: 4px;
     margin-top: 10px;
 }
 
 .error-message-container h3 {
     margin-top: 0;
-    color: #c62828;
+    color: #c2410c;
 }
 
 .error-message-container p {
@@ -573,17 +614,17 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .error-message-container strong {
-    color: #b71c1c;
+    color: #c2410c;
 }
 
 .error-message-container a {
-    color: #b71c1c;
+    color: #c2410c;
     text-decoration: underline;
     word-break: break-all;
 }
 
 .error-message-container a:hover {
-    color: #d32f2f;
+    color: #b45309;
     text-decoration: none;
 }
 
@@ -597,7 +638,6 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #search-results-container h3 {
-    margin: 0 0 15px 0;
     font-size: 1.2em;
 }
 
@@ -790,6 +830,79 @@ input[type=number]::-webkit-outer-spin-button {
   border-radius: 5px;
 }
 
+.content-wide {
+  max-width: 1500px;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+#page-header {
+  margin: 0;
+}
+
+.menu-set-selector {
+  padding: 5px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.menu-options-wrapper {
+  position: relative;
+}
+
+.menu-options-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.menu-options-link {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  white-space: nowrap;
+}
+
+.menu-options-link-delete {
+  color: #d32f2f;
+  border-top: 1px solid #eee;
+}
+
+.content-scroll {
+  overflow: auto;
+}
+
+#yaml-source-wrapper {
+  display: none;
+}
+
 #product-container {
   & th {
     border: 1px solid #ddd;
@@ -868,35 +981,35 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* Dark mode error message styling */
 .dark .error-message-container {
-  color: #fca5a5;
-  background: #450a0a;
-  border-color: #991b1b;
+  color: #fdba74;
+  background: #2a1402;
+  border-color: #9a3412;
 }
 
 .dark .error-message-container h3 {
-  color: #fecaca;
+  color: #fdba74;
 }
 
 .dark .error-message-container strong {
-  color: #fef2f2;
+  color: #fdba74;
 }
 
 .dark .error-message-container a {
-  color: #fecaca;
+  color: #fdba74;
   text-decoration: underline;
 }
 
 .dark .error-message-container a:hover {
-  color: #fef2f2;
+  color: #ffedd5;
   text-decoration: none;
 }
 
 .dark .error-message-container ul {
-  color: #fca5a5;
+  color: #fdba74;
 }
 
 .dark .error-message-container li {
-  color: #fca5a5;
+  color: #fdba74;
 }
 
 .dark .close-search-btn:hover {
@@ -2005,71 +2118,6 @@ input[type=number]::-webkit-outer-spin-button {
 /* ============================================
    Food Category Sidebar Dark Mode
    ============================================ */
-
-.dark #category-sidebar {
-  background: #1e293b;
-  border-color: #334155;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.dark #category-sidebar h3 {
-  color: #f1f5f9;
-}
-
-.dark .category-item {
-  background: #0f172a;
-  color: #cbd5e1;
-}
-
-.dark .category-item:hover {
-  background: #334155;
-}
-
-.dark .category-item.active {
-  background: #22c55e;
-  color: white;
-}
-
-.dark .category-title {
-  background-color: #0f172a;
-  border-color: #334155;
-  color: #e2e8f0;
-}
-
-.dark .category-title:hover {
-  background-color: #1e3a3a;
-  border-color: #22c55e;
-}
-
-.dark .category-title.active {
-  background-color: #22c55e;
-  color: white;
-  border-color: #22c55e;
-}
-
-.dark .category-arrow {
-  background-color: #0f172a;
-  border-color: #334155;
-  color: #94a3b8;
-}
-
-.dark .category-arrow:hover {
-  background-color: #1e3a3a;
-  border-color: #22c55e;
-}
-
-.dark .subcategory-list {
-  border-left-color: #334155;
-}
-
-.dark .subcategory-link {
-  color: #94a3b8;
-}
-
-.dark .subcategory-link:hover {
-  background-color: #334155;
-  color: #f1f5f9;
-}
 
 /* ============================================
    Transportation Panel Specific Styles
