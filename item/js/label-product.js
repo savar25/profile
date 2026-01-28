@@ -1829,7 +1829,8 @@ function renderProductDescription(data, priorityImageUrl = null) {
 
     // Gallery view (initially hidden)
     if (allImages.length > 0) {
-        const galleryClass = galleryImages.length % 3 === 0 ? "image-gallery three-col-prefer" : "image-gallery";
+        const preferThreeCol = galleryImages.length % 3 === 0 || galleryImages.length === 5;
+        const galleryClass = preferThreeCol ? "image-gallery three-col-prefer" : "image-gallery";
         contentHTML += `
             <div class="${galleryClass}" style="display: none;">
                 <div class="gallery-header">
