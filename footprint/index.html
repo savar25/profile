@@ -1690,11 +1690,27 @@
         async function loadIndiaStateData() {
             try {
                 console.log("Loading India state data...");
+                const csvPath = "../../trade-data/year/temp/IN/domestic/india_states.csv";
+                console.log("CSV path:", csvPath);
 
-                const data = await d3.csv("../../trade-data/year/temp/IN/domestic/india_states.csv");
+                // Use fetch instead of d3.csv to match other data sources
+                const response = await fetch(csvPath);
+                if (!response.ok) {
+                    throw new Error(`Failed to load CSV: ${response.status} ${response.statusText}`);
+                }
+                const csvText = await response.text();
+                const data = d3.csvParse(csvText);
+                console.log("CSV loaded successfully, rows:", data.length);
+                console.log("First row sample:", data[0]);
+
+                if (!data || data.length === 0) {
+                    console.warn("India CSV file is empty or has no data");
+                    indiaStateData = [];
+                    return [];
+                }
 
                 // Convert CSV rows into standardized structure for UI (like US states)
-                const indiaStateData = data.map(d => ({
+                indiaStateData = data.map(d => ({
                     stateName: d.State,
                     stateAbbr: d.Code || d.State,     // optional short code
                     output: +d.Output || 0,
@@ -1708,11 +1724,14 @@
                     type: "state"
                 }));
 
+                console.log("Processed India data:", indiaStateData.length, "states");
+                console.log("Sample processed data:", indiaStateData[0]);
+
                 updateDataInfo('India state economic output & employment');
 
                 updateDataSources("india", [{
                     label: "India State Dataset",
-                    path: "data/india_states.csv",
+                    path: csvPath,
                     type: "india",
                     isLink: true,
                     displayPath: "india_states.csv"
@@ -1724,6 +1743,18 @@
 
             } catch (error) {
                 console.error("Error loading India data:", error);
+                console.error("Error details:", error.message, error.stack);
+
+                // Check if it's a CORS error (file:// protocol)
+                if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+                    console.error("CORS error: Cannot load CSV file when opened via file:// protocol.");
+                    console.error("Please run a local HTTP server:");
+                    console.error("  cd d:\\Model_Earth_Complete\\webroot");
+                    console.error("  python -m http.server 8887");
+                    console.error("Then access via: http://localhost:8887/profile/footprint/index.html");
+                }
+
+                indiaStateData = [];
                 return [];
             }
         }
@@ -2476,6 +2507,8 @@
                 } else {
                     regionLabel = ` regions (${stateCount} states + ${countryCount} countries)`;
                 }
+            } else if (dataType === 'india') {
+                regionLabel = ' regions';
             }
             
             // Debug the actual values to see what's happening
@@ -2759,6 +2792,7 @@
                 }
                 else if (newSource === 'india') {
                     data = await loadIndiaStateData();
+                    indiaStateData = data; // Ensure global variable is updated
                     if (updateHash) {
                         updateHashWithDataSource('india=all');
                     }
@@ -2878,6 +2912,9 @@
             if (hash.includes('country=all&state=all')) {
                 initialView = 'combined';
                 document.querySelector('input[value="combined"]').checked = true;
+            } else if (hash.includes('india=all') || hash.includes('india=')) {
+                initialView = 'india';
+                document.querySelector('input[value="india"]').checked = true;
             } else if (hash.includes('state=all') || hash.includes('state=')) {
                 initialView = 'us';
                 document.querySelector('input[value="us"]').checked = true;
@@ -2943,6 +2980,13 @@
                     if (currentDataSource !== 'combined') {
                         document.querySelector('input[value="combined"]').checked = true;
                         handleDataSourceChange('combined', false);
+                    }
+                }
+                // Handle India view
+                else if (hash.includes('india=all') || hash.includes('india=')) {
+                    if (currentDataSource !== 'india') {
+                        document.querySelector('input[value="india"]').checked = true;
+                        handleDataSourceChange('india', false);
                     }
                 }
                 // Handle state view (both state=all and specific states) - check for state= without country=all
