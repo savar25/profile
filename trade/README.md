@@ -1,7 +1,7 @@
 [Active Projects](../../projects/)
 # Trade Profiles (CSV and SQL)
 
-We're using UN Comtrade [Exiobase](https://exiobase.eu) trade factors and US Bureau of Economic Analysis (BEA) data with Claude Code CLI to create Python that outputs [Exiobase .CSV files](../../exiobase/tradeflow/) and US state commodity analysis .CSV files from our [BEA+Exiobase data prep python](../../exiobase/tradeflow/bea/).
+We're using UN Comtrade [Exiobase](https://exiobase.eu) trade factors and US Bureau of Economic Analysis (BEA) data with Claude Code CLI and OpenAI Codex to create Python that outputs [Exiobase .CSV files](../../exiobase/tradeflow/) and US state commodity analysis .CSV files from our [BEA+Exiobase data prep python](../../exiobase/tradeflow/bea/).
 
 <!--Each country-year database instance will represent a country and year from Exiobase.-->
 
