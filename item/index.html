@@ -44,6 +44,7 @@ let initialYAMLSource = null;
 
 function updateYAMLSourceLink(categoryFromYAML) {
   const link = document.getElementById('yaml-source-link');
+  const parserLink = document.getElementById('parser-link');
   const wrapper = document.getElementById('yaml-source-wrapper');
 
   if (!link || !wrapper) return;
@@ -68,7 +69,9 @@ function updateYAMLSourceLink(categoryFromYAML) {
     if (!initialYAMLSource || initialYAMLSource.key !== sourceKey) {
       // GitHub web view URL for better formatting
       const githubBase = "https://github.com/ModelEarth/products-data/blob/main";
+      const rawBase = "https://raw.githubusercontent.com/ModelEarth/products-data/refs/heads/main";
       const yamlUrl = `${githubBase}/${hash.country}/${category}/${hash.id}.yaml`;
+      const rawYamlUrl = `${rawBase}/${hash.country}/${category}/${hash.id}.yaml`;
 
       initialYAMLSource = {
         key: sourceKey,
@@ -77,6 +80,12 @@ function updateYAMLSourceLink(categoryFromYAML) {
       };
 
       link.href = yamlUrl;
+
+      // Set View in Parser link
+      if (parserLink) {
+        parserLink.href = `/io/template/parser/#source=${encodeURIComponent(rawYamlUrl)}`;
+      }
+
       console.log("YAML Source link set with category:", category, "URL:", yamlUrl);
     }
 
@@ -297,6 +306,7 @@ document.addEventListener('click', function(event) {
 
 function toggleCategorySidebar() {
   const sidebar = document.getElementById("category-sidebar");
+  const toggleBtn = document.getElementById("menu-toggle-btn");
   if (sidebar) {
     if (sidebar.style.display === "none" || sidebar.style.display === "") {
       // Showing sidebar - check which categories to load
@@ -311,8 +321,10 @@ function toggleCategorySidebar() {
         }
       }
       sidebar.style.display = "block";
+      if (toggleBtn) toggleBtn.classList.add("dimmed");
     } else {
       sidebar.style.display = "none";
+      if (toggleBtn) toggleBtn.classList.remove("dimmed");
     }
   }
 }
@@ -372,7 +384,7 @@ function toggleCategorySidebar() {
 
   <br>
   <hr>
-  <p><a href="../../products/">About Product Profiles</a><span id="yaml-source-wrapper"> | <a href="#" id="yaml-source-link" target="_blank">YAML Source</a></span></p>
+  <p><a href="../../products/">About Product Profiles</a><span id="yaml-source-wrapper"> | <a href="#" id="yaml-source-link" target="_blank">YAML Source</a> | <a href="#" id="parser-link" target="_blank">View in Parser</a></span></p>
 
 </div>
 </body>

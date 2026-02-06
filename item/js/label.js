@@ -162,11 +162,11 @@ function getRowValue(row, keys) {
 }
 
 function buildAllCsvUrl(country) {
-    return `${RAW_BASE}/${country}/all.csv`;
+    return `${LOCAL_BASE}/${country}/all.csv`;
 }
 
 function buildCategoryCsvUrl(country, subcategoryName) {
-    return `${RAW_BASE}/${country}/${country}-${subcategoryName}.csv`;
+    return `${LOCAL_BASE}/${country}/${country}-${subcategoryName}.csv`;
 }
 
 function renderProductCsvList(container, rows, country, listSourceUrl, titleText = "Products") {
@@ -229,13 +229,18 @@ function renderProductCsvList(container, rows, country, listSourceUrl, titleText
 }
 
 async function loadCsvList(url) {
-    const response = await fetch(url);
-    if (!response.ok) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            return null;
+        }
+        const csvText = await response.text();
+        const parsed = parseCSV(csvText);
+        return parsed.rows;
+    } catch (e) {
+        // Network error (CORS, DNS, offline) — return null so callers fall through gracefully
         return null;
     }
-    const csvText = await response.text();
-    const parsed = parseCSV(csvText);
-    return parsed.rows;
 }
 
 // function loadMenu() {
@@ -347,6 +352,8 @@ async function loadMenu() {
         selectedCountry = hash.country;
     }
 
+    const toggleBtn = document.getElementById("menu-toggle-btn");
+
     if (hash.layout == "product") {
         addUSDASearchBar(); // Show search bar with country dropdown
         searchResultsContainer.style.display = "none";
@@ -356,6 +363,7 @@ async function loadMenu() {
         if (hash.id) {
             // Has product ID - load specific product and hide sidebar
             if (sidebar) sidebar.style.display = "none";
+            if (toggleBtn) toggleBtn.classList.remove("dimmed");
             if (hash.cat) {
                 const container = document.getElementById("product-container");
                 if (container) {
@@ -369,6 +377,7 @@ async function loadMenu() {
             // No specific product ID - show product categories and sidebar
             loadProductCategorySidebar();
             if (sidebar) sidebar.style.display = "block";
+            if (toggleBtn) toggleBtn.classList.add("dimmed");
             const productContainer = document.getElementById("product-container");
             const productLabel = document.getElementById("product-label");
             if (productContainer) productContainer.style.display = "none";
@@ -411,8 +420,10 @@ async function loadMenu() {
     // Show sidebar if no specific food id in hash
     if (!hash.id) {
         if (sidebar) sidebar.style.display = "block";
+        if (toggleBtn) toggleBtn.classList.add("dimmed");
     } else {
         if (sidebar) sidebar.style.display = "none";
+        if (toggleBtn) toggleBtn.classList.remove("dimmed");
     }
 
     // If country is India, trigger India search automatically
@@ -943,6 +954,22 @@ async function selectProductSubcategory(country, subcategoryName) {
             return;
         }
 
+        // Try to fetch CSV from GitHub raw to build an ID-to-name map
+        let csvNameMap = {};
+        try {
+            const remoteCsvUrl = `${RAW_BASE}/${country}/${country}-${subcategoryName}.csv`;
+            const csvRows = await loadCsvList(remoteCsvUrl);
+            if (csvRows && csvRows.length) {
+                csvRows.forEach(row => {
+                    const rid = getRowValue(row, ["ID", "id", "Id", "uuid", "UUID"]);
+                    const rname = getRowValue(row, ["name", "Name"]);
+                    if (rid && rname) csvNameMap[rid] = rname;
+                });
+            }
+        } catch (e) {
+            // CSV lookup is best-effort; continue with filenames
+        }
+
         container.innerHTML = `<h3>${subcategoryName.replace(/_/g, " ")} (${yamlFiles.length} products)</h3>`;
 
         const listContainer = document.createElement("div");
@@ -977,7 +1004,8 @@ async function selectProductSubcategory(country, subcategoryName) {
                 if (key === "name") {
                     const nameLink = document.createElement("a");
                     nameLink.href = `#layout=product&country=${country}&id=${id}`;
-                    nameLink.textContent = value || id;
+                    // Use CSV product name if available, otherwise fall back to filename/id
+                    nameLink.textContent = csvNameMap[id] || value || id;
                     nameLink.addEventListener("click", (event) => {
                         event.stopPropagation();
                         if (typeof goHash === "function") {
@@ -1181,6 +1209,7 @@ function displayCategoryResults(categoryName) {
 
 const API_BASE = "https://api.github.com/repos/ModelEarth/products-data/contents";
 const RAW_BASE = "https://raw.githubusercontent.com/ModelEarth/products-data/refs/heads/main";
+const LOCAL_BASE = "../../products-data";
 
 // Helper function to construct raw GitHub URL
 function getRawGitHubUrl(country, category, filename) {
