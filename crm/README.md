@@ -7,7 +7,7 @@
 Tables names match Salesforce and [Microsoft Dynamics Common Data Model (CDM)](https://learn.microsoft.com/en-us/common-data-model):
 
 <!-- looked here: https://github.com/profle/crm/blob/main/crm/sql/suitecrm-postgres.sql -->
-[Our Azure management script](../azure/) installs this [Common SQL Schema](https://github.com/profile/crm/blob/main/sql/suitecrm-postgres.sql) [[Maria and SQL versions](https://github.com/ModelEarth/profile/tree/main/crm/sql)] with table names including:
+[Our Azure management script](../azure/) installs this [Common SQL Schema](https://github.com/ModelEarth/profile/blob/main/crm/sql/suitecrm-postgres.sql) [[Maria and SQL versions](https://github.com/ModelEarth/profile/tree/main/crm/sql)] with table names including:
 
 users
 accounts - which include organizations
