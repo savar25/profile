@@ -19,6 +19,11 @@
   color: #333;
 }
 
+/* Dimmed state when sidebar is open */
+.menu-toggle-btn.sidebar-open {
+  opacity: 0.5;
+}
+
 .menu-icon {
   font-size: 24px;
   line-height: 1;
