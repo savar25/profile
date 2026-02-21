@@ -13,7 +13,11 @@
 
 <link type="text/css" rel="stylesheet" href="css/label.css" />
 <link type="text/css" rel="stylesheet" href="css/label-menu.css" />
+<!-- Shared param UI  -->
+<link rel="stylesheet" href="/cloud/run/css/param.css">
 <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+<script src="/cloud/run/js/param-input.js"></script>
+
 <script type="text/javascript" src="js/shared.js"></script>
 <script type="text/javascript" src="js/layout-product.js"></script>
 <script type="text/javascript" src="js/label-product.js"></script>
@@ -23,7 +27,7 @@ document.addEventListener('hashChangeEvent', hashChangedMenu, false);
 function hashChangedMenu(event) {
   console.log("Profile hash changed");
   loadMenu();
-  // Don't update YAML source link here - wait for YAML to load
+  
 }
 loadMenu();
 
@@ -174,13 +178,13 @@ function handleMenuSelectorChange(event) {
 
 function loadCurrentMenuItems() {
   const menu = getCurrentMenu();
-  // Clear current display
+  
   const menuContainer = document.getElementById('menu-container');
   if (menuContainer) {
     menuContainer.innerHTML = '';
   }
 
-  // TODO: Reload menu items from menu.items array
+  //   Reload menu items from menu.items array
   console.log('Loading menu items:', menu.items);
   checkMenuItemsDisplay();
 }
@@ -318,9 +322,100 @@ function toggleCategorySidebar() {
 }
 </script>
 
+ <script>
+// --- Insights wiring (Get Insights button) ---
+
+let lastCategoryFromYAML = null;
+
+// Capture category from your existing updateYAMLSourceLink callback
+const _updateYAMLSourceLink = updateYAMLSourceLink;
+updateYAMLSourceLink = function(categoryFromYAML) {
+  if (categoryFromYAML) lastCategoryFromYAML = categoryFromYAML;
+  return _updateYAMLSourceLink(categoryFromYAML);
+};
+
+function buildInsightsPath() {
+  const hash = (typeof getHash === "function") ? getHash() : getUrlHash();
+
+  // Product detail -> build raw YAML path from products-data
+  if (hash.layout === "product" && hash.country && hash.id && lastCategoryFromYAML) {
+    const category = lastCategoryFromYAML
+      .replace(/[^A-Za-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    return `https://raw.githubusercontent.com/ModelEarth/products-data/main/${hash.country}/${category}/${hash.id}.yaml`;
+  }
+
+  // Food/menu view fallback 
+ return window.location.origin + window.location.pathname;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('getInsightsBtn');
+  const panel = document.getElementById('insightsPanel');
+  if (!btn || !panel) return;
+
+btn.addEventListener('click', function() {
+  panel.style.display = 'block';
+
+  const cachedFoodPath = window.profileItemCache && window.profileItemCache.lastFoodApiUrl;
+  const path = cachedFoodPath || buildInsightsPath();
+
+  // Restore last target 
+  const targetSelect = document.getElementById('menuTargetSelect');
+  const cachedTarget = window.profileItemCache && window.profileItemCache.lastTargetPath;
+
+  if (targetSelect && cachedTarget && !targetSelect.value) {
+    targetSelect.value = cachedTarget;
+  }
+
+  const targetVal = (targetSelect && targetSelect.value) ? targetSelect.value : "";
+
+  if (typeof goHash === 'function') {
+    const payload = { "features.path": path };
+    if (targetVal) payload["targets.path"] = targetVal;
+    goHash(payload, "parambase,customYamlUrl");
+  }
+
+  try {
+    document.dispatchEvent(new Event('hashChangeEvent'));
+    window.dispatchEvent(new Event('hashchange'));
+  } catch (e) {}
+});
+
+
+
+ // Target select -> set targets.path
+  const targetSelect = document.getElementById('menuTargetSelect');
+  if (!targetSelect) return;
+
+  targetSelect.addEventListener('change', function(e) {
+    const val = e.target.value;
+    if (!val) return;
+
+    if (typeof goHash === 'function') {
+      goHash({ 'targets.path': val }, 'parambase,customYamlUrl');
+    }
+
+    try {
+      window.profileItemCache = window.profileItemCache || {};
+      window.profileItemCache.lastTargetPath = val;
+      if (typeof saveProfileItemCache === 'function') saveProfileItemCache();
+    } catch (err) {}
+
+    try {
+      document.dispatchEvent(new Event('hashChangeEvent'));
+      window.dispatchEvent(new Event('hashchange'));
+    } catch (err) {}
+  });
+});
+
+</script>
+
 </head>
 
-<body>
+<body data-param-input="profile-item">
+
 <div class="content contentpadding large-list content-wide">
 
   <div class="header-row">
@@ -331,6 +426,10 @@ function toggleCategorySidebar() {
       <div id="page-header"><b>Item Profiles:</b> <a href="">Healthy Meals</a> and <a href="#layout=product">Building Materials</a></div>
     </div>
     <div class="header-right">
+      <button id="getInsightsBtn" class="menu-toggle-btn" type="button" title="Menu Insights">
+  Menu Insights
+</button>
+
       <select id="menu-set-selector" class="menu-set-selector">
         <option value="menu-1">Menu 1</option>
         <option value="add-new">+ Add New Menu</option>
@@ -363,6 +462,46 @@ function toggleCategorySidebar() {
     </div>
     <div class="content-scroll">
       <div id="search-div"></div>
+      <!-- Insights panel  -->
+<div id="insightsPanel" style="display:none; margin:14px 0;">
+
+  <div style="font-weight:700; font-size:18px; margin-bottom:6px;">Menu Insights</div>
+
+<div style="margin:0 0 10px 0; color:#444;">
+  Do another food search to add additional features and targets for analysis. Targets have a true/false column (1 or 0)
+  and are joined to your features by a common value (for example location, food category, or culture).
+</div>
+
+<div style="display:flex; align-items:center; gap:8px; margin:0 0 10px 0;">
+  <label for="menuTargetSelect" style="font-size:14px; margin:0;">Choose target:</label>
+  <select id="menuTargetSelect" style="max-width:260px;">
+    <option value="">Select a target...</option>
+    <option value="target:low_sugar">Low Sugar</option>
+    <option value="target:low_calories">Low Calories</option>
+    <option value="target:low_carbs">Low Carbs</option>
+    <option value="target:high_protein">High Protein</option>
+  </select>
+</div>
+
+<select id="parambase"></select>
+
+  <div id="pathControls"></div>
+
+  <div id="paramText" class="codetext" contenteditable>
+    <pre>
+folder: profile-insights
+
+features:
+  path: ""
+
+targets:
+  path: ""
+
+models: xgboost
+    </pre>
+  </div>
+</div>
+
       <div id="search-results-container"></div>
       <div id="menu-container"></div>
       <div id="product-container"></div>
@@ -377,3 +516,5 @@ function toggleCategorySidebar() {
 </div>
 </body>
 </html>
+
+

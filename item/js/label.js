@@ -10,6 +10,103 @@ if (typeof jsyaml === "undefined") {
     s.src = "https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js";
     document.head.appendChild(s);
 }
+// Page cache used by Insights (Get Insights panel)
+window.profileItemCache = window.profileItemCache || {};
+// Persist across refresh
+const PROFILE_ITEM_CACHE_KEY = "profileItemCache";
+
+try {
+  const saved = JSON.parse(sessionStorage.getItem(PROFILE_ITEM_CACHE_KEY) || "{}");
+  window.profileItemCache = { ...saved, ...(window.profileItemCache || {}) };
+} catch (e) {
+  // ignore
+}
+
+function saveProfileItemCache() {
+  try {
+    sessionStorage.setItem(PROFILE_ITEM_CACHE_KEY, JSON.stringify(window.profileItemCache || {}));
+  } catch (e) {
+    // ignore
+  }
+}
+function safeEncodeForHash(v) {
+  if (v == null) return v;
+  if (typeof v !== "string") return v;
+  try {
+    // avoid double-encoding
+    return encodeURIComponent(decodeURIComponent(v));
+  } catch (e) {
+    return encodeURIComponent(v);
+  }
+}
+
+function safeGoHash(obj, removeKeys) {
+  if (typeof goHash !== "function" && typeof updateHash !== "function") return;
+
+  const encoded = {};
+  for (const k in obj) {
+    encoded[k] = safeEncodeForHash(obj[k]);
+  }
+
+  if (typeof goHash === "function") {
+    goHash(encoded, removeKeys);
+  } else {
+    updateHash(encoded, true, removeKeys);
+  }
+}
+
+// Push cached USDA API url into Insights YAML/hash (so Get Insights uses it)
+function syncInsightsPathFromCache() {
+  try {
+    const url =
+        window.profileItemCache.lastFoodApiUrl ||
+        window.profileItemCache.lastFoodSearchApiUrl;
+
+if (!url) return;
+
+
+    // 1) Update the YAML editor if it's present
+    if (typeof applyCachedFoodApiUrlToYaml === "function") {
+      applyCachedFoodApiUrlToYaml();
+    }
+
+       // 2) Update hash (persist) AND remove Bee Density parambase
+    const h = (typeof getHash === "function") ? getHash() : getUrlHash();
+    const existing = h && (h["features.path"] || h.features?.path);
+
+    // Decide correct value for features.path
+    const nextPath = url;
+
+
+    const isProfileItem = window.location.pathname.includes('/profile/item');
+
+const foodSearchUrl = window.profileItemCache?.lastFoodSearchApiUrl;
+
+// Build hash update
+const hashUpdate = { "features.path": nextPath };
+
+//   Put the search endpoint into hash too 
+if (foodSearchUrl) {
+  hashUpdate.foodSearchUrl = foodSearchUrl;
+}
+
+ 
+safeGoHash(hashUpdate, isProfileItem ? "parambase,customYamlUrl" : "customYamlUrl");
+
+try {
+  document.dispatchEvent(new Event("hashChangeEvent"));
+  window.dispatchEvent(new HashChangeEvent("hashchange"));
+} catch (e) {
+  // ignore
+}
+
+
+
+  } catch (e) {
+    console.warn("syncInsightsPathFromCache failed:", e);
+  }
+}
+
 
 let searchResults = []; // Store current search results
 let lastHashSignature = null;
@@ -18,6 +115,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.addEventListener) {
         document.addEventListener("hashChangeEvent", loadMenu, false);
     }
+
+      window.addEventListener("hashchange", () => {
+    loadMenu();
+    updateTopicSelectLinks?.();
+  });
+      syncInsightsPathFromCache();
     loadMenu();
     setupTopicSelect();
 });
@@ -327,7 +430,7 @@ async function loadMenu() {
     const header = document.getElementById("page-header");
     const sidebar = document.getElementById("category-sidebar");
 
-    // Critical fix: DOM not ready when this runs on model.earth
+    //   DOM not ready when this runs on model.earth
     if (!header) {
         lastHashSignature = null;
         if (typeof waitForElm === "function") {
@@ -404,9 +507,15 @@ async function loadMenu() {
 
     // Food view (no layout parameter)
     addUSDASearchBar();
-    if (searchResultsContainer) searchResultsContainer.style.display = "";
-    if (menuContainer) menuContainer.style.display = "";
-    loadFoodCategorySidebar();
+   
+const isProfileItem = window.location.pathname.includes("/profile/item");
+if (searchResultsContainer) {
+  searchResultsContainer.style.display = isProfileItem ? "none" : "";
+}
+
+if (menuContainer) menuContainer.style.display = "";
+loadFoodCategorySidebar();
+
 
     // Show sidebar if no specific food id in hash
     if (!hash.id) {
@@ -1100,7 +1209,32 @@ function searchUSDAFoodByCategory(categoryQuery) {
         searchQuery = categoryQuery + " American";
     }
 
+
     const apiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&pageSize=20&pageNumber=1`;
+
+    // Cache for Insights
+    window.profileItemCache = window.profileItemCache || {};
+
+window.profileItemCache.lastFoodSearchApiUrl = apiUrl;
+window.profileItemCache.lastFoodQuery = searchQuery;
+window.profileItemCache.lastCountry = selectedCountry;
+window.profileItemCache.lastLayout = "food";
+saveProfileItemCache();
+
+//   Make /profile/item able to rebuild the dropdown from the hash
+try {
+  if (typeof goHash === "function") {
+    safeGoHash({ foodSearchUrl: apiUrl });
+
+  } else if (typeof updateHash === "function") {
+    updateHash({ foodSearchUrl: apiUrl }, true, "foodSearchUrl");
+  }
+  // force listeners even if localsite skips history update
+  document.dispatchEvent(new Event("hashChangeEvent"));
+  window.dispatchEvent(new Event("hashchange"));
+} catch (e) {}
+
+syncInsightsPathFromCache();
 
     const container = document.getElementById("search-results-container");
     container.innerHTML = "<h3>Loading...</h3>";
@@ -1117,6 +1251,20 @@ function searchUSDAFoodByCategory(categoryQuery) {
         .then(data => {
             if (data.foods && data.foods.length > 0) {
                 searchResults = data.foods;
+                try {
+  const apiKey = "bLecediTVa2sWd8AegmUZ9o7DxYFSYoef9B4i1Ml";
+  window.profileItemCache = window.profileItemCache || {};
+  window.profileItemCache.lastFoodSearchResults = (data.foods || [])
+    .filter(f => f && f.fdcId)
+    .map(f => ({
+      label: f.description,
+      url: `https://api.nal.usda.gov/fdc/v1/food/${f.fdcId}?api_key=${apiKey}`,
+      fdcId: f.fdcId
+    }));
+  saveProfileItemCache();
+  if (typeof populateFoodDropdown === "function") populateFoodDropdown();
+} catch(e) {}
+
                 displayCategoryResults(categoryQuery);
             } else {
                 container.innerHTML = `<p>No foods found in this category.</p>`;
@@ -1172,7 +1320,10 @@ function displayCategoryResults(categoryName) {
     container.querySelectorAll(".add-to-menu-btn").forEach(button => {
         button.onclick = function() {
             const index = parseInt(button.dataset.index);
-            addFoodToMenu(searchResults[index]);
+            const food = searchResults[index];
+cacheSelectedFood(food);
+addFoodToMenu(food);
+
         };
     });
 
@@ -1632,6 +1783,8 @@ function addUSDASearchBar() {
         }
     }
 
+     if (window.__usdaListenersAdded) return;
+  window.__usdaListenersAdded = true;
     // Event listeners for search functionality
     document.addEventListener('click', (e) => {
         if (e.target && e.target.id === 'usda-search-button') {
@@ -1666,8 +1819,45 @@ function searchUSDAFood(query = "apple", targetContainer = null) {
     } else if (selectedCountry === "US") {
         searchQuery = query + " American";
     }
+const q = encodeURIComponent(String(query || "").trim());
+    const apiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${q}`;
+    window.profileItemCache = window.profileItemCache || {};
 
-    const apiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&pageSize=10&pageNumber=1`;
+    // Cache for Insights
+window.profileItemCache.lastFoodSearchApiUrl = apiUrl;
+window.profileItemCache.lastFoodQuery = searchQuery;
+window.profileItemCache.lastCountry = selectedCountry;
+window.profileItemCache.lastLayout = "food";
+saveProfileItemCache();
+//   Make /profile/item able to rebuild the dropdown from the hash
+try {
+  if (typeof goHash === "function") {
+    safeGoHash({ foodSearchUrl: apiUrl });
+
+  } else if (typeof updateHash === "function") {
+    updateHash({ foodSearchUrl: apiUrl }, true, "foodSearchUrl");
+  }
+  // force listeners even if localsite skips history update
+  document.dispatchEvent(new Event("hashChangeEvent"));
+  window.dispatchEvent(new Event("hashchange"));
+} catch (e) {}
+
+if (typeof populateFoodDropdown === "function") {
+  populateFoodDropdown();
+}
+
+
+
+console.log("Cached USDA API URL:", apiUrl);
+
+// Force Insights YAML to update
+if (typeof applyCachedFoodApiUrlToYaml === "function") {
+    applyCachedFoodApiUrlToYaml();
+}
+
+syncInsightsPathFromCache();
+
+
     return fetch(apiUrl)
         .then(response => {
             if (!response.ok) {
@@ -1680,6 +1870,42 @@ function searchUSDAFood(query = "apple", targetContainer = null) {
         .then(data => {
             if (data.foods && data.foods.length > 0) {
                 searchResults = data.foods;
+                try {
+  window.profileItemCache = window.profileItemCache || {};
+  window.profileItemCache.recentFoods = window.profileItemCache.recentFoods || [];
+
+  const apiKey = "bLecediTVa2sWd8AegmUZ9o7DxYFSYoef9B4i1Ml";
+
+  // Convert search results into dropdown entries
+  const batch = data.foods
+    .filter(f => f && f.fdcId)
+    .map(f => ({
+      label: f.description,
+      url: `https://api.nal.usda.gov/fdc/v1/food/${f.fdcId}?api_key=${apiKey}`
+    }));
+
+    window.profileItemCache.lastFoodSearchResults = batch;
+
+  // merge + de-dupe by url, keep latest first
+  const existing = window.profileItemCache.recentFoods;
+  const merged = [...batch, ...existing];
+  const seen = new Set();
+  window.profileItemCache.recentFoods = merged.filter(x => {
+    if (!x?.url || seen.has(x.url)) return false;
+    seen.add(x.url);
+    return true;
+  }).slice(0, 200); // keep as many as you want
+
+  saveProfileItemCache();
+  //   Only call this if /profile/item loaded that function
+if (typeof populateFoodDropdown === "function") {
+  populateFoodDropdown();
+}
+
+} catch (e) {
+  console.warn("Failed to cache search results:", e);
+}
+
                 if (targetContainer) {
                     displaySearchResults(targetContainer);
                 } else {
@@ -1755,7 +1981,10 @@ function displaySearchResults(targetContainer = null) {
     container.querySelectorAll(".add-to-menu-btn").forEach(button => {
         button.onclick = function() {
             const index = parseInt(button.dataset.index);
-            addFoodToMenu(searchResults[index]);
+            const food = searchResults[index];
+cacheSelectedFood(food);
+addFoodToMenu(food);
+
         };
     });
 
@@ -1862,7 +2091,40 @@ function displayInitialFoodItems() {
     }
 }
 
+function cacheSelectedFood(food) {
+  try {
+    const apiKey = "bLecediTVa2sWd8AegmUZ9o7DxYFSYoef9B4i1Ml";
+    const foodLabel = food?.description || "Selected food";
+    const foodApiUrl = `https://api.nal.usda.gov/fdc/v1/food/${food.fdcId}?api_key=${apiKey}`;
+
+    window.profileItemCache = window.profileItemCache || {};
+    window.profileItemCache.recentFoods = window.profileItemCache.recentFoods || [];
+
+    const entry = { label: foodLabel, url: foodApiUrl };
+
+    window.profileItemCache.recentFoods = [
+  entry,
+  ...(window.profileItemCache.recentFoods.filter(x => x.url !== foodApiUrl))
+].slice(0, 200);
+
+
+    // This is what Insights should use
+    window.profileItemCache.lastFoodApiUrl = foodApiUrl;
+
+    // persist
+    saveProfileItemCache();
+
+    // push into hash/yaml if needed
+    syncInsightsPathFromCache();
+  } catch (e) {
+    console.warn("cacheSelectedFood failed:", e);
+  }
+}
+
+
 function addFoodToMenu(food) {
+
+    cacheSelectedFood(food);
 
     // Check if food is already in menu
     const existingIndex = menuItems.findIndex(item =>
@@ -1900,12 +2162,16 @@ function usdaProfileObject(usdaItem) {
     });
 
     // Create a more flexible lookup that tries multiple possible names
-    const getValue = (nutrientName) => {
-        if (nutrients[nutrientName] !== undefined) {
-            return nutrients[nutrientName];
-        }
-        return 0;
-    };
+   const getValue = (nutrientName) => {
+  if (Array.isArray(nutrientName)) {
+    for (const n of nutrientName) {
+      if (nutrients[n] !== undefined) return nutrients[n];
+    }
+    return 0;
+  }
+  return nutrients[nutrientName] !== undefined ? nutrients[nutrientName] : 0;
+};
+
 
     return {
         itemName: usdaItem.description,
@@ -2674,6 +2940,10 @@ async function loadProfile() {
                 try {
                     const rawBase = "https://raw.githubusercontent.com/ModelEarth/products-data/refs/heads/main";
                     const yamlUrl = `${rawBase}/${hash.country}/${hash.cat}/${hash.id}.yaml`;
+                    window.profileItemCache.lastProductYamlUrl = yamlUrl;
+window.profileItemCache.lastCountry = hash.country;
+window.profileItemCache.lastLayout = "product";
+
                     console.log("Loading product YAML from:", yamlUrl);
 
                     const yamlText = await fetchText(yamlUrl);
