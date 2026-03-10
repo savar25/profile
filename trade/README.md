@@ -78,7 +78,7 @@ The [useeio_internal_concordance.csv](https://github.com/ModelEarth/USEEIO/blob/
 ## Member CRM tables
 
 [SuiteCRM](../crm) - Partner Data analysis using Azure, SQL Express and MariaDB.
-[MemberCommons Admin Dashboard](../../team/admin)  
+[Admin Dashboard](../../team/admin)  
 
 
 
