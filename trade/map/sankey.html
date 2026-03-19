@@ -263,42 +263,111 @@ d3.csv(CSV_URL).then(function(data) {
 // Build Sankey data from rawData
 // ---------------------------------------------------------------------------
 function buildSankeyData(metricKey, topN) {
-  // Aggregate: (industry1, industry2) → sum of metric
+  // Step 1: Aggregate raw rows → (src, tgt) total value; skip self-loops.
   const flowMap = new Map();
   for (const row of rawData) {
     const src = row.industry1;
     const tgt = row.industry2;
-    if (!src || !tgt || src === tgt) continue; // skip missing or self-loops
+    if (!src || !tgt || src === tgt) continue;
     const val = parseFloat(row[metricKey]);
     if (!isFinite(val) || val <= 0) continue;
     const key = src + "\x00" + tgt;
     flowMap.set(key, (flowMap.get(key) || 0) + val);
   }
 
-  // Sort descending by value, keep top N
-  const sorted = Array.from(flowMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topN);
-
-  // Collect unique node labels (readable names)
-  const nodeSet = new Set();
-  for (const [key] of sorted) {
-    const [src, tgt] = key.split("\x00");
-    nodeSet.add(sectorLabel(src));
-    nodeSet.add(sectorLabel(tgt));
+  // Step 2: Resolve bidirectional pairs (A→B and B→A) — keep only the
+  // dominant direction so the aggregated graph has no 2-node cycles.
+  const resolvedMap = new Map();
+  for (const [key, val] of flowMap) {
+    const sep    = key.indexOf("\x00");
+    const src    = key.slice(0, sep);
+    const tgt    = key.slice(sep + 1);
+    const revKey = tgt + "\x00" + src;
+    if (resolvedMap.has(revKey)) {
+      if (val > resolvedMap.get(revKey)) {
+        resolvedMap.delete(revKey);
+        resolvedMap.set(key, val);
+      }
+      // else reverse direction is dominant — leave it, drop this one.
+    } else {
+      resolvedMap.set(key, val);
+    }
   }
 
+  // Step 3: Sort descending, take top N, convert to link objects.
+  let links = Array.from(resolvedMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([key, value]) => {
+      const sep = key.indexOf("\x00");
+      return {
+        source: sectorLabel(key.slice(0, sep)),
+        target: sectorLabel(key.slice(sep + 1)),
+        value,
+      };
+    });
+
+  // Step 4: Strip any remaining multi-node cycles via iterative DFS.
+  // Each pass finds all back-edges; remove the lowest-value one and repeat.
+  links = removeCycles(links);
+
+  // Step 5: Collect unique node names from the clean link set.
+  const nodeSet = new Set();
+  for (const lk of links) { nodeSet.add(lk.source); nodeSet.add(lk.target); }
   const nodes = Array.from(nodeSet).map(name => ({ name }));
-  const links = sorted.map(([key, value]) => {
-    const [src, tgt] = key.split("\x00");
-    return {
-      source: sectorLabel(src),
-      target: sectorLabel(tgt),
-      value:  value,
-    };
-  });
 
   return { nodes, links };
+}
+
+// ---------------------------------------------------------------------------
+// Cycle removal helpers
+// ---------------------------------------------------------------------------
+
+// Returns all back-edges found by DFS (edges whose target is "gray" / on the
+// current recursion stack, meaning they point back into an ancestor).
+function findBackEdges(links) {
+  const adj = new Map();
+  for (const lk of links) {
+    if (!adj.has(lk.source)) adj.set(lk.source, []);
+    adj.get(lk.source).push(lk);
+  }
+
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color    = new Map();
+  const backEdges = [];
+
+  function dfs(node) {
+    color.set(node, GRAY);
+    for (const lk of (adj.get(node) || [])) {
+      const c = color.get(lk.target) || WHITE;
+      if (c === GRAY) {
+        backEdges.push(lk);        // back-edge → cycle
+      } else if (c === WHITE) {
+        dfs(lk.target);
+      }
+    }
+    color.set(node, BLACK);
+  }
+
+  const nodes = new Set();
+  for (const lk of links) { nodes.add(lk.source); nodes.add(lk.target); }
+  for (const node of nodes) {
+    if (!color.get(node)) dfs(node);
+  }
+  return backEdges;
+}
+
+// Repeatedly remove the lowest-value back-edge until the graph is a DAG.
+function removeCycles(links) {
+  let remaining = links.slice();
+  for (let guard = 0; guard < links.length; guard++) {
+    const backs = findBackEdges(remaining);
+    if (backs.length === 0) break;
+    // Drop the cheapest back-edge (least information loss).
+    const worst = backs.reduce((min, e) => e.value < min.value ? e : min);
+    remaining = remaining.filter(lk => lk !== worst);
+  }
+  return remaining;
 }
 
 // ---------------------------------------------------------------------------
