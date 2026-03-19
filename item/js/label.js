@@ -1795,6 +1795,8 @@ function addUSDASearchBar() {
                 <select id="country-dropdown" style="margin-right: 10px;">
                     <option value="US" ${selectedCountry === 'US' ? 'selected' : ''}>US</option>
                     <option value="IN" ${selectedCountry === 'IN' ? 'selected' : ''}>India</option>
+                    <option value="GB" ${selectedCountry === 'GB' ? 'selected' : ''}>GB</option>
+                    <option value="DE" ${selectedCountry === 'DE' ? 'selected' : ''}>DE</option>
                 </select>
                 <input type="text" id="search-input" placeholder="${placeholder}" style="width:300px;">
                 <button id="usda-search-button" class="add-to-menu-btn">Search</button>

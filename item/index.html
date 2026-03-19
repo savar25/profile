@@ -374,6 +374,12 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!btn || !panel) return;
 
 btn.addEventListener('click', function() {
+  const isVisible = window.getComputedStyle(panel).display !== 'none';
+  if (isVisible) {
+    panel.style.display = 'none';
+    return;
+  }
+
   panel.style.display = 'block';
 
  const cachedFoodPath =
@@ -445,13 +451,13 @@ if (typeof window.rsRefreshFromYaml === 'function') {
 
   <div class="header-row">
     <div class="header-left">
-      <button id="menu-toggle-btn" class="menu-toggle-btn" onclick="toggleCategorySidebar()" title="Toggle categories menu">
+      <button id="menu-toggle-btn" class="menu-toggle-btn btn" onclick="toggleCategorySidebar()" title="Toggle categories menu">
         <i class="material-icons menu-icon">menu</i>
       </button>
       <div id="page-header"><b>Item Profiles:</b> <a href="">Healthy Meals</a> and <a href="#layout=product">Building Materials</a></div>
     </div>
     <div class="header-right">
-      <button id="getInsightsBtn" class="menu-toggle-btn" type="button" title="Menu Insights">
+      <button id="getInsightsBtn" class="menu-toggle-btn btn" type="button" title="Menu Insights">
   Menu Insights
 </button>
 
@@ -460,7 +466,7 @@ if (typeof window.rsRefreshFromYaml === 'function') {
         <option value="add-new">+ Add New Menu</option>
       </select>
       <div id="menu-options-wrapper" class="menu-options-wrapper">
-        <button id="menu-options-btn" class="menu-toggle-btn" onclick="toggleMenuOptions()" title="Menu options">
+        <button id="menu-options-btn" class="menu-toggle-btn btn" onclick="toggleMenuOptions()" title="Menu options">
           <i class="material-icons menu-icon">more_vert</i>
         </button>
         <div id="menu-options-dropdown" class="menu-options-dropdown">
@@ -541,5 +547,4 @@ models: xgboost
 </div>
 </body>
 </html>
-
 
