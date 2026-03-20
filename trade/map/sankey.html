@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>Exiobase Industry Trade Flow Sankey</title>
+<link type="text/css" rel="stylesheet" href="/localsite/css/base.css" />
+<script type="text/javascript" src="/localsite/js/localsite.js?showheader=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  .sankey-page-header {
+    margin: 1em 0 0.25em;
+  }
+  .sankey-page-header h2 {
+    margin: 0 0 0.2em;
+    font-size: 1.5em;
+  }
+  .sankey-page-header p {
+    margin: 0 0 1em;
+    color: #555;
+    font-size: 0.95em;
+  }
+  #sankey-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    align-items: center;
+    padding: 0.75em 1em;
+    background: #f4f6f8;
+    border: 1px solid #dde1e7;
+    border-radius: 6px;
+    margin-bottom: 0.75em;
+  }
+  #sankey-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.93em;
+    color: #333;
+  }
+  #sankey-controls select {
+    padding: 0.25em 0.5em;
+    font-size: 0.93em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+  #sankey-controls input[type=range] {
+    width: 120px;
+    cursor: pointer;
+  }
+  #topn-label {
+    font-weight: 600;
+    min-width: 2em;
+    text-align: right;
+  }
+  #sankey-status {
+    font-size: 0.88em;
+    color: #666;
+    font-style: italic;
+    margin: 0 0 0.5em;
+    min-height: 1.3em;
+  }
+  #sankey-chart {
+    width: 100%;
+    height: 640px;
+    border: 1px solid #e8eaed;
+    border-radius: 4px;
+    background: #fff;
+  }
+  #sankey-attribution {
+    margin-top: 1em;
+    padding-top: 0.75em;
+    border-top: 1px solid #dde1e7;
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.8;
+  }
+  #sankey-attribution a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  #sankey-attribution a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<div class="content contentpadding">
+
+  <div class="sankey-page-header">
+    <h2>Exiobase Industry Trade Flow Sankey</h2>
+    <p>
+      Global industry-to-industry embodied environmental flows &middot;
+      World aggregate (WM) &middot; 2022 baseline &middot;
+      <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
+    </p>
+  </div>
+
+  <div id="sankey-controls">
+    <label>
+      Indicator:
+      <select id="metric-select">
+        <option value="CO2_total">CO&#x2082; Emissions</option>
+        <option value="Water_total">Water Use</option>
+        <option value="Employment_total">Employment</option>
+        <option value="amount">Trade Amount (USD)</option>
+      </select>
+    </label>
+    <label>
+      Top flows:
+      <input type="range" id="topn-slider" min="5" max="50" step="1" value="20">
+      <span id="topn-label">20</span>
+    </label>
+  </div>
+
+  <div id="sankey-status">Loading data&hellip;</div>
+  <div id="sankey-chart"></div>
+
+  <div id="sankey-attribution">
+    <strong>Data source:</strong>
+    <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
+    (multi-regional input-output database, 44 countries, 163 sectors) &middot;
+    <a href="https://github.com/ModelEarth/trade-data" target="_blank" rel="noopener">ModelEarth/trade-data</a>
+    &middot; CSV: <code>year/2022/WM/domestic/trade_impact.csv</code>
+    &middot; Part of
+    <a href="https://github.com/modelearth/projects/issues/65" target="_blank" rel="noopener">ModelEarth/projects Issue #65</a>
+  </div>
+
+</div><!-- end .content.contentpadding -->
+
+<script>
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+const CSV_URL =
+  "https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/WM/domestic/trade_impact.csv";
+
+// Exiobase 3 sector code → readable name (~60 most common codes)
+const SECTOR_NAMES = {
+  AGRIC: "Agriculture",
+  AGRI:  "Agriculture",
+  FORE:  "Forestry",
+  FISH:  "Fishing",
+  COAL:  "Coal Mining",
+  CRUDE: "Crude Oil & Gas",
+  URAN:  "Uranium Mining",
+  IRON:  "Iron Ore Mining",
+  NFMET: "Non-ferrous Metal Ores",
+  STONE: "Stone Quarrying",
+  SALT:  "Salt Mining",
+  NATUR: "Natural Resources",
+  MINNG: "Mining & Quarrying",
+  FOOD:  "Food Products",
+  BEVER: "Beverages",
+  TOBAC: "Tobacco",
+  TEXTI: "Textiles",
+  WEAR:  "Wearing Apparel",
+  LEATH: "Leather & Footwear",
+  WOOD:  "Wood Products",
+  PAPER: "Paper & Pulp",
+  PRINT: "Printing & Publishing",
+  PETRO: "Petroleum Refining",
+  NUCLE: "Nuclear Fuel",
+  CHEMI: "Basic Chemicals",
+  SPCHE: "Specialty Chemicals",
+  PHARMA:"Pharmaceuticals",
+  FERTL: "Fertilizers",
+  RUBBE: "Rubber & Plastics",
+  PLAST: "Plastics",
+  GLASS: "Glass & Ceramics",
+  CEMEN: "Cement & Concrete",
+  STEEL: "Iron & Steel",
+  NFMTL: "Non-ferrous Metals",
+  METAL: "Fabricated Metals",
+  MACHI: "Machinery & Equipment",
+  OFMAC: "Office Machinery",
+  ELECT: "Electrical Equipment",
+  ELEC2: "Electricity",
+  RADIO: "Radio & TV Equipment",
+  MEDIC: "Medical Instruments",
+  MOTOR: "Motor Vehicles",
+  SHIPS: "Shipbuilding",
+  AIRCR: "Aircraft",
+  RAILW: "Railway Equipment",
+  FURNI: "Furniture",
+  RECYC: "Recycling",
+  CONST: "Construction",
+  DISTR: "Trade & Distribution",
+  HOTEL: "Hotels & Restaurants",
+  TRANS: "Transport Services",
+  AIRTX: "Air Transport",
+  WATRX: "Water Transport",
+  POST:  "Post & Telecom",
+  FINAN: "Financial Services",
+  INSUR: "Insurance",
+  REALE: "Real Estate",
+  RESEA: "Research & Development",
+  PUBLI: "Public Administration",
+  EDUCA: "Education",
+  HEALT: "Health Services",
+  SEWAG: "Sewage & Waste Treatment",
+  GAS:   "Gas Supply",
+  WATR:  "Water Supply",
+  GASES: "Industrial Gases",
+};
+
+// Per-metric display config
+// Scale: divisor to convert raw values to display units
+const METRICS = {
+  CO2_total:        { label: "CO\u2082 Emissions",  unit: "Gt CO\u2082",  scale: 1e12 },
+  Water_total:      { label: "Water Use",            unit: "Gm\u00B3",     scale: 1e9  },
+  Employment_total: { label: "Employment",           unit: "M jobs",        scale: 1e6  },
+  amount:           { label: "Trade Amount",         unit: "M USD",         scale: 1e6  },
+};
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let rawData = null;
+let currentMetric = "CO2_total";
+let currentTopN   = 20;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function sectorLabel(code) {
+  return SECTOR_NAMES[code] || code;
+}
+
+function fmtValue(val, metricKey) {
+  const m = METRICS[metricKey];
+  const scaled = val / m.scale;
+  const formatted = scaled >= 1000
+    ? scaled.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : scaled.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return formatted + "\u00A0" + m.unit;
+}
+
+function setStatus(msg) {
+  document.getElementById("sankey-status").textContent = msg;
+}
+
+// ---------------------------------------------------------------------------
+// eCharts instance
+// ---------------------------------------------------------------------------
+const chartDom = document.getElementById("sankey-chart");
+const chart = echarts.init(chartDom);
+window.addEventListener("resize", () => chart.resize());
+
+// ---------------------------------------------------------------------------
+// Data fetch
+// ---------------------------------------------------------------------------
+d3.csv(CSV_URL).then(function(data) {
+  rawData = data;
+  setStatus("Loaded " + data.length.toLocaleString() + " trade flow records.");
+  render();
+}).catch(function(err) {
+  setStatus("Error loading CSV: " + err.message);
+});
+
+// ---------------------------------------------------------------------------
+// Build Sankey data from rawData
+// ---------------------------------------------------------------------------
+function buildSankeyData(metricKey, topN) {
+  // Step 1: Aggregate raw rows → (src, tgt) total value; skip self-loops.
+  const flowMap = new Map();
+  for (const row of rawData) {
+    const src = row.industry1;
+    const tgt = row.industry2;
+    if (!src || !tgt || src === tgt) continue;
+    const val = parseFloat(row[metricKey]);
+    if (!isFinite(val) || val <= 0) continue;
+    const key = src + "\x00" + tgt;
+    flowMap.set(key, (flowMap.get(key) || 0) + val);
+  }
+
+  // Step 2: Resolve bidirectional pairs (A→B and B→A) — keep only the
+  // dominant direction so the aggregated graph has no 2-node cycles.
+  const resolvedMap = new Map();
+  for (const [key, val] of flowMap) {
+    const sep    = key.indexOf("\x00");
+    const src    = key.slice(0, sep);
+    const tgt    = key.slice(sep + 1);
+    const revKey = tgt + "\x00" + src;
+    if (resolvedMap.has(revKey)) {
+      if (val > resolvedMap.get(revKey)) {
+        resolvedMap.delete(revKey);
+        resolvedMap.set(key, val);
+      }
+      // else reverse direction is dominant — leave it, drop this one.
+    } else {
+      resolvedMap.set(key, val);
+    }
+  }
+
+  // Step 3: Sort descending, take top N, convert to link objects.
+  let links = Array.from(resolvedMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([key, value]) => {
+      const sep = key.indexOf("\x00");
+      return {
+        source: sectorLabel(key.slice(0, sep)),
+        target: sectorLabel(key.slice(sep + 1)),
+        value,
+      };
+    });
+
+  // Step 4: Strip any remaining multi-node cycles via iterative DFS.
+  // Each pass finds all back-edges; remove the lowest-value one and repeat.
+  links = removeCycles(links);
+
+  // Step 5: Collect unique node names from the clean link set.
+  const nodeSet = new Set();
+  for (const lk of links) { nodeSet.add(lk.source); nodeSet.add(lk.target); }
+  const nodes = Array.from(nodeSet).map(name => ({ name }));
+
+  return { nodes, links };
+}
+
+// ---------------------------------------------------------------------------
+// Cycle removal helpers
+// ---------------------------------------------------------------------------
+
+// Returns all back-edges found by DFS (edges whose target is "gray" / on the
+// current recursion stack, meaning they point back into an ancestor).
+function findBackEdges(links) {
+  const adj = new Map();
+  for (const lk of links) {
+    if (!adj.has(lk.source)) adj.set(lk.source, []);
+    adj.get(lk.source).push(lk);
+  }
+
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color    = new Map();
+  const backEdges = [];
+
+  function dfs(node) {
+    color.set(node, GRAY);
+    for (const lk of (adj.get(node) || [])) {
+      const c = color.get(lk.target) || WHITE;
+      if (c === GRAY) {
+        backEdges.push(lk);        // back-edge → cycle
+      } else if (c === WHITE) {
+        dfs(lk.target);
+      }
+    }
+    color.set(node, BLACK);
+  }
+
+  const nodes = new Set();
+  for (const lk of links) { nodes.add(lk.source); nodes.add(lk.target); }
+  for (const node of nodes) {
+    if (!color.get(node)) dfs(node);
+  }
+  return backEdges;
+}
+
+// Repeatedly remove the lowest-value back-edge until the graph is a DAG.
+function removeCycles(links) {
+  let remaining = links.slice();
+  for (let guard = 0; guard < links.length; guard++) {
+    const backs = findBackEdges(remaining);
+    if (backs.length === 0) break;
+    // Drop the cheapest back-edge (least information loss).
+    const worst = backs.reduce((min, e) => e.value < min.value ? e : min);
+    remaining = remaining.filter(lk => lk !== worst);
+  }
+  return remaining;
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function render() {
+  if (!rawData) return;
+
+  const m = METRICS[currentMetric];
+  const { nodes, links } = buildSankeyData(currentMetric, currentTopN);
+
+  if (links.length === 0) {
+    setStatus("No data available for this combination.");
+    chart.clear();
+    return;
+  }
+
+  const option = {
+    tooltip: {
+      trigger: "item",
+      triggerOn: "mousemove",
+      confine: true,
+      formatter: function(params) {
+        if (params.dataType === "edge") {
+          return (
+            "<b>" + params.data.source + "</b>"
+            + " &rarr; "
+            + "<b>" + params.data.target + "</b>"
+            + "<br/>"
+            + m.label + ": <b>" + fmtValue(params.data.value, currentMetric) + "</b>"
+          );
+        }
+        // Node tooltip — sum of all adjacent links
+        return "<b>" + params.name + "</b>";
+      },
+    },
+    series: [{
+      type: "sankey",
+      layout: "none",
+      layoutIterations: 32,
+      emphasis: {
+        focus: "adjacency",
+      },
+      nodeAlign: "left",
+      nodeGap: 14,
+      nodeWidth: 22,
+      left:   "1%",
+      right:  "22%",
+      top:    "2%",
+      bottom: "4%",
+      data:  nodes,
+      links: links,
+      label: {
+        position: "right",
+        fontSize: 12,
+        color: "#333",
+        formatter: function(params) { return params.name; },
+      },
+      lineStyle: {
+        color:     "gradient",
+        opacity:   0.45,
+        curveness: 0.5,
+      },
+      itemStyle: {
+        borderWidth: 1,
+        borderColor: "#aaa",
+      },
+    }],
+  };
+
+  chart.setOption(option, /* notMerge = */ true);
+
+  setStatus(
+    "Showing top\u00A0" + links.length + " flows by " + m.label
+    + " \u00B7 " + nodes.length + " industries"
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Controls
+// ---------------------------------------------------------------------------
+document.getElementById("metric-select").addEventListener("change", function(e) {
+  currentMetric = e.target.value;
+  render();
+});
+
+document.getElementById("topn-slider").addEventListener("input", function(e) {
+  currentTopN = parseInt(e.target.value, 10);
+  document.getElementById("topn-label").textContent = currentTopN;
+  render();
+});
+</script>
+</body>
+</html>
