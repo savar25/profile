@@ -90,8 +90,13 @@ See chart starter sample in upper right.
 In the CoLab, add the [Sector table output](https://github.com/ModelEarth/USEEIO/commit/c10d087d916477b3335127de560d4689fa5818ea) Ben created.
 -->
 
-TO DO: Create [interactive versions](/profile/impacts/) of the [three Exiobase charts](https://exiobase.eu)  
-See our various [Data Prep processes](/profile/prep/) - Three Charts using International Exiobase Data
+**Exiobase Interactive Charts** — Three Charts using International Exiobase Data ([Issue #65](https://github.com/modelearth/projects/issues/65))
+
+- ✅ **Sankey (eCharts)** — [Live chart](../trade/map/sankey.html) · industry-to-industry embodied CO₂, water, and employment flows for the World (WM) region, 2022 · [source](map/sankey.html)
+- 🔲 TO DO: **Trade Flow Map** (Leaflet/geographic) — needs real country-pair flow data (region1 ≠ region2)
+- 🔲 TO DO: **Chord Diagram** (D3) — needs bilateral region data; see existing D3 chord in [charts/d3/chord-diagram/](../charts/d3/chord-diagram/)
+
+See our various [Data Prep processes](/profile/prep/)
 
 TO DO: [Generate datasets for additional years and trade flow types](https://github.com/ModelEarth/projects/issues/30)
 
