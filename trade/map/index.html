@@ -371,6 +371,7 @@ function renderArrows(trades, targetCountry) {
             .style("cursor", "default");
 
         path.on("mouseover", function(evt) {
+                map.getContainer().style.cursor = "default";
                 applyHighlight(trade.from);
                 showTooltip(trade, targetCountry, evt);
             })
@@ -378,6 +379,7 @@ function renderArrows(trades, targetCountry) {
                 moveTooltip(evt);
             })
             .on("mouseout", function() {
+                map.getContainer().style.cursor = "";
                 hideTooltip();
                 if (selectedArrow) {
                     applyHighlight(selectedArrow);
