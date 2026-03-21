@@ -368,7 +368,7 @@ function renderArrows(trades, targetCountry) {
             .attr("data-base-sw", sw)
             .attr("data-from", trade.from)
             .attr("marker-end", `url(#${markerId})`)
-            .style("cursor", "pointer");
+            .style("cursor", "default");
 
         path.on("mouseover", function(evt) {
                 applyHighlight(trade.from);
