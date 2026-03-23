@@ -98,6 +98,21 @@
             stroke-width: 2.5px;
         }
 
+        #flow-toggle {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .toggle-opt {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+        }
+
         #legend {
             position: absolute;
             bottom: 30px;
@@ -141,7 +156,15 @@
 
     <div class="control-panel">
         <h4>Exiobase Trade Flows · 2022</h4>
-        <label for="country-select">Importing country:</label>
+        <div id="flow-toggle">
+            <label class="toggle-opt">
+                <input type="radio" name="flow-dir" value="imports" checked> Imports
+            </label>
+            <label class="toggle-opt">
+                <input type="radio" name="flow-dir" value="exports"> Exports
+            </label>
+        </div>
+        <label for="country-select" id="country-label">Importing country:</label>
         <select id="country-select">
             <option value="US">United States (US)</option>
             <option value="CN">China (CN)</option>
@@ -154,7 +177,7 @@
     </div>
 
     <div id="legend">
-        Arrow thickness = total embodied CO&#x2082; from exporter &rarr; importer
+        Arrow thickness = total embodied CO&#x2082; &middot; <span id="legend-dir">exporter &rarr; importer</span>
     </div>
     <div id="map-tooltip"></div>
 
@@ -230,6 +253,7 @@ const csvCache = new Map();
 // ---------------------------------------------------------------------------
 // Interaction state
 // ---------------------------------------------------------------------------
+let currentFlowDir = "imports";   // "imports" or "exports"
 let selectedArrow = null;
 const NORMAL_OPACITY    = 0.65;
 const HIGHLIGHT_OPACITY = 1.0;
@@ -240,9 +264,12 @@ const DIM_OPACITY       = 0.08;
 // ---------------------------------------------------------------------------
 const tooltip = document.getElementById("map-tooltip");
 
-function showTooltip(trade, targetCountry, evt) {
+function showTooltip(trade, focusCountry, flowDir, evt) {
+    const label = flowDir === "imports"
+        ? `${countryLabel(trade.from)} \u2192 ${countryLabel(focusCountry)}`
+        : `${countryLabel(focusCountry)} \u2192 ${countryLabel(trade.to)}`;
     tooltip.innerHTML =
-        `<div class="tt-direction">${countryLabel(trade.from)} \u2192 ${countryLabel(targetCountry)}</div>` +
+        `<div class="tt-direction">${label}</div>` +
         `<div class="tt-co2">${fmtCO2(trade.co2)}</div>`;
     tooltip.style.display = "block";
     moveTooltip(evt);
@@ -273,9 +300,9 @@ function hideTooltip() {
 // ---------------------------------------------------------------------------
 // Highlight / clear
 // ---------------------------------------------------------------------------
-function applyHighlight(fromCode) {
+function applyHighlight(partnerCode) {
     g.selectAll("path.arrow").style("opacity", DIM_OPACITY);
-    const targetPath = g.select("path.arrow-" + fromCode);
+    const targetPath = g.select("path.arrow-" + partnerCode);
     if (!targetPath.empty()) {
         const baseSW = parseFloat(targetPath.attr("data-base-sw")) || 2;
         targetPath
@@ -283,7 +310,7 @@ function applyHighlight(fromCode) {
             .style("stroke-width", (baseSW + 3) + "px");
     }
     document.querySelectorAll("#source-filters label").forEach(el => {
-        el.classList.toggle("highlighted", el.dataset.from === fromCode);
+        el.classList.toggle("highlighted", el.dataset.partner === partnerCode);
     });
 }
 
@@ -321,7 +348,7 @@ map.on("moveend", update);
 // ---------------------------------------------------------------------------
 // Render arrows
 // ---------------------------------------------------------------------------
-function renderArrows(trades, targetCountry) {
+function renderArrows(trades, focusCountry, flowDir) {
     g.selectAll("*").remove();
     svg.selectAll("defs").remove();
 
@@ -356,19 +383,19 @@ function renderArrows(trades, targetCountry) {
         const path = g.append("path")
             .datum(trade)
             .attr("id", pathId)
-            .attr("class", `arrow arrow-${trade.from}`)
+            .attr("class", `arrow arrow-${trade.partner}`)
             .attr("d", drawCurve(trade))
             .attr("stroke", color)
             .attr("stroke-width", sw)
             .attr("data-base-sw", sw)
-            .attr("data-from", trade.from)
+            .attr("data-partner", trade.partner)
             .attr("marker-end", `url(#${markerId})`)
             .style("opacity", NORMAL_OPACITY);
 
         path.on("mouseover", function(evt) {
                 map.getContainer().style.cursor = "default";
-                applyHighlight(trade.from);
-                showTooltip(trade, targetCountry, evt);
+                applyHighlight(trade.partner);
+                showTooltip(trade, focusCountry, flowDir, evt);
             })
             .on("mousemove", function(evt) {
                 moveTooltip(evt);
@@ -379,12 +406,12 @@ function renderArrows(trades, targetCountry) {
                 selectedArrow ? applyHighlight(selectedArrow) : clearHighlight();
             })
             .on("click", function() {
-                if (selectedArrow === trade.from) {
+                if (selectedArrow === trade.partner) {
                     selectedArrow = null;
                     clearHighlight();
                 } else {
-                    selectedArrow = trade.from;
-                    applyHighlight(trade.from);
+                    selectedArrow = trade.partner;
+                    applyHighlight(trade.partner);
                 }
             });
 
@@ -394,21 +421,21 @@ function renderArrows(trades, targetCountry) {
             .attr("startOffset", "42%")
             .attr("class", "label-text")
             .attr("text-anchor", "middle")
-            .text(trade.from);
+            .text(trade.partner);
     });
 }
 
 // ---------------------------------------------------------------------------
 // Build checkboxes
 // ---------------------------------------------------------------------------
-function buildCheckboxes(trades) {
+function buildCheckboxes(trades, focusCountry, flowDir) {
     const container = document.getElementById("source-filters");
     container.innerHTML = "";
     if (trades.length === 0) return;
 
     const header = document.createElement("div");
     header.style.cssText = "font-size:11px;font-weight:600;margin-bottom:6px;color:#333;";
-    header.textContent = "Toggle exporters:";
+    header.textContent = flowDir === "imports" ? "Toggle exporters:" : "Toggle importers:";
     container.appendChild(header);
 
     trades.forEach(trade => {
@@ -416,24 +443,18 @@ function buildCheckboxes(trades) {
         const checkbox = document.createElement("input");
         checkbox.type    = "checkbox";
         checkbox.checked = true;
-        checkbox.value   = trade.from;
-        label.dataset.from = trade.from;
+        checkbox.value   = trade.partner;
+        label.dataset.partner = trade.partner;
 
         checkbox.addEventListener("change", function() {
             const vis = this.checked ? "visible" : "hidden";
-            d3.selectAll(`.arrow-${trade.from}`).attr("visibility", vis);
-            d3.selectAll("textPath")
-              .filter(function() {
-                  return this.parentNode.__data__ &&
-                         this.parentNode.__data__.from === trade.from;
-              })
-              .attr("visibility", vis);
+            d3.selectAll(`.arrow-${trade.partner}`).attr("visibility", vis);
         });
 
         label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(` ${trade.from} \u2014 ${fmtCO2(trade.co2)}`));
+        label.appendChild(document.createTextNode(` ${trade.partner} \u2014 ${fmtCO2(trade.co2)}`));
 
-        label.addEventListener("mouseenter", () => applyHighlight(trade.from));
+        label.addEventListener("mouseenter", () => applyHighlight(trade.partner));
         label.addEventListener("mouseleave", () => {
             selectedArrow ? applyHighlight(selectedArrow) : clearHighlight();
         });
@@ -449,47 +470,74 @@ function setStatus(msg) {
     document.getElementById("status-msg").textContent = msg;
 }
 
-function processAndRender(data, targetCountry) {
+function processAndRender(data, focusCountry, flowDir) {
     const flowMap = new Map();
-    for (const row of data) {
-        const src = row.region1;
-        if (!src || src === targetCountry || !COORDS[src]) continue;
-        const val = parseFloat(row.CO2_total) || 0;
-        if (val <= 0) continue;
-        flowMap.set(src, (flowMap.get(src) || 0) + val);
+
+    if (flowDir === "imports") {
+        // Arrows: other countries → focusCountry
+        for (const row of data) {
+            const src = row.region1;
+            if (!src || src === focusCountry || !COORDS[src]) continue;
+            const val = parseFloat(row.CO2_total) || 0;
+            if (val <= 0) continue;
+            flowMap.set(src, (flowMap.get(src) || 0) + val);
+        }
+    } else {
+        // Exports: focusCountry → other countries
+        // Export files group by region2 as destination
+        for (const row of data) {
+            const dst = row.region2;
+            if (!dst || dst === focusCountry || !COORDS[dst]) continue;
+            const val = parseFloat(row.CO2_total) || 0;
+            if (val <= 0) continue;
+            flowMap.set(dst, (flowMap.get(dst) || 0) + val);
+        }
     }
 
     const trades = Array.from(flowMap.entries())
         .sort((a, b) => b[1] - a[1])
-        .map(([from, co2]) => ({ from, to: targetCountry, co2 }));
+        .map(([partner, co2]) => ({
+            from: flowDir === "imports" ? partner : focusCountry,
+            to:   flowDir === "imports" ? focusCountry : partner,
+            co2,
+            partner,
+        }));
 
     if (trades.length === 0) { setStatus("No data found."); return; }
 
-    setStatus(`${trades.length} exporters \u2192 ${countryLabel(targetCountry)}`);
-    renderArrows(trades, targetCountry);
-    buildCheckboxes(trades);
+    const arrow = flowDir === "imports"
+        ? `${trades.length} exporters \u2192 ${countryLabel(focusCountry)}`
+        : `${countryLabel(focusCountry)} \u2192 ${trades.length} importers`;
+    setStatus(arrow);
+
+    const legendDir = flowDir === "imports" ? "exporter \u2192 importer" : "exporter \u2192 importer";
+    document.getElementById("legend-dir").textContent = legendDir;
+
+    renderArrows(trades, focusCountry, flowDir);
+    buildCheckboxes(trades, focusCountry, flowDir);
 }
 
-function loadFlows(targetCountry) {
+function loadFlows(focusCountry, flowDir) {
     selectedArrow = null;
     hideTooltip();
     g.selectAll("*").remove();
     svg.selectAll("defs").remove();
     document.getElementById("source-filters").innerHTML = "";
 
+    const cacheKey = `${focusCountry}/${flowDir}`;
+
     // Serve from cache if available
-    if (csvCache.has(targetCountry)) {
-        setStatus(`${countryLabel(targetCountry)} (cached)`);
-        processAndRender(csvCache.get(targetCountry), targetCountry);
+    if (csvCache.has(cacheKey)) {
+        processAndRender(csvCache.get(cacheKey), focusCountry, flowDir);
         return;
     }
 
     setStatus("Loading\u2026");
-    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/${targetCountry}/imports/trade_impact.csv`;
+    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/${focusCountry}/${flowDir}/trade_impact.csv`;
 
     d3.csv(url).then(function(data) {
-        csvCache.set(targetCountry, data); // cache for next time
-        processAndRender(data, targetCountry);
+        csvCache.set(cacheKey, data);
+        processAndRender(data, focusCountry, flowDir);
     }).catch(function(err) {
         setStatus("Error loading data.");
         console.error("Trade flow fetch failed:", err);
@@ -497,13 +545,22 @@ function loadFlows(targetCountry) {
 }
 
 // ---------------------------------------------------------------------------
-// Country selector
+// Country selector + flow direction toggle
 // ---------------------------------------------------------------------------
 document.getElementById("country-select").addEventListener("change", function() {
-    loadFlows(this.value);
+    loadFlows(this.value, currentFlowDir);
 });
 
-loadFlows("US");
+document.querySelectorAll("input[name='flow-dir']").forEach(radio => {
+    radio.addEventListener("change", function() {
+        currentFlowDir = this.value;
+        const lbl = currentFlowDir === "imports" ? "Importing country:" : "Exporting country:";
+        document.getElementById("country-label").textContent = lbl;
+        loadFlows(document.getElementById("country-select").value, currentFlowDir);
+    });
+});
+
+loadFlows("US", "imports");
     </script>
 </body>
 </html>
