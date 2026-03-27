@@ -67,7 +67,7 @@ Available region codes follow ISO 3166-1 alpha-2 (e.g. `US`, `CN`, `DE`, `IN`) p
 | `Employment_total` | Employment indicator (scaled ÷1e6) |
 | `amount` | Trade amount in USD (scaled ÷1e6) |
 
-Full column list: `trade_id, year, region1, region2, industry1, industry2, amount, total_impact_value, factor_count, unique_factors, air_emissions, employment, material, water, CO2_total, Water_total, Employment_total, impact_intensity`
+Full column list: `trade_id, year, region1, region2, industry1, industry2, amount, total_level, factor_count, unique_factors, air_emissions, employment, material, water, CO2_total, Water_total, Employment_total, impact_intensity`
 
 ---
 
