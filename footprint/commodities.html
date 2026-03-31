@@ -226,7 +226,7 @@ function displayTable(locale, formatType) {
         var value = cell.getValue();
 
         if (formatType === "full") {
-          return new Intl.NumberFormat(navigator.language).format(value);
+          return new Intl.NumberFormat(locale).format(value);
         } else if (formatType === "scientific") {
           let scientificValue = Number(value).toExponential(1);
           let parts = scientificValue.split("e");
@@ -377,15 +377,7 @@ function displayTable(locale, formatType) {
 
 // Update the table with the selected locale
 function updateTable(locale) {
-
-    table.updateColumnDefinition("output", {
-        formatter: function(cell, formatterParams) {
-            var value = cell.getValue();
-            return new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0  }).format(value);
-        }
-    });
-
-    table.redraw();
+    displayTable(locale, getCurrentNumberFormat());
 }
 
 </script>
@@ -461,6 +453,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add commodities-specific event listeners
     localeSelect.addEventListener("change", function() {
+        numberFormatToggle.value = "full";
+        console.log("%cSwitched to full values so location-specific formatting is visible.", "color: green");
         updateTable(this.value);
     });
 
