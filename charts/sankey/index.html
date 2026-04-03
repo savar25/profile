@@ -1,3 +1,136 @@
-<script type="text/javascript">
-	window.location="../echarts/";
-</script>
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<title>Exiobase Industry Trade Flow Sankey</title>
+<link type="text/css" rel="stylesheet" href="/localsite/css/base.css" />
+<script type="text/javascript" src="/localsite/js/localsite.js?showheader=true&showsearch=true&showfilters=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link type="text/css" rel="stylesheet" href="css/sankey.css" />
+<script src="js/sankey.js" defer></script>
+</head>
+<body>
+<div class="contentpadding">
+
+  <div class="sankey-page-header">
+    <h2>Exiobase Industry Trade Flow Sankey</h2>
+    <p>
+      Global industry-to-industry embodied environmental flows &middot;
+      US aggregate (<abbr title="WM = US aggregate — all 44 Exiobase countries combined into a single region">US</abbr>)
+      <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
+    </p>
+  </div>
+
+  <div id="sankey-controls">
+    <label>
+      Country:
+      <select id="country-select">
+        <option value="AU">AU</option>
+        <option value="BR">BR</option>
+        <option value="CA">CA</option>
+        <option value="CN">CN</option>
+        <option value="DE">DE</option>
+        <option value="FR">FR</option>
+        <option value="GB">GB</option>
+        <option value="IN">IN</option>
+        <option value="IT">IT</option>
+        <option value="JP">JP</option>
+        <option value="KR">KR</option>
+        <option value="RU">RU</option>
+        <option value="US">US</option>
+        <option value="WM">WM</option>
+      </select>
+    </label>
+    <label>
+      Year:
+      <select id="year-select">
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+        <option value="2019">2019</option>
+      </select>
+    </label>
+    <label>
+      Indicator:
+      <select id="metric-select">
+        <option value="amount">Amount Spent</option>
+        <option value="CO2_total">CO&#x2082; Emissions</option>
+        <option value="Water_total">Water Use</option>
+        <option value="Employment_total">Employment</option>
+      </select>
+    </label>
+    <label id="currency-label">
+      Currency:
+      <select id="currency-select">
+        <option value="EUR">Euro</option>
+        <option value="USD">US Dollar</option>
+        <option value="AUD">Australian Dollar</option>
+        <option value="BGN">Bulgarian Lev</option>
+        <option value="BRL">Brazilian Real</option>
+        <option value="CAD">Canadian Dollar</option>
+        <option value="CHF">Swiss Franc</option>
+        <option value="CNY">Chinese Yuan</option>
+        <option value="CZK">Czech Koruna</option>
+        <option value="DKK">Danish Krone</option>
+        <option value="GBP">British Pound</option>
+        <option value="HKD">Hong Kong Dollar</option>
+        <option value="HRK">Croatian Kuna</option>
+        <option value="HUF">Hungarian Forint</option>
+        <option value="IDR">Indonesian Rupiah</option>
+        <option value="ILS">Israeli Shekel</option>
+        <option value="INR">Indian Rupee</option>
+        <option value="ISK">Icelandic Krona</option>
+        <option value="JPY">Japanese Yen</option>
+        <option value="KRW">South Korean Won</option>
+        <option value="MXN">Mexican Peso</option>
+        <option value="MYR">Malaysian Ringgit</option>
+        <option value="NOK">Norwegian Krone</option>
+        <option value="NZD">New Zealand Dollar</option>
+        <option value="PHP">Philippine Peso</option>
+        <option value="PLN">Polish Zloty</option>
+        <option value="RON">Romanian Leu</option>
+        <option value="RUB">Russian Ruble</option>
+        <option value="SEK">Swedish Krona</option>
+        <option value="SGD">Singapore Dollar</option>
+        <option value="THB">Thai Baht</option>
+        <option value="TRY">Turkish Lira</option>
+        <option value="ZAR">South African Rand</option>
+      </select>
+    </label>
+    <label>
+      Top flows:
+      <input type="range" id="topn-slider" min="5" max="50" step="1" value="20">
+      <span id="topn-label">20</span>
+    </label>
+    <label>
+      Titles:
+      <select id="title-mode-select">
+        <option value="full">Full</option>
+        <option value="short">Short</option>
+        <option value="verbose">Verbose</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="sankey-status">Loading data&hellip;</div>
+  <div id="sankey-chart"></div>
+
+  <div id="sankey-attribution">
+    <strong>Data source:</strong>
+    <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
+    (multi-regional input-output database, 44 countries, 163 sectors) &middot;
+    <a href="https://github.com/ModelEarth/trade-data" target="_blank" rel="noopener">ModelEarth/trade-data</a>
+    &middot; CSV:
+    <a id="sankey-csv-link" href="https://github.com/ModelEarth/trade-data/blob/main/year/2022/WM/domestic/trade_impact.csv" target="_blank" rel="noopener">
+      <span id="sankey-csv-path">year/2022/WM/domestic/trade_impact.csv</span>
+    </a>
+    &middot; Part of
+    <a href="https://github.com/modelearth/projects/issues/65" target="_blank" rel="noopener">ModelEarth/projects Issue #65</a>
+  </div>
+
+</div><!-- end .content.contentpadding -->
+
+
+</body>
+</html>
