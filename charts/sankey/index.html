@@ -3,134 +3,1508 @@
 <head>
 <meta charset="utf-8">
 <title>Exiobase Industry Trade Flow Sankey</title>
-<link type="text/css" rel="stylesheet" href="/localsite/css/base.css" />
-<script type="text/javascript" src="/localsite/js/localsite.js?showheader=true&showsearch=true&showfilters=true"></script>
+<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ModelEarth/localsite@main/css/base.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ModelEarth/localsite@main/js/localsite.js?showheader=true&showsearch=true&showfilters=true"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<link type="text/css" rel="stylesheet" href="css/sankey.css" />
-<script src="js/sankey.js" defer></script>
+<style>
+  .content.contentpadding {
+    width: 100%;
+    max-width: none !important;
+    margin: 0 auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+  }
+  .sankey-page-header {
+    margin: 1em 0 0.25em;
+  }
+  .sankey-page-header h2 {
+    margin: 0 0 0.2em;
+    font-size: 1.5em;
+  }
+  .sankey-page-header p {
+    margin: 0 0 1em;
+    color: #555;
+    font-size: 0.95em;
+  }
+  .sankey-header-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75em;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  #score-help-button {
+    padding: 0.45em 0.8em;
+    border: 1px solid #cfd6df;
+    border-radius: 999px;
+    background: #fff;
+    color: #1f2937;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #score-help-button:hover {
+    background: #f8fafc;
+  }
+  #score-help-panel {
+    margin: 0 0 1em;
+    padding: 0.85em 1em;
+    border: 1px solid #dde1e7;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.92em;
+    line-height: 1.55;
+  }
+  #score-help-panel[hidden] {
+    display: none;
+  }
+  #score-help-panel p {
+    margin: 0 0 0.45em;
+  }
+  #score-help-panel p:last-child {
+    margin-bottom: 0;
+  }
+  #sankey-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5em;
+    align-items: center;
+    padding: 0.75em 1em;
+    background: #f4f6f8;
+    border: 1px solid #dde1e7;
+    border-radius: 6px;
+    margin-bottom: 0.75em;
+  }
+  #sankey-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: 0.93em;
+    color: #333;
+  }
+  #sankey-controls select {
+    padding: 0.25em 0.5em;
+    font-size: 0.93em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+  }
+  #sankey-controls input[type=range] {
+    width: 120px;
+    cursor: pointer;
+  }
+  #topn-label {
+    font-weight: 600;
+    min-width: 2em;
+    text-align: right;
+  }
+  #sankey-status {
+    font-size: 0.88em;
+    color: #666;
+    font-style: italic;
+    margin: 0 0 0.5em;
+    min-height: 1.3em;
+  }
+  #sankey-chart {
+    width: 100%;
+    height: 720px;
+    padding: 4px 6px;
+    box-sizing: border-box;
+    border: 1px solid #e8eaed;
+    border-radius: 4px;
+    background: #fff;
+  }
+  #partner-chart-panel {
+    margin-top: 1.25em;
+  }
+  #partner-chart-panel[hidden] {
+    display: none;
+  }
+  #partner-chart-header {
+    margin: 0 0 0.35em;
+    font-size: 1.1em;
+  }
+  #partner-chart-note {
+    margin: 0 0 0.75em;
+    color: #555;
+    font-size: 0.92em;
+  }
+  #partner-chart-status {
+    font-size: 0.88em;
+    color: #666;
+    font-style: italic;
+    margin: 0 0 0.5em;
+    min-height: 1.3em;
+  }
+  #partner-chart {
+    width: 100%;
+    height: 430px;
+    border: 1px solid #e8eaed;
+    border-radius: 4px;
+    background: #fff;
+  }
+  #sankey-attribution {
+    margin-top: 1em;
+    padding-top: 0.75em;
+    border-top: 1px solid #dde1e7;
+    font-size: 0.85em;
+    color: #666;
+    line-height: 1.8;
+  }
+  #sankey-attribution a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  #sankey-attribution a:hover {
+    text-decoration: underline;
+  }
+  #geoviewSelectHolder #year_select {
+    float: left;
+    border-radius: 20px !important;
+    border: 0px !important;
+    border-right: 1px solid lightgray !important;
+    border-bottom: 1px solid lightgray !important;
+    padding: 0px 9px 0px 12px;
+    min-height: 34px !important;
+    color: #686868;
+  }
+</style>
 </head>
 <body>
-<div class="contentpadding">
+<div class="content contentpadding">
 
   <div class="sankey-page-header">
-    <h2>Exiobase Industry Trade Flow Sankey</h2>
-    <p>
-      Global industry-to-industry embodied environmental flows &middot;
-      US aggregate (<abbr title="WM = US aggregate — all 44 Exiobase countries combined into a single region">US</abbr>)
-      <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
-    </p>
+    <div class="sankey-header-row">
+      <div>
+        <h2>Exiobase Industry Trade Flow Sankey</h2>
+        <p>
+          Global industry-to-industry embodied environmental flows with the same country/year/flow selection used by the main dashboard &middot;
+          <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
+        </p>
+      </div>
+      <button id="score-help-button" type="button" aria-expanded="false" aria-controls="score-help-panel">Score Help</button>
+    </div>
+  </div>
+
+  <div id="score-help-panel" hidden>
+    <p><strong>How the partner-country score works:</strong> the score ranks import/export partner countries from best to worst on a 0 to 100 scale.</p>
+    <p><strong>Amount Spent:</strong> score = 100 x partner trade value / largest partner trade value.</p>
+    <p><strong>CO&#x2082; Emissions and Water Use:</strong> score = 100 x (0.6 x trade strength + 0.4 x lower impact per amount-spent efficiency).</p>
+    <p><strong>Employment:</strong> score = 100 x (0.6 x trade strength + 0.4 x higher jobs per amount-spent efficiency).</p>
+    <p><strong>Trade strength</strong> is the partner&rsquo;s trade value relative to the largest partner. <strong>Efficiency</strong> compares indicator per amount spent across the visible partner-country set.</p>
   </div>
 
   <div id="sankey-controls">
     <label>
       Country:
-      <select id="country-select">
-        <option value="AU">AU</option>
-        <option value="BR">BR</option>
-        <option value="CA">CA</option>
-        <option value="CN">CN</option>
-        <option value="DE">DE</option>
-        <option value="FR">FR</option>
-        <option value="GB">GB</option>
-        <option value="IN">IN</option>
-        <option value="IT">IT</option>
-        <option value="JP">JP</option>
-        <option value="KR">KR</option>
-        <option value="RU">RU</option>
-        <option value="US">US</option>
-        <option value="WM">WM</option>
-      </select>
+      <select id="country-select"></select>
     </label>
     <label>
       Year:
-      <select id="year-select">
-        <option value="2022">2022</option>
-        <option value="2021">2021</option>
-        <option value="2020">2020</option>
-        <option value="2019">2019</option>
-      </select>
+      <select id="year-select"></select>
+    </label>
+    <label>
+      Flow:
+      <select id="flow-select"></select>
     </label>
     <label>
       Indicator:
       <select id="metric-select">
-        <option value="amount">Amount Spent</option>
         <option value="CO2_total">CO&#x2082; Emissions</option>
         <option value="Water_total">Water Use</option>
         <option value="Employment_total">Employment</option>
+        <option value="amount">Amount Spent</option>
       </select>
     </label>
-    <label id="currency-label">
+    <label id="currency-select-label">
       Currency:
-      <select id="currency-select">
-        <option value="EUR">Euro</option>
-        <option value="USD">US Dollar</option>
-        <option value="AUD">Australian Dollar</option>
-        <option value="BGN">Bulgarian Lev</option>
-        <option value="BRL">Brazilian Real</option>
-        <option value="CAD">Canadian Dollar</option>
-        <option value="CHF">Swiss Franc</option>
-        <option value="CNY">Chinese Yuan</option>
-        <option value="CZK">Czech Koruna</option>
-        <option value="DKK">Danish Krone</option>
-        <option value="GBP">British Pound</option>
-        <option value="HKD">Hong Kong Dollar</option>
-        <option value="HRK">Croatian Kuna</option>
-        <option value="HUF">Hungarian Forint</option>
-        <option value="IDR">Indonesian Rupiah</option>
-        <option value="ILS">Israeli Shekel</option>
-        <option value="INR">Indian Rupee</option>
-        <option value="ISK">Icelandic Krona</option>
-        <option value="JPY">Japanese Yen</option>
-        <option value="KRW">South Korean Won</option>
-        <option value="MXN">Mexican Peso</option>
-        <option value="MYR">Malaysian Ringgit</option>
-        <option value="NOK">Norwegian Krone</option>
-        <option value="NZD">New Zealand Dollar</option>
-        <option value="PHP">Philippine Peso</option>
-        <option value="PLN">Polish Zloty</option>
-        <option value="RON">Romanian Leu</option>
-        <option value="RUB">Russian Ruble</option>
-        <option value="SEK">Swedish Krona</option>
-        <option value="SGD">Singapore Dollar</option>
-        <option value="THB">Thai Baht</option>
-        <option value="TRY">Turkish Lira</option>
-        <option value="ZAR">South African Rand</option>
+      <select id="currency-select"></select>
+    </label>
+    <label>
+      Industry labels:
+      <select id="industry-label-select">
+        <option value="title">Title</option>
+        <option value="short">Short name</option>
+        <option value="verbose">Complete verbose name</option>
       </select>
     </label>
     <label>
       Top flows:
-      <input type="range" id="topn-slider" min="5" max="50" step="1" value="20">
-      <span id="topn-label">20</span>
-    </label>
-    <label>
-      Titles:
-      <select id="title-mode-select">
-        <option value="full">Full</option>
-        <option value="short">Short</option>
-        <option value="verbose">Verbose</option>
-      </select>
+      <input type="range" id="topn-slider" min="5" max="50" step="1" value="15">
+      <span id="topn-label">15</span>
     </label>
   </div>
 
   <div id="sankey-status">Loading data&hellip;</div>
   <div id="sankey-chart"></div>
+  <div id="partner-chart-panel" hidden>
+    <h3 id="partner-chart-header">Top Partner Countries</h3>
+    <p id="partner-chart-note">
+      Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.
+    </p>
+    <div id="partner-chart-status"></div>
+    <div id="partner-chart"></div>
+  </div>
 
   <div id="sankey-attribution">
     <strong>Data source:</strong>
     <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
     (multi-regional input-output database, 44 countries, 163 sectors) &middot;
-    <a href="https://github.com/ModelEarth/trade-data" target="_blank" rel="noopener">ModelEarth/trade-data</a>
-    &middot; CSV:
-    <a id="sankey-csv-link" href="https://github.com/ModelEarth/trade-data/blob/main/year/2022/WM/domestic/trade_impact.csv" target="_blank" rel="noopener">
-      <span id="sankey-csv-path">year/2022/WM/domestic/trade_impact.csv</span>
-    </a>
-    &middot; Part of
-    <a href="https://github.com/modelearth/projects/issues/65" target="_blank" rel="noopener">ModelEarth/projects Issue #65</a>
+    <a href="https://github.com/savar25/trade-data" target="_blank" rel="noopener">savar25/trade-data</a>
+    &middot; labels from <code>year/[year]/industry.csv</code>
+    &middot; currency rates from <code>concordance/eur_annual_rates.csv</code>
+    &middot; repo CSV: <code id="csv-path-label">year/.../trade_impact.csv</code>
   </div>
 
 </div><!-- end .content.contentpadding -->
 
+<script src="https://cdn.jsdelivr.net/gh/savar25/trade-data@main/sankey-data.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+const manifest = window.TRADE_SANKEY_MANIFEST || {
+  countries: ["US"],
+  yearsByCountry: { US: ["2022"] },
+  flowsByCountryYear: { "US|2022": ["domestic"] },
+  defaultSelection: { country: "US", year: "2022", flow: "domestic" }
+};
 
+const METRICS = {
+  CO2_total:        { label: "CO\u2082 Emissions",  unit: "Gt CO\u2082", scale: 1e12, sourceKeys: ["CO2_total"], scoreDirection: "lower" },
+  Water_total:      { label: "Water Use",           unit: "Gm\u00B3",    scale: 1e9,  sourceKeys: ["Water_total"], scoreDirection: "lower" },
+  Employment_total: { label: "Employment",          unit: "M jobs",      scale: 1e6,  sourceKeys: ["Employment_total", "Employment_people_total"], scoreDirection: "higher" },
+  amount:           { label: "Amount Spent",        unit: "M EUR",       scale: 1,    sourceKeys: ["amount"], scoreDirection: "higher" }
+};
+
+const INDUSTRY_LABEL_MODES = {
+  short: true,
+  title: true,
+  verbose: true
+};
+
+const CURRENCY_NAMES = {
+  EUR: "Euro",
+  USD: "US Dollar",
+  JPY: "Japanese Yen",
+  GBP: "British Pound",
+  CHF: "Swiss Franc",
+  SEK: "Swedish Krona",
+  NOK: "Norwegian Krone",
+  DKK: "Danish Krone",
+  CZK: "Czech Koruna",
+  PLN: "Polish Zloty",
+  HUF: "Hungarian Forint",
+  RON: "Romanian Leu",
+  HRK: "Croatian Kuna",
+  BGN: "Bulgarian Lev",
+  TRY: "Turkish Lira",
+  AUD: "Australian Dollar",
+  CAD: "Canadian Dollar",
+  HKD: "Hong Kong Dollar",
+  SGD: "Singapore Dollar",
+  KRW: "South Korean Won",
+  ZAR: "South African Rand",
+  MXN: "Mexican Peso",
+  INR: "Indian Rupee",
+  CNY: "Chinese Renminbi",
+  BRL: "Brazilian Real",
+  IDR: "Indonesian Rupiah",
+  ILS: "Israeli New Shekel",
+  MYR: "Malaysian Ringgit",
+  PHP: "Philippine Peso",
+  THB: "Thai Baht",
+  ISK: "Icelandic Krona",
+  NZD: "New Zealand Dollar",
+  RUB: "Russian Rouble"
+};
+
+const SECTOR_NAMES = {
+  AGRIC: "Agriculture",
+  AGRI:  "Agriculture",
+  FORE:  "Forestry",
+  FISH:  "Fishing",
+  COAL:  "Coal Mining",
+  CRUDE: "Crude Oil & Gas",
+  URAN:  "Uranium Mining",
+  IRON:  "Iron Ore Mining",
+  NFMET: "Non-ferrous Metal Ores",
+  STONE: "Stone Quarrying",
+  SALT:  "Salt Mining",
+  NATUR: "Natural Resources",
+  MINNG: "Mining & Quarrying",
+  FOOD:  "Food Products",
+  BEVER: "Beverages",
+  TOBAC: "Tobacco",
+  TEXTI: "Textiles",
+  WEAR:  "Wearing Apparel",
+  LEATH: "Leather & Footwear",
+  WOOD:  "Wood Products",
+  PAPER: "Paper & Pulp",
+  PRINT: "Printing & Publishing",
+  PETRO: "Petroleum Refining",
+  NUCLE: "Nuclear Fuel",
+  CHEMI: "Basic Chemicals",
+  SPCHE: "Specialty Chemicals",
+  PHARMA:"Pharmaceuticals",
+  FERTL: "Fertilizers",
+  RUBBE: "Rubber & Plastics",
+  PLAST: "Plastics",
+  GLASS: "Glass & Ceramics",
+  CEMEN: "Cement & Concrete",
+  STEEL: "Iron & Steel",
+  NFMTL: "Non-ferrous Metals",
+  METAL: "Fabricated Metals",
+  MACHI: "Machinery & Equipment",
+  OFMAC: "Office Machinery",
+  ELECT: "Electrical Equipment",
+  ELEC2: "Electricity",
+  RADIO: "Radio & TV Equipment",
+  MEDIC: "Medical Instruments",
+  MOTOR: "Motor Vehicles",
+  SHIPS: "Shipbuilding",
+  AIRCR: "Aircraft",
+  RAILW: "Railway Equipment",
+  FURNI: "Furniture",
+  RECYC: "Recycling",
+  CONST: "Construction",
+  DISTR: "Trade & Distribution",
+  HOTEL: "Hotels & Restaurants",
+  TRANS: "Transport Services",
+  AIRTX: "Air Transport",
+  WATRX: "Water Transport",
+  POST:  "Post & Telecom",
+  FINAN: "Financial Services",
+  INSUR: "Insurance",
+  REALE: "Real Estate",
+  RESEA: "Research & Development",
+  PUBLI: "Public Administration",
+  EDUCA: "Education",
+  HEALT: "Health Services",
+  SEWAG: "Sewage & Waste Treatment",
+  GAS:   "Gas Supply",
+  WATR:  "Water Supply",
+  GASES: "Industrial Gases",
+  TRAN1: "Land Transport",
+  TRAN2: "Water Transport",
+  TRAN3: "Air Transport",
+  GASDI: "Gas Distribution",
+  RETA1: "Retail Trade",
+  PFERT: "Fertilizers & Nitrogen",
+  POSTT: "Post & Telecommunications",
+  ALUM1: "Aluminium Production",
+  VEGET: "Vegetable & Animal Oils",
+  BASIC: "Basic Pharmaceuticals",
+  WHOLT: "Wholesale Trade",
+  PAPPE: "Paper & Paperboard",
+  COALT: "Coal & Lignite",
+  COKNG: "Coke & Refined Petroleum",
+  ELECTR:"Electricity Distribution",
+  SEWWT: "Sewage & Waste Treatment",
+  PUBAD: "Public Administration",
+  ACTIV: "Business Activities",
+  RENTS: "Renting of Machinery"
+};
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+const countrySelect = document.getElementById("country-select");
+const yearSelect = document.getElementById("year-select");
+const flowSelect = document.getElementById("flow-select");
+const metricSelect = document.getElementById("metric-select");
+const currencySelect = document.getElementById("currency-select");
+const currencySelectLabel = document.getElementById("currency-select-label");
+const industryLabelSelect = document.getElementById("industry-label-select");
+const topnSlider = document.getElementById("topn-slider");
+const topnLabel = document.getElementById("topn-label");
+const csvPathLabel = document.getElementById("csv-path-label");
+const scoreHelpButton = document.getElementById("score-help-button");
+const scoreHelpPanel = document.getElementById("score-help-panel");
+const chartDom = document.getElementById("sankey-chart");
+const chart = echarts.init(chartDom);
+const partnerChartPanel = document.getElementById("partner-chart-panel");
+const partnerChartNote = document.getElementById("partner-chart-note");
+const partnerChartStatus = document.getElementById("partner-chart-status");
+const partnerChartDom = document.getElementById("partner-chart");
+const partnerChart = echarts.init(partnerChartDom);
+const csvCache = {};
+const industryNameByYear = {};
+const currencyRatesByYear = {};
+
+let availableCurrencyCodes = ["EUR"];
+let currencyRatesPromise = null;
+
+let rawData = null;
+let activeSelection = null;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function normalizeCode(value) {
+  return String(value || "").trim();
+}
+
+function parseNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function resolveIndustryNames(code) {
+  const key = normalizeCode(code);
+  const yearMap = activeSelection && activeSelection.year
+    ? industryNameByYear[normalizeCode(activeSelection.year)]
+    : null;
+  const verbose = (yearMap && yearMap[key]) || key;
+  const title = SECTOR_NAMES[key] || String(verbose || "")
+    .replace(/\s*\([^)]*\)\s*$/g, "")
+    .split(";")[0]
+    .trim() || key;
+  return {
+    code: key,
+    title: title || key,
+    verbose: verbose || title || key
+  };
+}
+
+function sectorLabel(code) {
+  const names = resolveIndustryNames(code);
+  const mode = activeSelection && activeSelection.industryLabelMode
+    ? activeSelection.industryLabelMode
+    : "title";
+
+  if (mode === "short") {
+    return names.code;
+  }
+  if (mode === "verbose") {
+    return names.verbose;
+  }
+  return names.title;
+}
+
+function displayIndustryName(code) {
+  const names = resolveIndustryNames(code);
+  const label = sectorLabel(code);
+  return label !== names.code ? label + " (" + names.code + ")" : names.code;
+}
+
+function wrapLabel(text, maxChars) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return "";
+  }
+  const lines = [];
+  let current = "";
+  words.forEach(function (word) {
+    if (!current) {
+      current = word;
+    } else if (current.length + 1 + word.length <= maxChars) {
+      current += " " + word;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  });
+  if (current) {
+    lines.push(current);
+  }
+  return lines.join("\n");
+}
+
+async function loadIndustryNamesForYear(year) {
+  const key = normalizeCode(year);
+  if (!key || industryNameByYear[key]) {
+    return;
+  }
+
+  const response = await fetchTextWithFallback([
+    "https://raw.githubusercontent.com/savar25/trade-data/main/year/" + key + "/industry.csv"
+  ]);
+  if (!response || !response.text) {
+    return;
+  }
+
+  const rows = d3.csvParse(response.text);
+  const yearMap = {};
+  rows.forEach(function (row) {
+    const industryId = normalizeCode(row.industry_id);
+    const name = String(row.name || "").trim();
+    if (industryId) {
+      yearMap[industryId] = name || industryId;
+    }
+  });
+  industryNameByYear[key] = yearMap;
+}
+
+async function loadCurrencyRates() {
+  if (currencyRatesPromise) {
+    return currencyRatesPromise;
+  }
+
+  currencyRatesPromise = (async function () {
+    const response = await fetchTextWithFallback([
+      "https://raw.githubusercontent.com/savar25/trade-data/main/concordance/eur_annual_rates.csv"
+    ]);
+    if (!response || !response.text) {
+      return;
+    }
+
+    const rows = d3.csvParse(response.text);
+    const columns = (rows.columns || []).filter(function (column) {
+      return column !== "Year";
+    });
+    availableCurrencyCodes = ["EUR"].concat(columns);
+
+    rows.forEach(function (row) {
+      const year = normalizeCode(row.Year);
+      if (!year) {
+        return;
+      }
+      const yearRates = { EUR: 1 };
+      columns.forEach(function (currencyCode) {
+        const rate = parseNumber(row[currencyCode]);
+        if (rate > 0) {
+          yearRates[currencyCode] = rate;
+        }
+      });
+      currencyRatesByYear[year] = yearRates;
+    });
+  })().catch(function () {
+    availableCurrencyCodes = ["EUR"];
+  });
+
+  return currencyRatesPromise;
+}
+
+function currencyName(code) {
+  const key = normalizeCode(code);
+  return CURRENCY_NAMES[key] || key;
+}
+
+function currenciesForYear(year) {
+  const yearRates = currencyRatesByYear[normalizeCode(year)] || { EUR: 1 };
+  return availableCurrencyCodes.filter(function (currencyCode) {
+    return currencyCode === "EUR" || parseNumber(yearRates[currencyCode]) > 0;
+  });
+}
+
+function syncCurrencyOptions(year, preferredCurrency) {
+  const currencies = currenciesForYear(year);
+  currencySelect.innerHTML = "";
+  (currencies.length ? currencies : ["EUR"]).forEach(function (currencyCode) {
+    const option = document.createElement("option");
+    option.value = currencyCode;
+    option.textContent = currencyCode + " - " + currencyName(currencyCode);
+    currencySelect.appendChild(option);
+  });
+
+  const fallbackCurrency = preferredCurrency || "EUR";
+  currencySelect.value = currencies.includes(fallbackCurrency) ? fallbackCurrency : (currencies[0] || "EUR");
+}
+
+function selectedCurrency() {
+  return activeSelection && activeSelection.currency
+    ? activeSelection.currency
+    : (currencySelect.value || "EUR");
+}
+
+function currencyRateForYear(year, currencyCode) {
+  const currency = normalizeCode(currencyCode) || "EUR";
+  if (currency === "EUR") {
+    return 1;
+  }
+  const yearRates = currencyRatesByYear[normalizeCode(year)] || {};
+  return parseNumber(yearRates[currency]) || 1;
+}
+
+function convertAmountValue(value, year, currencyCode) {
+  return parseNumber(value) * currencyRateForYear(year, currencyCode);
+}
+
+function convertIntensityPerCurrency(value, year, currencyCode) {
+  const rate = currencyRateForYear(year, currencyCode);
+  return rate > 0 ? (parseNumber(value) / rate) : parseNumber(value);
+}
+
+function metricUnit(metricKey) {
+  if (metricKey === "amount") {
+    return "M " + selectedCurrency();
+  }
+  return (METRICS[metricKey] && METRICS[metricKey].unit) || "";
+}
+
+function metricScale(metricKey) {
+  if (metricKey === "amount") {
+    return 1;
+  }
+  return (METRICS[metricKey] && METRICS[metricKey].scale) || 1;
+}
+
+function displayMetricValue(value, metricKey) {
+  if (metricKey === "amount") {
+    return convertAmountValue(value, activeSelection && activeSelection.year, selectedCurrency());
+  }
+  return parseNumber(value);
+}
+
+function fmtValue(val, metricKey) {
+  const metric = METRICS[metricKey];
+  if (!metric) {
+    return parseNumber(val).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  const scaled = displayMetricValue(val, metricKey) / metricScale(metricKey);
+  const formatted = scaled >= 1000
+    ? scaled.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : scaled.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return formatted + "\u00A0" + metricUnit(metricKey);
+}
+
+function fmtAxisTick(val, metricKey) {
+  const metric = METRICS[metricKey];
+  if (!metric) {
+    return parseNumber(val).toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 });
+  }
+  const scaled = displayMetricValue(val, metricKey) / metricScale(metricKey);
+  return scaled.toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 });
+}
+
+function fmtCompactValue(val, metricKey) {
+  const metric = METRICS[metricKey];
+  if (!metric) {
+    return parseNumber(val).toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 });
+  }
+  const scaled = displayMetricValue(val, metricKey) / metricScale(metricKey);
+  return scaled.toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 1 }) + "\u00A0" + metricUnit(metricKey);
+}
+
+function fmtScore(val) {
+  return parseNumber(val).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function normalizeRange(value, minValue, maxValue, invert) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  if (!Number.isFinite(minValue) || !Number.isFinite(maxValue) || maxValue <= minValue) {
+    return 1;
+  }
+  const normalized = (value - minValue) / (maxValue - minValue);
+  return invert ? (1 - normalized) : normalized;
+}
+
+function metricSourceKeys(metricKey) {
+  const metric = METRICS[metricKey] || {};
+  if (Array.isArray(metric.sourceKeys) && metric.sourceKeys.length) {
+    return metric.sourceKeys;
+  }
+  if (metric.sourceKey) {
+    return [metric.sourceKey];
+  }
+  return [metricKey];
+}
+
+function getMetricValue(row, metricKey) {
+  const keys = metricSourceKeys(metricKey);
+  for (let index = 0; index < keys.length; index += 1) {
+    const value = parseNumber(row[keys[index]]);
+    if (value) {
+      return value;
+    }
+  }
+  return 0;
+}
+
+function setStatus(msg, isError) {
+  const status = document.getElementById("sankey-status");
+  status.textContent = msg;
+  status.style.color = isError ? "#a3412d" : "#666";
+}
+
+function setPartnerStatus(msg, isError) {
+  partnerChartStatus.textContent = msg;
+  partnerChartStatus.style.color = isError ? "#a3412d" : "#666";
+}
+
+function syncControlVisibility() {
+  if (!currencySelectLabel) {
+    return;
+  }
+  currencySelectLabel.style.display = metricSelect.value === "amount" ? "flex" : "none";
+}
+
+function supportedFlows(country, year) {
+  const key = normalizeCode(country) + "|" + normalizeCode(year);
+  const flows = manifest.flowsByCountryYear && manifest.flowsByCountryYear[key];
+  return flows && flows.length ? flows.slice() : ["domestic", "imports", "exports"];
+}
+
+function readHashState() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return {
+    country: normalizeCode(params.get("country")) || manifest.defaultSelection.country,
+    year: normalizeCode(params.get("year")) || manifest.defaultSelection.year,
+    flow: normalizeCode(params.get("flow")) || (manifest.defaultSelection.flow || "domestic"),
+    metric: normalizeCode(params.get("metric")) || "CO2_total",
+    currency: normalizeCode(params.get("currency")) || "",
+    industryLabelMode: normalizeCode(params.get("labels")) || "title",
+    topn: parseInt(params.get("topn"), 10) || 15
+  };
+}
+
+function writeHashState(state, replaceOnly) {
+  const params = new URLSearchParams();
+  params.set("country", state.country);
+  params.set("year", state.year);
+  params.set("flow", state.flow);
+  params.set("metric", state.metric);
+  params.set("currency", state.currency);
+  params.set("labels", state.industryLabelMode);
+  params.set("topn", String(state.topn));
+  const nextHash = params.toString();
+
+  if (replaceOnly && window.history && typeof window.history.replaceState === "function") {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search + "#" + nextHash);
+    return;
+  }
+
+  if (window.location.hash.replace(/^#/, "") !== nextHash) {
+    window.location.hash = nextHash;
+  }
+}
+
+function syncCountryOptions() {
+  countrySelect.innerHTML = "";
+  (manifest.countries || []).forEach(function (country) {
+    const option = document.createElement("option");
+    option.value = country;
+    option.textContent = country;
+    countrySelect.appendChild(option);
+  });
+}
+
+function syncYearOptions(country, preferredYear) {
+  const years = manifest.yearsByCountry[country] || [];
+  yearSelect.innerHTML = "";
+  years.forEach(function (year) {
+    const option = document.createElement("option");
+    option.value = year;
+    option.textContent = year;
+    yearSelect.appendChild(option);
+  });
+  yearSelect.value = years.includes(preferredYear) ? preferredYear : (years[0] || "");
+}
+
+function syncFlowOptions(country, year, preferredFlow) {
+  const flows = supportedFlows(country, year);
+  flowSelect.innerHTML = "";
+  flows.forEach(function (flow) {
+    const option = document.createElement("option");
+    option.value = flow;
+    option.textContent = flow.charAt(0).toUpperCase() + flow.slice(1);
+    flowSelect.appendChild(option);
+  });
+  flowSelect.value = flows.includes(preferredFlow) ? preferredFlow : (flows[0] || "domestic");
+}
+
+function resolveSelection(state) {
+  const country = manifest.countries.includes(state.country)
+    ? state.country
+    : manifest.defaultSelection.country;
+  syncYearOptions(country, state.year);
+  const year = yearSelect.value || manifest.defaultSelection.year;
+  syncFlowOptions(country, year, state.flow);
+  const flow = flowSelect.value || manifest.defaultSelection.flow || "domestic";
+  const preferredCurrency = state.currency ||
+    (state.metric === "amount_usd" ? "USD" : "EUR");
+  syncCurrencyOptions(year, preferredCurrency);
+  const currency = currencySelect.value || "EUR";
+  const industryLabelMode = INDUSTRY_LABEL_MODES[state.industryLabelMode]
+    ? state.industryLabelMode
+    : "title";
+  const metric = METRICS[state.metric]
+    ? state.metric
+    : ((state.metric === "amount_usd" || state.metric === "amount_eur") ? "amount" : "CO2_total");
+  const topn = Math.max(5, Math.min(50, state.topn || 15));
+
+  countrySelect.value = country;
+  yearSelect.value = year;
+  flowSelect.value = flow;
+  metricSelect.value = metric;
+  currencySelect.value = currency;
+  industryLabelSelect.value = industryLabelMode;
+  topnSlider.value = String(topn);
+  topnLabel.textContent = String(topn);
+  syncControlVisibility();
+
+  return {
+    country: country,
+    year: year,
+    flow: flow,
+    metric: metric,
+    currency: currency,
+    industryLabelMode: industryLabelMode,
+    topn: topn
+  };
+}
+
+function localCSVPath(selection) {
+  return rawCSVPath(selection);
+}
+
+function rawCSVPath(selection) {
+  return "https://raw.githubusercontent.com/savar25/trade-data/main/year/" +
+    selection.year + "/" + selection.country + "/" + selection.flow + "/trade_impact.csv";
+}
+
+async function fetchTextWithFallback(paths) {
+  for (let index = 0; index < paths.length; index += 1) {
+    try {
+      const response = await fetch(paths[index]);
+      if (response.ok) {
+        return {
+          text: await response.text(),
+          path: paths[index]
+        };
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  return null;
+}
+
+function partnerCountryCode(row, selection) {
+  const origin = normalizeCode(row.region1);
+  const destination = normalizeCode(row.region2);
+  const selectedCountry = normalizeCode(selection.country);
+
+  if (selection.flow === "exports") {
+    if (destination && destination !== selectedCountry) {
+      return destination;
+    }
+    if (origin && origin !== selectedCountry) {
+      return origin;
+    }
+    return destination || origin;
+  }
+
+  if (selection.flow === "imports") {
+    if (origin && origin !== selectedCountry) {
+      return origin;
+    }
+    if (destination && destination !== selectedCountry) {
+      return destination;
+    }
+    return origin || destination;
+  }
+
+  return "";
+}
+
+function buildPartnerBreakdown(metricKey, limit) {
+  const byPartner = new Map();
+
+  rawData.forEach(function (row) {
+    const partner = partnerCountryCode(row, activeSelection);
+    if (!partner) {
+      return;
+    }
+
+    const metricValue = getMetricValue(row, metricKey);
+    const amountValue = getMetricValue(row, "amount");
+    if (metricValue <= 0 && amountValue <= 0) {
+      return;
+    }
+
+    const current = byPartner.get(partner) || {
+      partner: partner,
+      metricValue: 0,
+      amountValue: 0
+    };
+    current.metricValue += metricValue;
+    current.amountValue += amountValue;
+    byPartner.set(partner, current);
+  });
+
+  const rows = Array.from(byPartner.values()).map(function (row) {
+    const intensity = row.amountValue > 0 ? (row.metricValue / row.amountValue) : 0;
+    return Object.assign({}, row, { intensity: intensity });
+  });
+
+  if (!rows.length) {
+    return rows;
+  }
+
+  const maxAmount = Math.max.apply(null, rows.map(function (row) {
+    return row.amountValue;
+  }));
+  const intensities = rows.map(function (row) {
+    return row.intensity;
+  });
+  const minIntensity = Math.min.apply(null, intensities);
+  const maxIntensity = Math.max.apply(null, intensities);
+  const invertIntensity = (METRICS[metricKey] && METRICS[metricKey].scoreDirection) === "lower";
+
+  return rows
+    .map(function (row) {
+      const tradeStrength = maxAmount > 0 ? (row.amountValue / maxAmount) : 0;
+      const impactEfficiency = metricKey === "amount"
+        ? tradeStrength
+        : normalizeRange(row.intensity, minIntensity, maxIntensity, invertIntensity);
+      const score = metricKey === "amount"
+        ? (tradeStrength * 100)
+        : ((tradeStrength * 0.6 + impactEfficiency * 0.4) * 100);
+      return Object.assign({}, row, {
+        tradeStrength: tradeStrength,
+        impactEfficiency: impactEfficiency,
+        score: score
+      });
+    })
+    .sort(function (a, b) {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return b.amountValue - a.amountValue;
+    })
+    .slice(0, limit);
+}
+
+// ---------------------------------------------------------------------------
+// Build Sankey data from rawData
+// ---------------------------------------------------------------------------
+function buildSankeyData(metricKey, topN) {
+  const flowMap = new Map();
+  for (const row of rawData) {
+    const src = row.industry1;
+    const tgt = row.industry2;
+    if (!src || !tgt || src === tgt) continue;
+    const val = getMetricValue(row, metricKey);
+    if (!isFinite(val) || val <= 0) continue;
+    const key = src + "\x00" + tgt;
+    flowMap.set(key, (flowMap.get(key) || 0) + val);
+  }
+
+  const resolvedMap = new Map();
+  for (const [key, val] of flowMap) {
+    const sep = key.indexOf("\x00");
+    const src = key.slice(0, sep);
+    const tgt = key.slice(sep + 1);
+    const revKey = tgt + "\x00" + src;
+    if (resolvedMap.has(revKey)) {
+      if (val > resolvedMap.get(revKey)) {
+        resolvedMap.delete(revKey);
+        resolvedMap.set(key, val);
+      }
+    } else {
+      resolvedMap.set(key, val);
+    }
+  }
+
+  let links = Array.from(resolvedMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN)
+    .map(([key, value]) => {
+      const sep = key.indexOf("\x00");
+      return {
+        source: normalizeCode(key.slice(0, sep)),
+        target: normalizeCode(key.slice(sep + 1)),
+        value: value
+      };
+    });
+
+  links = removeCycles(links);
+
+  const nodeSet = new Set();
+  for (const link of links) {
+    nodeSet.add(link.source);
+    nodeSet.add(link.target);
+  }
+
+  return {
+    nodes: Array.from(nodeSet).map(function (name) {
+      return { name: name };
+    }),
+    links: links
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Cycle removal helpers
+// ---------------------------------------------------------------------------
+function findBackEdges(links) {
+  const adj = new Map();
+  for (const link of links) {
+    if (!adj.has(link.source)) adj.set(link.source, []);
+    adj.get(link.source).push(link);
+  }
+
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map();
+  const backEdges = [];
+
+  function dfs(node) {
+    color.set(node, GRAY);
+    for (const link of (adj.get(node) || [])) {
+      const nextColor = color.get(link.target) || WHITE;
+      if (nextColor === GRAY) {
+        backEdges.push(link);
+      } else if (nextColor === WHITE) {
+        dfs(link.target);
+      }
+    }
+    color.set(node, BLACK);
+  }
+
+  const nodes = new Set();
+  for (const link of links) {
+    nodes.add(link.source);
+    nodes.add(link.target);
+  }
+  for (const node of nodes) {
+    if (!color.get(node)) {
+      dfs(node);
+    }
+  }
+  return backEdges;
+}
+
+function removeCycles(links) {
+  let remaining = links.slice();
+  for (let guard = 0; guard < links.length; guard += 1) {
+    const backEdges = findBackEdges(remaining);
+    if (!backEdges.length) break;
+    const worst = backEdges.reduce((min, edge) => edge.value < min.value ? edge : min);
+    remaining = remaining.filter(link => link !== worst);
+  }
+  return remaining;
+}
+
+// ---------------------------------------------------------------------------
+// Render
+// ---------------------------------------------------------------------------
+function render() {
+  if (!rawData || !activeSelection) return;
+
+  const metric = METRICS[activeSelection.metric];
+  const { nodes, links } = buildSankeyData(activeSelection.metric, activeSelection.topn);
+
+  if (!links.length) {
+    setStatus("No data available for this combination.", true);
+    chart.clear();
+    renderPartnerChart();
+    return;
+  }
+
+  chart.setOption({
+    tooltip: {
+      trigger: "item",
+      triggerOn: "mousemove",
+      confine: true,
+      formatter: function(params) {
+        if (params.dataType === "edge") {
+          return (
+            "<b>" + displayIndustryName(params.data.source) + "</b>" +
+            " &rarr; " +
+            "<b>" + displayIndustryName(params.data.target) + "</b><br/>" +
+            metric.label + ": <b>" + fmtValue(params.data.value, activeSelection.metric) + "</b>"
+          );
+        }
+        return "<b>" + displayIndustryName(params.name) + "</b>";
+      }
+    },
+    series: [{
+      type: "sankey",
+      layout: "none",
+      layoutIterations: 32,
+      emphasis: {
+        focus: "adjacency"
+      },
+      nodeAlign: "left",
+      nodeGap: 14,
+      nodeWidth: 22,
+      left: "1%",
+      right: "8%",
+      top: "2%",
+      bottom: "2%",
+      data: nodes,
+      links: links,
+      label: {
+        position: "right",
+        fontSize: 12,
+        width: 150,
+        overflow: "break",
+        lineHeight: 14,
+        align: "left",
+        color: "#333",
+        formatter: function(params) {
+          return wrapLabel(sectorLabel(params.name), 24);
+        }
+      },
+      lineStyle: {
+        color: "gradient",
+        opacity: 0.45,
+        curveness: 0.5
+      },
+      itemStyle: {
+        borderWidth: 1,
+        borderColor: "#aaa"
+      }
+    }]
+  }, true);
+  chart.resize();
+
+  setStatus(
+    "Showing top\u00A0" + links.length +
+    " " + activeSelection.flow +
+    " flows by " + metric.label +
+    " for " + activeSelection.country + " " + activeSelection.year,
+    false
+  );
+
+  renderPartnerChart();
+}
+
+function renderPartnerChart() {
+  if (!rawData || !activeSelection || activeSelection.flow === "domestic") {
+    partnerChartPanel.hidden = true;
+    partnerChart.clear();
+    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
+    setPartnerStatus("");
+    return;
+  }
+
+  partnerChartPanel.hidden = false;
+
+  const metricKey = activeSelection.metric;
+  const metric = METRICS[metricKey];
+  const amountMetric = METRICS.amount;
+  const rows = buildPartnerBreakdown(metricKey, 10);
+
+  if (!rows.length) {
+    partnerChart.clear();
+    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
+    setPartnerStatus("No partner-country data available for this selection.", true);
+    return;
+  }
+
+  partnerChartNote.textContent = metricKey === "amount"
+    ? "Countries are ranked from strongest to weakest by amount-spent score, scaled relative to the largest partner-country trade value."
+    : "Countries are ranked from best to worst using a score that blends 60% trade-value strength with 40% indicator efficiency per amount spent.";
+
+  const categories = rows.map(function (row) {
+    return row.partner;
+  });
+  const metricSeries = rows.map(function (row) {
+    return {
+      value: row.metricValue,
+      amountValue: row.amountValue,
+      score: row.score,
+      intensity: row.intensity
+    };
+  });
+  const amountSeries = rows.map(function (row) {
+    return {
+      value: row.amountValue,
+      metricValue: row.metricValue,
+      score: row.score,
+      intensity: row.intensity
+    };
+  });
+  const showAmountSeries = metricKey !== "amount";
+
+  partnerChart.setOption({
+    animationDuration: 300,
+    legend: {
+      top: 10,
+      left: "center",
+      itemGap: 18,
+      data: showAmountSeries ? [metric.label, amountMetric.label] : [amountMetric.label]
+    },
+    grid: {
+      left: 88,
+      right: 88,
+      top: 62,
+      bottom: 28,
+      containLabel: true
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: { type: "shadow" },
+      confine: true,
+      formatter: function (params) {
+        const lines = ["<b>" + params[0].axisValue + "</b>"];
+        params.forEach(function (item) {
+          const metricForSeries = item.seriesName === amountMetric.label ? "amount" : metricKey;
+          lines.push(item.marker + item.seriesName + ": <b>" + fmtValue(item.value, metricForSeries) + "</b>");
+        });
+        const source = params[0] && params[0].data ? params[0].data : null;
+        if (source) {
+          lines.push("Score: <b>" + fmtScore(source.score) + "</b>");
+          if (metricKey !== "amount") {
+            lines.push("Indicator per " + metricUnit("amount") + ": <b>" + fmtCompactValue(convertIntensityPerCurrency(source.intensity, activeSelection.year, activeSelection.currency), metricKey) + "</b>");
+          }
+        }
+        return lines.join("<br/>");
+      }
+    },
+    yAxis: {
+      type: "category",
+      inverse: true,
+      axisTick: { show: false },
+      data: categories
+    },
+    xAxis: showAmountSeries ? [
+      {
+        type: "value",
+        name: metric.label + " (" + metricUnit(metricKey) + ")",
+        position: "top",
+        nameTextStyle: {
+          padding: [0, 0, 8, 0]
+        },
+        axisLabel: {
+          formatter: function (value) {
+            return fmtAxisTick(value, metricKey);
+          }
+        }
+      },
+      {
+        type: "value",
+        name: amountMetric.label + " (" + metricUnit("amount") + ")",
+        position: "bottom",
+        nameTextStyle: {
+          padding: [0, 0, 8, 0]
+        },
+        axisLabel: {
+          formatter: function (value) {
+            return fmtAxisTick(value, "amount");
+          }
+        }
+      }
+    ] : [
+      {
+        type: "value",
+        name: amountMetric.label + " (" + metricUnit("amount") + ")",
+        position: "bottom",
+        nameTextStyle: {
+          padding: [0, 0, 8, 0]
+        },
+        axisLabel: {
+          formatter: function (value) {
+            return fmtAxisTick(value, "amount");
+          }
+        }
+      }
+    ],
+    series: showAmountSeries ? [
+      {
+        name: metric.label,
+        type: "bar",
+        xAxisIndex: 0,
+        data: metricSeries,
+        itemStyle: { color: "#2563eb" },
+        barMaxWidth: 18,
+        barGap: "20%"
+      },
+      {
+        name: amountMetric.label,
+        type: "bar",
+        xAxisIndex: 1,
+        data: amountSeries,
+        itemStyle: { color: "#f59e0b" },
+        barMaxWidth: 18,
+        label: {
+          show: true,
+          position: "right",
+          distance: 10,
+          color: "#333",
+          fontWeight: 600,
+          formatter: function (params) {
+            return "Score " + fmtScore(params.data.score);
+          }
+        }
+      }
+    ] : [
+      {
+        name: amountMetric.label,
+        type: "bar",
+        data: amountSeries,
+        itemStyle: { color: "#f59e0b" },
+        barMaxWidth: 22,
+        label: {
+          show: true,
+          position: "right",
+          distance: 10,
+          color: "#333",
+          fontWeight: 600,
+          formatter: function (params) {
+            return "Score " + fmtScore(params.data.score);
+          }
+        }
+      }
+    ]
+  }, true);
+  partnerChart.resize();
+
+  setPartnerStatus(
+    "Top 10 " + activeSelection.flow + " partner countries ranked best to worst for " +
+    activeSelection.country + " " + activeSelection.year + ".",
+    false
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
+async function loadSelection(selection) {
+  activeSelection = selection;
+  const cacheKey = [
+    selection.country,
+    selection.year,
+    selection.flow
+  ].join("|");
+
+  const localPath = localCSVPath(selection);
+  const rawPath = rawCSVPath(selection);
+  csvPathLabel.textContent = "year/" + selection.year + "/" + selection.country + "/" + selection.flow + "/trade_impact.csv";
+  await loadIndustryNamesForYear(selection.year);
+  setPartnerStatus("");
+  setStatus("Loading data...", false);
+
+  if (!csvCache[cacheKey]) {
+    const response = await fetchTextWithFallback([localPath, rawPath]);
+    if (!response || !response.text) {
+      rawData = null;
+      chart.clear();
+      partnerChart.clear();
+      partnerChartPanel.hidden = selection.flow === "domestic";
+      setStatus("Error loading data for " + cacheKey + ".", true);
+      return;
+    }
+    csvCache[cacheKey] = d3.csvParse(response.text);
+  }
+
+  rawData = csvCache[cacheKey];
+  render();
+}
+
+// ---------------------------------------------------------------------------
+// Sync
+// ---------------------------------------------------------------------------
+function loadFromHash(replaceOnly) {
+  const selection = resolveSelection(readHashState());
+  writeHashState(selection, Boolean(replaceOnly));
+  loadSelection(selection);
+}
+
+function updateHashFromControls() {
+  const selection = {
+    country: countrySelect.value,
+    year: yearSelect.value,
+    flow: flowSelect.value,
+    metric: metricSelect.value,
+    currency: currencySelect.value,
+    industryLabelMode: industryLabelSelect.value,
+    topn: parseInt(topnSlider.value, 10) || 15
+  };
+
+  activeSelection = selection;
+  topnLabel.textContent = String(selection.topn);
+  syncControlVisibility();
+  writeHashState(selection, false);
+}
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+syncCountryOptions();
+currencySelect.innerHTML = "<option value=\"EUR\">EUR - Euro</option>";
+syncControlVisibility();
+
+countrySelect.addEventListener("change", function() {
+  syncYearOptions(countrySelect.value, yearSelect.value);
+  syncFlowOptions(countrySelect.value, yearSelect.value, flowSelect.value);
+  syncCurrencyOptions(yearSelect.value, currencySelect.value);
+  updateHashFromControls();
+});
+
+yearSelect.addEventListener("change", function() {
+  syncFlowOptions(countrySelect.value, yearSelect.value, flowSelect.value);
+  syncCurrencyOptions(yearSelect.value, currencySelect.value);
+  updateHashFromControls();
+});
+
+flowSelect.addEventListener("change", updateHashFromControls);
+
+metricSelect.addEventListener("change", function() {
+  syncControlVisibility();
+  if (!activeSelection) {
+    updateHashFromControls();
+    return;
+  }
+  activeSelection.metric = metricSelect.value;
+  writeHashState(activeSelection, false);
+  render();
+});
+
+currencySelect.addEventListener("change", function() {
+  if (!activeSelection) {
+    updateHashFromControls();
+    return;
+  }
+  activeSelection.currency = currencySelect.value || "EUR";
+  writeHashState(activeSelection, false);
+  render();
+});
+
+industryLabelSelect.addEventListener("change", function() {
+  if (!activeSelection) {
+    updateHashFromControls();
+    return;
+  }
+  activeSelection.industryLabelMode = industryLabelSelect.value || "title";
+  writeHashState(activeSelection, false);
+  render();
+});
+
+topnSlider.addEventListener("input", function() {
+  topnLabel.textContent = topnSlider.value;
+  if (!activeSelection) {
+    updateHashFromControls();
+    return;
+  }
+  activeSelection.topn = parseInt(topnSlider.value, 10) || 15;
+  writeHashState(activeSelection, false);
+  render();
+});
+
+scoreHelpButton.addEventListener("click", function() {
+  const isHidden = scoreHelpPanel.hasAttribute("hidden");
+  if (isHidden) {
+    scoreHelpPanel.removeAttribute("hidden");
+  } else {
+    scoreHelpPanel.setAttribute("hidden", "");
+  }
+  scoreHelpButton.setAttribute("aria-expanded", String(isHidden));
+});
+
+window.addEventListener("hashchange", function() {
+  loadFromHash(false);
+});
+
+window.addEventListener("resize", function() {
+  chart.resize();
+  partnerChart.resize();
+});
+
+// Init
+loadCurrencyRates().finally(function () {
+  loadFromHash(true);
+});
+</script>
 </body>
 </html>
