@@ -1,12 +1,12 @@
 # Open Footprint
 
-### Nutrition-style Energy Labels
+### Nutrition-Style Energy Labels
 
 &bullet; <a href="item/#layout=product">Product Profiles</a> - BuildingTransparency.org
 &bullet; <a href="item">Nutritious Meal Planner</a> - USDA Food Database
 
 
-### Data Prep for Visualizations
+### Data Prep for Trade Flow Visualizations
 
 &bullet; [US Census NAICS Industry Data](../../data-pipeline/industries/naics) - Zip, County, State, Country Employment Levels
 &bullet; [Trade Flow data from Exiobase](../../exiobase/tradeflow/) - Pull for Exiobase for domestic, imports, exports
@@ -28,10 +28,11 @@
 
 Multi-Regional Input-Output (MRIO)
 
+<a href="../profile/charts/sankey/">Sankey Trade Flow</a>  
 <a href="../localsite/info/">Industry Supply-Chain</a>  
-[UN Timelines - Google Data Commons](../../localsite/timeline/)  
-<a href="footprint/sector_supply_impacts.html">Chord (D3) Sector Supply Impacts</a>
-<a href="charts/echarts/">Sankey (eCharts)</a>
+[UN Goal Timelines](../../localsite/timeline/)  
+<a href="footprint/sector_supply_impacts.html">Sector Supply Impacts (Chord Chart)</a>
 <a href="trade/map/">Trade Flow Map</a>  
+<a href="../space/">3D Event Space</a>  
 
-Contribute to [our projects](../projects/)
+Contribute to [our visualization projects](../projects/)
