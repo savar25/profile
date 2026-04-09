@@ -6,7 +6,7 @@
     <title>Trade Flow Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body { margin: 0; font-family: sans-serif; }
 
@@ -127,6 +127,27 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
+        #zoom-toast {
+            position: absolute;
+            left: 50%;
+            bottom: 26px;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.88);
+            color: #fff;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            z-index: 1100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s ease;
+        }
+        #zoom-toast.visible {
+            opacity: 1;
+        }
+
         #map-tooltip {
             position: fixed;
             pointer-events: none;
@@ -179,6 +200,7 @@
     <div id="legend">
         Arrow thickness = total embodied CO&#x2082; &middot; <span id="legend-dir">exporter &rarr; importer</span>
     </div>
+    <div id="zoom-toast" aria-live="polite"></div>
     <div id="map-tooltip"></div>
 
     <script>
@@ -232,7 +254,10 @@ function fmtCO2(val) {
 // ---------------------------------------------------------------------------
 // Map setup
 // ---------------------------------------------------------------------------
-const map = L.map("map").setView([25, 12], 2);
+const map = L.map("map", {
+    scrollWheelZoom: false,
+    zoomSnap: 1,
+}).setView([23, 24], 2);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -244,6 +269,56 @@ const svg = d3.select("#map").select("svg");
 const g   = svg.append("g");
 
 const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+const zoomToast = document.getElementById("zoom-toast");
+let zoomToastTimer = null;
+
+L.DomEvent.disableClickPropagation(document.querySelector(".control-panel"));
+L.DomEvent.disableScrollPropagation(document.querySelector(".control-panel"));
+L.DomEvent.disableClickPropagation(document.getElementById("legend"));
+L.DomEvent.disableScrollPropagation(document.getElementById("legend"));
+
+function showZoomToast(enabled) {
+    zoomToast.textContent = enabled ? "Zoom On" : "Zoom Off";
+    zoomToast.classList.add("visible");
+
+    if (zoomToastTimer) {
+        clearTimeout(zoomToastTimer);
+    }
+    zoomToastTimer = setTimeout(() => {
+        zoomToast.classList.remove("visible");
+        zoomToastTimer = null;
+    }, 2000);
+}
+
+function setScrollZoom(enabled) {
+    if (enabled) {
+        map.scrollWheelZoom.enable();
+    } else {
+        map.scrollWheelZoom.disable();
+    }
+    showZoomToast(enabled);
+}
+
+function clickShouldToggleZoom(evt) {
+    const target = evt.originalEvent?.target;
+    if (!(target instanceof Element)) return false;
+    const mapObjectRoot = g.node();
+
+    if (mapObjectRoot && mapObjectRoot.contains(target) && target !== mapObjectRoot) {
+        return false;
+    }
+
+    return !target.closest([
+        ".control-panel",
+        "#legend",
+        "#map-tooltip",
+        "#zoom-toast",
+        ".leaflet-marker-icon",
+        ".leaflet-popup",
+        ".leaflet-tooltip",
+        ".leaflet-interactive",
+    ].join(","));
+}
 
 // ---------------------------------------------------------------------------
 // CSV cache — avoids re-fetching when switching back to a visited country
@@ -333,14 +408,42 @@ function projectPoint(lon, lat) {
 function drawCurve(d) {
     const from = projectPoint(...COORDS[d.from]);
     const to   = projectPoint(...COORDS[d.to]);
+    return buildArcPath(from, to, 1);
+}
+
+function buildArcPath(from, to, sweepFlag) {
     const dx   = to.x - from.x;
     const dy   = to.y - from.y;
     const dr   = Math.sqrt(dx * dx + dy * dy);
-    return `M${from.x},${from.y}A${dr},${dr} 0 0,1 ${to.x},${to.y}`;
+    return `M${from.x},${from.y}A${dr},${dr} 0 0,${sweepFlag} ${to.x},${to.y}`;
+}
+
+function drawLabelCurve(d, flipLabel) {
+    const from = projectPoint(...COORDS[d.from]);
+    const to   = projectPoint(...COORDS[d.to]);
+    return flipLabel
+        ? buildArcPath(to, from, 0)
+        : buildArcPath(from, to, 1);
+}
+
+function pathMidAngle(pathNode) {
+    const total = pathNode.getTotalLength();
+    const delta = Math.max(1, Math.min(18, total * 0.025));
+    const p1 = pathNode.getPointAtLength(Math.max(0, total / 2 - delta));
+    const p2 = pathNode.getPointAtLength(Math.min(total, total / 2 + delta));
+    return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+}
+
+function labelNeedsFlip(pathNode) {
+    const angle = pathMidAngle(pathNode);
+    return angle > 90 || angle < -90;
 }
 
 function update() {
     g.selectAll("path.arrow").attr("d", drawCurve);
+    g.selectAll("path.label-path").attr("d", function(d) {
+        return drawLabelCurve(d, this.dataset.flipLabel === "true");
+    });
 }
 map.on("zoomend", update);
 map.on("moveend", update);
@@ -405,7 +508,10 @@ function renderArrows(trades, focusCountry, flowDir) {
                 hideTooltip();
                 selectedArrow ? applyHighlight(selectedArrow) : clearHighlight();
             })
-            .on("click", function() {
+            .on("click", function(evt) {
+                if (evt && typeof evt.stopPropagation === "function") {
+                    evt.stopPropagation();
+                }
                 if (selectedArrow === trade.partner) {
                     selectedArrow = null;
                     clearHighlight();
@@ -415,10 +521,23 @@ function renderArrows(trades, focusCountry, flowDir) {
                 }
             });
 
+        const flipLabel = labelNeedsFlip(path.node());
+        const labelPathId = `${pathId}-label`;
+
+        g.append("path")
+            .datum(trade)
+            .attr("id", labelPathId)
+            .attr("class", `label-path arrow-${trade.partner}`)
+            .attr("d", drawLabelCurve(trade, flipLabel))
+            .attr("fill", "none")
+            .attr("stroke", "none")
+            .attr("data-flip-label", flipLabel ? "true" : "false");
+
         g.append("text")
+            .attr("class", `arrow-${trade.partner}`)
             .append("textPath")
-            .attr("xlink:href", `#${pathId}`)
-            .attr("startOffset", "42%")
+            .attr("xlink:href", `#${labelPathId}`)
+            .attr("startOffset", flipLabel ? "58%" : "42%")
             .attr("class", "label-text")
             .attr("text-anchor", "middle")
             .text(trade.partner);
@@ -558,6 +677,11 @@ document.querySelectorAll("input[name='flow-dir']").forEach(radio => {
         document.getElementById("country-label").textContent = lbl;
         loadFlows(document.getElementById("country-select").value, currentFlowDir);
     });
+});
+
+map.on("click", function(evt) {
+    if (!clickShouldToggleZoom(evt)) return;
+    setScrollZoom(!map.scrollWheelZoom.enabled());
 });
 
 loadFlows("US", "imports");
