@@ -1,6 +1,10 @@
-# Profile
+# Open Footprint
 
-Contribute to [our projects](../projects/)
+### Nutrition-style Energy Labels
+
+&bullet; <a href="item/#layout=product">Product Profiles</a> - BuildingTransparency.org
+&bullet; <a href="item">Nutritious Meal Planner</a> - USDA Food Database
+
 
 ### Data Prep for Visualizations
 
@@ -29,3 +33,5 @@ Multi-Regional Input-Output (MRIO)
 <a href="footprint/sector_supply_impacts.html">Chord (D3) Sector Supply Impacts</a>
 <a href="charts/echarts/">Sankey (eCharts)</a>
 <a href="trade/map/">Trade Flow Map</a>  
+
+Contribute to [our projects](../projects/)
