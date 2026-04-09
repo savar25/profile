@@ -2,48 +2,57 @@
 // Configuration
 // ---------------------------------------------------------------------------
 function getCSVRepoPath(year, country) {
-  year = year || "2022";
-  country = country || "WM";
-  return `year/${year}/${country}/domestic/trade_impact.csv`;
+  return "year/" + (year || "2022") + "/" + (country || "WM") + "/domestic/trade_impact.csv";
 }
 
 function getCSV_URL(year, country) {
-  return `https://raw.githubusercontent.com/ModelEarth/trade-data/main/${getCSVRepoPath(year, country)}`;
+  return "https://raw.githubusercontent.com/ModelEarth/trade-data/main/" + getCSVRepoPath(year, country);
 }
 
 function getCSVSourceURL(year, country) {
-  return `https://github.com/ModelEarth/trade-data/blob/main/${getCSVRepoPath(year, country)}`;
+  return "https://github.com/ModelEarth/trade-data/blob/main/" + getCSVRepoPath(year, country);
 }
 
-// Exiobase 3 sector code → readable name (~60 most common codes)
+function getIndustryRepoPath(year) {
+  return "year/" + (year || "2022") + "/industry.csv";
+}
+
+function getIndustryURL(year) {
+  return "https://raw.githubusercontent.com/ModelEarth/trade-data/main/" + getIndustryRepoPath(year);
+}
+
+function getCurrencyRatesURL() {
+  return "https://raw.githubusercontent.com/ModelEarth/trade-data/main/concordance/eur_annual_rates.csv";
+}
+
 const SECTOR_NAMES = {
   AGRIC: "Agriculture",
-  AGRI:  "Agriculture",
-  FORE:  "Forestry",
-  FISH:  "Fishing",
-  COAL:  "Coal Mining",
+  AGRI: "Agriculture",
+  FORE: "Forestry",
+  FISH: "Fishing",
+  COAL: "Coal Mining",
   CRUDE: "Crude Oil & Gas",
-  URAN:  "Uranium Mining",
-  IRON:  "Iron Ore Mining",
+  URAN: "Uranium Mining",
+  IRON: "Iron Ore Mining",
   NFMET: "Non-ferrous Metal Ores",
   STONE: "Stone Quarrying",
-  SALT:  "Salt Mining",
+  SALT: "Salt Mining",
   NATUR: "Natural Resources",
   MINNG: "Mining & Quarrying",
-  FOOD:  "Food Products",
+  FOOD: "Food Products",
   BEVER: "Beverages",
   TOBAC: "Tobacco",
   TEXTI: "Textiles",
-  WEAR:  "Wearing Apparel",
+  WEAR: "Wearing Apparel",
   LEATH: "Leather & Footwear",
-  WOOD:  "Wood Products",
+  WOOD: "Wood Products",
   PAPER: "Paper & Pulp",
   PRINT: "Printing & Publishing",
   PETRO: "Petroleum Refining",
   NUCLE: "Nuclear Fuel",
   CHEMI: "Basic Chemicals",
   SPCHE: "Specialty Chemicals",
-  PHARMA:"Pharmaceuticals",
+  PHARMA: "Pharmaceuticals",
   FERTL: "Fertilizers",
   RUBBE: "Rubber & Plastics",
   PLAST: "Plastics",
@@ -70,7 +79,7 @@ const SECTOR_NAMES = {
   TRANS: "Transport Services",
   AIRTX: "Air Transport",
   WATRX: "Water Transport",
-  POST:  "Post & Telecom",
+  POST: "Post & Telecom",
   FINAN: "Financial Services",
   INSUR: "Insurance",
   REALE: "Real Estate",
@@ -79,10 +88,9 @@ const SECTOR_NAMES = {
   EDUCA: "Education",
   HEALT: "Health Services",
   SEWAG: "Sewage & Waste Treatment",
-  GAS:   "Gas Supply",
-  WATR:  "Water Supply",
+  GAS: "Gas Supply",
+  WATR: "Water Supply",
   GASES: "Industrial Gases",
-  // Additional codes seen in WM 2022 data
   TRAN1: "Land Transport",
   TRAN2: "Water Transport",
   TRAN3: "Air Transport",
@@ -94,24 +102,57 @@ const SECTOR_NAMES = {
   VEGET: "Vegetable & Animal Oils",
   BASIC: "Basic Pharmaceuticals",
   WHOLT: "Wholesale Trade",
-  TEXTI: "Textiles",
   PAPPE: "Paper & Paperboard",
   COALT: "Coal & Lignite",
   COKNG: "Coke & Refined Petroleum",
-  ELECTR:"Electricity Distribution",
+  ELECTR: "Electricity Distribution",
   SEWWT: "Sewage & Waste Treatment",
   PUBAD: "Public Administration",
   ACTIV: "Business Activities",
-  RENTS: "Renting of Machinery",
+  RENTS: "Renting of Machinery"
 };
 
-// Per-metric display config
-// Scale: divisor to convert raw values to display units
+const CURRENCY_NAMES = {
+  EUR: "Euro",
+  USD: "US Dollar",
+  JPY: "Japanese Yen",
+  GBP: "British Pound",
+  CHF: "Swiss Franc",
+  SEK: "Swedish Krona",
+  NOK: "Norwegian Krone",
+  DKK: "Danish Krone",
+  CZK: "Czech Koruna",
+  PLN: "Polish Zloty",
+  HUF: "Hungarian Forint",
+  RON: "Romanian Leu",
+  HRK: "Croatian Kuna",
+  BGN: "Bulgarian Lev",
+  TRY: "Turkish Lira",
+  AUD: "Australian Dollar",
+  CAD: "Canadian Dollar",
+  HKD: "Hong Kong Dollar",
+  SGD: "Singapore Dollar",
+  KRW: "South Korean Won",
+  ZAR: "South African Rand",
+  MXN: "Mexican Peso",
+  INR: "Indian Rupee",
+  CNY: "Chinese Renminbi",
+  BRL: "Brazilian Real",
+  IDR: "Indonesian Rupiah",
+  ILS: "Israeli New Shekel",
+  MYR: "Malaysian Ringgit",
+  PHP: "Philippine Peso",
+  THB: "Thai Baht",
+  ISK: "Icelandic Krona",
+  NZD: "New Zealand Dollar",
+  RUB: "Russian Rouble"
+};
+
 const METRICS = {
-  amount:           { label: "Dollars Spent",      unit: "M EUR",         scale: 1e6  },
-  CO2_total:        { label: "CO\u2082 Emissions",  unit: "Gt CO\u2082",  scale: 1e12 },
-  Water_total:      { label: "Water Use",            unit: "Gm\u00B3",     scale: 1e9  },
-  Employment_total: { label: "Employment",           unit: "M jobs",        scale: 1e6  },
+  amount: { label: "Amount Spent", unit: "M EUR", scale: 1 },
+  CO2_total: { label: "CO\u2082 Emissions", unit: "Gt CO\u2082", scale: 1e12 },
+  Water_total: { label: "Water Use", unit: "Gm\u00B3", scale: 1e9 },
+  Employment_total: { label: "Employment", unit: "M jobs", scale: 1e6 }
 };
 
 // ---------------------------------------------------------------------------
@@ -119,40 +160,54 @@ const METRICS = {
 // ---------------------------------------------------------------------------
 let rawData = null;
 let currentMetric = "amount";
-let currentTopN   = 20;
-let currentTitleMode = "full";
+let currentTopN = 15;
+let currentTitleMode = "title";
+let currentCurrency = "EUR";
+let currentSelection = { year: "2022", country: "WM" };
+
+const industryNamesByYear = {};
+const currencyRatesByYear = {};
+let availableCurrencies = ["EUR"];
+let currencyRatesPromise = null;
+
+// ---------------------------------------------------------------------------
+// DOM
+// ---------------------------------------------------------------------------
+const chartDom = document.getElementById("sankey-chart");
+const chart = echarts.init(chartDom);
+const countrySelect = document.getElementById("country-select");
+const yearSelect = document.getElementById("year-select");
+const metricSelect = document.getElementById("metric-select");
+const currencySelect = document.getElementById("currency-select");
+const currencyLabel = document.getElementById("currency-label");
+const titleModeSelect = document.getElementById("title-mode-select");
+const topnSlider = document.getElementById("topn-slider");
+const topnLabel = document.getElementById("topn-label");
+
+window.addEventListener("resize", function () {
+  chart.resize();
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function sectorLabel(code) {
-  return SECTOR_NAMES[code] || code;
+function normalizeCode(value) {
+  return String(value || "").trim();
 }
 
-function displaySectorLabel(code) {
-  if (currentTitleMode === "short") return code;
-  if (currentTitleMode === "verbose") return code + " - " + sectorLabel(code);
-  return sectorLabel(code);
+function parseNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function fmtValue(val, metricKey) {
-  const m = METRICS[metricKey];
-  const scaled = val / m.scale;
-  const formatted = scaled >= 1000
-    ? scaled.toLocaleString(undefined, { maximumFractionDigits: 0 })
-    : scaled.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  return formatted + "\u00A0" + m.unit;
-}
-
-function setStatus(msg) {
-  document.getElementById("sankey-status").textContent = msg;
+function setStatus(message) {
+  document.getElementById("sankey-status").textContent = message;
 }
 
 function updateCSVSourceLink(year, country) {
   const csvPath = getCSVRepoPath(year, country);
   const csvLink = document.getElementById("sankey-csv-link");
   const csvPathElem = document.getElementById("sankey-csv-path");
-
   if (csvLink) {
     csvLink.href = getCSVSourceURL(year, country);
   }
@@ -161,120 +216,306 @@ function updateCSVSourceLink(year, country) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// eCharts instance
-// ---------------------------------------------------------------------------
-const chartDom = document.getElementById("sankey-chart");
-const chart = echarts.init(chartDom);
-window.addEventListener("resize", () => chart.resize());
-
-// ---------------------------------------------------------------------------
-// Build Sankey data from rawData
-// ---------------------------------------------------------------------------
-function buildSankeyData(metricKey, topN) {
-  // Step 1: Aggregate raw rows → (src, tgt) total value; skip self-loops.
-  const flowMap = new Map();
-  for (const row of rawData) {
-    const src = row.industry1;
-    const tgt = row.industry2;
-    if (!src || !tgt || src === tgt) continue;
-    const val = parseFloat(row[metricKey]);
-    if (!isFinite(val) || val <= 0) continue;
-    const key = src + "\x00" + tgt;
-    flowMap.set(key, (flowMap.get(key) || 0) + val);
-  }
-
-  // Step 2: Resolve bidirectional pairs (A→B and B→A) — keep only the
-  // dominant direction so the aggregated graph has no 2-node cycles.
-  const resolvedMap = new Map();
-  for (const [key, val] of flowMap) {
-    const sep    = key.indexOf("\x00");
-    const src    = key.slice(0, sep);
-    const tgt    = key.slice(sep + 1);
-    const revKey = tgt + "\x00" + src;
-    if (resolvedMap.has(revKey)) {
-      if (val > resolvedMap.get(revKey)) {
-        resolvedMap.delete(revKey);
-        resolvedMap.set(key, val);
-      }
-      // else reverse direction is dominant — leave it, drop this one.
-    } else {
-      resolvedMap.set(key, val);
+function fetchText(url) {
+  return fetch(url).then(function (response) {
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
     }
+    return response.text();
+  });
+}
+
+function resolveIndustryNames(code) {
+  const key = normalizeCode(code);
+  const yearMap = industryNamesByYear[normalizeCode(currentSelection.year)] || {};
+  const verbose = yearMap[key] || key;
+  const title = SECTOR_NAMES[key] || String(verbose || "")
+    .replace(/\s*\([^)]*\)\s*$/g, "")
+    .split(";")[0]
+    .trim() || key;
+  return {
+    code: key,
+    title: title || key,
+    verbose: verbose || title || key
+  };
+}
+
+function sectorLabel(code) {
+  const names = resolveIndustryNames(code);
+  if (currentTitleMode === "short") {
+    return names.code;
+  }
+  if (currentTitleMode === "verbose") {
+    return names.verbose;
+  }
+  return names.title;
+}
+
+function displaySectorLabel(code) {
+  const names = resolveIndustryNames(code);
+  const label = sectorLabel(code);
+  return label !== names.code ? label + " (" + names.code + ")" : names.code;
+}
+
+function wrapLabel(text, maxChars) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return "";
+  }
+  const lines = [];
+  let currentLine = "";
+  words.forEach(function (word) {
+    if (!currentLine) {
+      currentLine = word;
+    } else if (currentLine.length + 1 + word.length <= maxChars) {
+      currentLine += " " + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  return lines.join("\n");
+}
+
+function metricUnit(metricKey) {
+  if (metricKey === "amount") {
+    return "M " + currentCurrency;
+  }
+  return (METRICS[metricKey] && METRICS[metricKey].unit) || "";
+}
+
+function metricScale(metricKey) {
+  return (METRICS[metricKey] && METRICS[metricKey].scale) || 1;
+}
+
+function currencyRateForYear(year, currencyCode) {
+  const currency = normalizeCode(currencyCode) || "EUR";
+  if (currency === "EUR") {
+    return 1;
+  }
+  const yearRates = currencyRatesByYear[normalizeCode(year)] || {};
+  return parseNumber(yearRates[currency]) || 1;
+}
+
+function displayMetricValue(value, metricKey) {
+  if (metricKey === "amount") {
+    return parseNumber(value) * currencyRateForYear(currentSelection.year, currentCurrency);
+  }
+  return parseNumber(value);
+}
+
+function fmtValue(value, metricKey) {
+  const scaled = displayMetricValue(value, metricKey) / metricScale(metricKey);
+  const formatted = scaled >= 1000
+    ? scaled.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : scaled.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return formatted + "\u00A0" + metricUnit(metricKey);
+}
+
+function currencyName(code) {
+  return CURRENCY_NAMES[normalizeCode(code)] || normalizeCode(code);
+}
+
+function syncCurrencyVisibility() {
+  if (currencyLabel) {
+    currencyLabel.style.display = currentMetric === "amount" ? "flex" : "none";
+  }
+}
+
+function currenciesForYear(year) {
+  const rates = currencyRatesByYear[normalizeCode(year)] || { EUR: 1 };
+  return availableCurrencies.filter(function (currencyCode) {
+    return currencyCode === "EUR" || parseNumber(rates[currencyCode]) > 0;
+  });
+}
+
+function syncCurrencyOptions(year, preferredCurrency) {
+  const supported = currenciesForYear(year);
+  currencySelect.innerHTML = "";
+  (supported.length ? supported : ["EUR"]).forEach(function (currencyCode) {
+    const option = document.createElement("option");
+    option.value = currencyCode;
+    option.textContent = currencyCode + " - " + currencyName(currencyCode);
+    currencySelect.appendChild(option);
+  });
+  currentCurrency = supported.includes(preferredCurrency) ? preferredCurrency : (supported[0] || "EUR");
+  currencySelect.value = currentCurrency;
+}
+
+function loadIndustryNamesForYear(year) {
+  const key = normalizeCode(year);
+  if (!key || industryNamesByYear[key]) {
+    return Promise.resolve();
+  }
+  return fetchText(getIndustryURL(year)).then(function (text) {
+    const rows = d3.csvParse(text);
+    const yearMap = {};
+    rows.forEach(function (row) {
+      const industryId = normalizeCode(row.industry_id);
+      const name = String(row.name || "").trim();
+      if (industryId) {
+        yearMap[industryId] = name || industryId;
+      }
+    });
+    industryNamesByYear[key] = yearMap;
+  }).catch(function () {
+    industryNamesByYear[key] = {};
+  });
+}
+
+function loadCurrencyRates() {
+  if (currencyRatesPromise) {
+    return currencyRatesPromise;
   }
 
-  // Step 3: Sort descending, take top N, convert to link objects.
-  let links = Array.from(resolvedMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topN)
-    .map(([key, value]) => {
-      const sep = key.indexOf("\x00");
-      return {
-        source: key.slice(0, sep),
-        target: key.slice(sep + 1),
-        value,
-      };
+  currencyRatesPromise = fetchText(getCurrencyRatesURL()).then(function (text) {
+    const rows = d3.csvParse(text);
+    const columns = (rows.columns || []).filter(function (column) {
+      return column !== "Year";
     });
+    availableCurrencies = ["EUR"].concat(columns);
+    rows.forEach(function (row) {
+      const year = normalizeCode(row.Year);
+      if (!year) {
+        return;
+      }
+      const yearRates = { EUR: 1 };
+      columns.forEach(function (currencyCode) {
+        const rate = parseNumber(row[currencyCode]);
+        if (rate > 0) {
+          yearRates[currencyCode] = rate;
+        }
+      });
+      currencyRatesByYear[year] = yearRates;
+    });
+  }).catch(function () {
+    availableCurrencies = ["EUR"];
+  });
 
-  // Step 4: Strip any remaining multi-node cycles via iterative DFS.
-  // Each pass finds all back-edges; remove the lowest-value one and repeat.
-  links = removeCycles(links);
-
-  // Step 5: Collect unique node names from the clean link set.
-  const nodeSet = new Set();
-  for (const lk of links) { nodeSet.add(lk.source); nodeSet.add(lk.target); }
-  const nodes = Array.from(nodeSet).map(name => ({ name }));
-
-  return { nodes, links };
+  return currencyRatesPromise;
 }
 
 // ---------------------------------------------------------------------------
-// Cycle removal helpers
+// Build Sankey data
 // ---------------------------------------------------------------------------
+function buildSankeyData(metricKey, topN) {
+  const flowMap = new Map();
+  rawData.forEach(function (row) {
+    const source = normalizeCode(row.industry1);
+    const target = normalizeCode(row.industry2);
+    if (!source || !target || source === target) {
+      return;
+    }
+    const value = parseNumber(row[metricKey]);
+    if (value <= 0) {
+      return;
+    }
+    const key = source + "\x00" + target;
+    flowMap.set(key, (flowMap.get(key) || 0) + value);
+  });
 
-// Returns all back-edges found by DFS (edges whose target is "gray" / on the
-// current recursion stack, meaning they point back into an ancestor).
+  const resolvedMap = new Map();
+  flowMap.forEach(function (value, key) {
+    const separator = key.indexOf("\x00");
+    const source = key.slice(0, separator);
+    const target = key.slice(separator + 1);
+    const reverseKey = target + "\x00" + source;
+    if (resolvedMap.has(reverseKey)) {
+      if (value > resolvedMap.get(reverseKey)) {
+        resolvedMap.delete(reverseKey);
+        resolvedMap.set(key, value);
+      }
+    } else {
+      resolvedMap.set(key, value);
+    }
+  });
+
+  let links = Array.from(resolvedMap.entries())
+    .sort(function (a, b) { return b[1] - a[1]; })
+    .slice(0, topN)
+    .map(function (entry) {
+      const key = entry[0];
+      const separator = key.indexOf("\x00");
+      return {
+        source: key.slice(0, separator),
+        target: key.slice(separator + 1),
+        value: entry[1]
+      };
+    });
+
+  links = removeCycles(links);
+
+  const nodeSet = new Set();
+  links.forEach(function (link) {
+    nodeSet.add(link.source);
+    nodeSet.add(link.target);
+  });
+
+  return {
+    nodes: Array.from(nodeSet).map(function (name) {
+      return { name: name };
+    }),
+    links: links
+  };
+}
+
 function findBackEdges(links) {
-  const adj = new Map();
-  for (const lk of links) {
-    if (!adj.has(lk.source)) adj.set(lk.source, []);
-    adj.get(lk.source).push(lk);
-  }
+  const adjacency = new Map();
+  links.forEach(function (link) {
+    if (!adjacency.has(link.source)) {
+      adjacency.set(link.source, []);
+    }
+    adjacency.get(link.source).push(link);
+  });
 
-  const WHITE = 0, GRAY = 1, BLACK = 2;
-  const color    = new Map();
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map();
   const backEdges = [];
 
   function dfs(node) {
     color.set(node, GRAY);
-    for (const lk of (adj.get(node) || [])) {
-      const c = color.get(lk.target) || WHITE;
-      if (c === GRAY) {
-        backEdges.push(lk);        // back-edge → cycle
-      } else if (c === WHITE) {
-        dfs(lk.target);
+    (adjacency.get(node) || []).forEach(function (link) {
+      const nextColor = color.get(link.target) || WHITE;
+      if (nextColor === GRAY) {
+        backEdges.push(link);
+      } else if (nextColor === WHITE) {
+        dfs(link.target);
       }
-    }
+    });
     color.set(node, BLACK);
   }
 
   const nodes = new Set();
-  for (const lk of links) { nodes.add(lk.source); nodes.add(lk.target); }
-  for (const node of nodes) {
-    if (!color.get(node)) dfs(node);
-  }
+  links.forEach(function (link) {
+    nodes.add(link.source);
+    nodes.add(link.target);
+  });
+  nodes.forEach(function (node) {
+    if (!color.get(node)) {
+      dfs(node);
+    }
+  });
   return backEdges;
 }
 
-// Repeatedly remove the lowest-value back-edge until the graph is a DAG.
 function removeCycles(links) {
   let remaining = links.slice();
-  for (let guard = 0; guard < links.length; guard++) {
-    const backs = findBackEdges(remaining);
-    if (backs.length === 0) break;
-    // Drop the cheapest back-edge (least information loss).
-    const worst = backs.reduce((min, e) => e.value < min.value ? e : min);
-    remaining = remaining.filter(lk => lk !== worst);
+  for (let guard = 0; guard < links.length; guard += 1) {
+    const backEdges = findBackEdges(remaining);
+    if (!backEdges.length) {
+      break;
+    }
+    const worst = backEdges.reduce(function (minEdge, edge) {
+      return edge.value < minEdge.value ? edge : minEdge;
+    });
+    remaining = remaining.filter(function (link) {
+      return link !== worst;
+    });
   }
   return remaining;
 }
@@ -283,177 +524,164 @@ function removeCycles(links) {
 // Render
 // ---------------------------------------------------------------------------
 function render() {
-  if (!rawData) return;
+  if (!rawData) {
+    return;
+  }
 
-  const m = METRICS[currentMetric];
-  const { nodes, links } = buildSankeyData(currentMetric, currentTopN);
+  const metric = METRICS[currentMetric];
+  const sankeyData = buildSankeyData(currentMetric, currentTopN);
 
-  if (links.length === 0) {
+  if (!sankeyData.links.length) {
     setStatus("No data available for this combination.");
     chart.clear();
     return;
   }
 
-  const option = {
+  chart.setOption({
     tooltip: {
       trigger: "item",
       triggerOn: "mousemove",
       confine: true,
-      formatter: function(params) {
+      formatter: function (params) {
         if (params.dataType === "edge") {
-          return (
-            "<b>" + sectorLabel(params.data.source) + "</b>"
+          return "<b>" + displaySectorLabel(params.data.source) + "</b>"
             + " &rarr; "
-            + "<b>" + sectorLabel(params.data.target) + "</b>"
-            + "<br/>"
-            + m.label + ": <b>" + fmtValue(params.data.value, currentMetric) + "</b>"
-          );
+            + "<b>" + displaySectorLabel(params.data.target) + "</b><br/>"
+            + metric.label + ": <b>" + fmtValue(params.data.value, currentMetric) + "</b>";
         }
-        // Node tooltip — sum of all adjacent links
-        return "<b>" + sectorLabel(params.name) + "</b>";
-      },
+        return "<b>" + displaySectorLabel(params.name) + "</b>";
+      }
     },
     series: [{
       type: "sankey",
       layout: "none",
       layoutIterations: 32,
       emphasis: {
-        focus: "adjacency",
+        focus: "adjacency"
       },
       nodeAlign: "left",
       nodeGap: 14,
       nodeWidth: 22,
-      left:   "1%",
-      right:  currentTitleMode === "verbose" ? "36%" : (currentTitleMode === "full" ? "30%" : "18%"),
-      top:    "2%",
-      bottom: "4%",
-      data:  nodes,
-      links: links,
+      left: "1%",
+      right: "8%",
+      top: "2%",
+      bottom: "2%",
+      data: sankeyData.nodes,
+      links: sankeyData.links,
       label: {
         position: "right",
-        fontSize: currentTitleMode === "verbose" ? 10 : (currentTitleMode === "full" ? 11 : 12),
+        fontSize: 12,
+        width: 150,
+        overflow: "break",
+        lineHeight: 14,
+        align: "left",
         color: "#333",
-        formatter: function(params) { return displaySectorLabel(params.name); },
+        formatter: function (params) {
+          return wrapLabel(sectorLabel(params.name), 24);
+        }
       },
       lineStyle: {
-        color:     "gradient",
-        opacity:   0.45,
-        curveness: 0.5,
+        color: "gradient",
+        opacity: 0.45,
+        curveness: 0.5
       },
       itemStyle: {
         borderWidth: 1,
-        borderColor: "#aaa",
-      },
-    }],
-  };
+        borderColor: "#aaa"
+      }
+    }]
+  }, true);
 
-  chart.setOption(option, /* notMerge = */ true);
   chart.resize();
-
   setStatus(
-    "Showing top\u00A0" + links.length + " flows by " + m.label
-    + " \u00B7 " + nodes.length + " industries"
+    "Showing top\u00A0" + sankeyData.links.length + " flows by " + metric.label
+      + " for " + currentSelection.country + " " + currentSelection.year
   );
 }
 
 // ---------------------------------------------------------------------------
-// Controls
+// Hash and loading
 // ---------------------------------------------------------------------------
-function fitSelectToValue(sel) {
-  const tmp = document.createElement("select");
-  const cs = window.getComputedStyle(sel);
-  tmp.style.cssText = "position:absolute;visibility:hidden;";
-  tmp.style.font = cs.font;
-  tmp.style.padding = cs.padding;
-  tmp.style.border = cs.border;
-  tmp.style.boxSizing = cs.boxSizing;
-  const opt = document.createElement("option");
-  opt.textContent = sel.options[sel.selectedIndex].text;
-  tmp.appendChild(opt);
-  document.body.appendChild(tmp);
-  sel.style.width = tmp.offsetWidth + "px";
-  document.body.removeChild(tmp);
-}
-
-const currencySelect = document.getElementById("currency-select");
-currencySelect.addEventListener("change", function() { fitSelectToValue(this); });
-fitSelectToValue(currencySelect);
-
-const titleModeSelect = document.getElementById("title-mode-select");
-titleModeSelect.addEventListener("change", function() { fitSelectToValue(this); });
-fitSelectToValue(titleModeSelect);
-
-document.getElementById("metric-select").addEventListener("change", function(e) {
-  currentMetric = e.target.value;
-  document.getElementById("currency-label").style.display = currentMetric === "amount" ? "" : "none";
-  render();
-});
-
-document.getElementById("topn-slider").addEventListener("input", function(e) {
-  currentTopN = parseInt(e.target.value, 10);
-  document.getElementById("topn-label").textContent = currentTopN;
-  render();
-});
-
-document.getElementById("title-mode-select").addEventListener("change", function(e) {
-  currentTitleMode = e.target.value;
-  render();
-});
-
-// ---------------------------------------------------------------------------
-// Year + Country hash filter
-// ---------------------------------------------------------------------------
-function initFilters() {
-  const countrySelect = document.getElementById('country-select');
-  const yearSelect = document.getElementById('year-select');
-
-  countrySelect.addEventListener('change', function() {
-    goHash({
-      country: countrySelect.value,
-      year: yearSelect.value,
-    });
-  });
-
-  yearSelect.addEventListener('change', function() {
-    goHash({
-      country: countrySelect.value,
-      year: yearSelect.value,
-    });
-  });
-
-  loadFromHash();
-}
-
 function loadFromHash() {
-  const hash = getHash();
-  const year = hash.year || '2022';
-  const country = hash.country || 'WM';
+  const hash = typeof getHash === "function" ? (getHash() || {}) : {};
+  const year = hash.year || "2022";
+  const country = hash.country || "WM";
 
-  // Update filter selects if they exist
-  const countrySelect = document.getElementById('country-select');
-  if (countrySelect) countrySelect.value = country;
+  currentSelection = { year: year, country: country };
+  if (countrySelect) {
+    countrySelect.value = country;
+  }
+  if (yearSelect) {
+    yearSelect.value = year;
+  }
 
-  const yearSelect = document.getElementById('year-select');
-  if (yearSelect) yearSelect.value = year;
-
-  // Reload data with new URL
-  const url = getCSV_URL(year, country);
+  syncCurrencyOptions(year, currentCurrency);
   updateCSVSourceLink(year, country);
-  setStatus('Loading data…');
-  rawData = null;
+  setStatus("Loading data...");
   chart.clear();
+  rawData = null;
 
-  d3.csv(url).then(function(data) {
-    rawData = data;
-    setStatus('Loaded ' + data.length.toLocaleString() + ' trade flow records.');
+  Promise.all([
+    loadIndustryNamesForYear(year),
+    loadCurrencyRates(),
+    d3.csv(getCSV_URL(year, country))
+  ]).then(function (results) {
+    rawData = results[2];
+    syncCurrencyOptions(year, currentCurrency);
     render();
-  }).catch(function(err) {
-    setStatus('Error loading CSV: ' + err.message);
+  }).catch(function (error) {
+    setStatus("Error loading CSV: " + error.message);
   });
 }
 
-// Listen for hash changes (year or country)
-document.addEventListener('hashChangeEvent', loadFromHash, false);
+function initFilters() {
+  syncCurrencyVisibility();
+  syncCurrencyOptions(currentSelection.year, currentCurrency);
+  topnSlider.value = String(currentTopN);
+  topnLabel.textContent = String(currentTopN);
+  metricSelect.value = currentMetric;
+  titleModeSelect.value = currentTitleMode;
 
-// Init
+  countrySelect.addEventListener("change", function () {
+    goHash({
+      country: countrySelect.value,
+      year: yearSelect.value
+    });
+  });
+
+  yearSelect.addEventListener("change", function () {
+    goHash({
+      country: countrySelect.value,
+      year: yearSelect.value
+    });
+  });
+
+  metricSelect.addEventListener("change", function (event) {
+    currentMetric = event.target.value;
+    syncCurrencyVisibility();
+    render();
+  });
+
+  currencySelect.addEventListener("change", function (event) {
+    currentCurrency = event.target.value || "EUR";
+    render();
+  });
+
+  titleModeSelect.addEventListener("change", function (event) {
+    currentTitleMode = event.target.value || "title";
+    render();
+  });
+
+  topnSlider.addEventListener("input", function (event) {
+    currentTopN = parseInt(event.target.value, 10) || 15;
+    topnLabel.textContent = String(currentTopN);
+    render();
+  });
+
+  loadCurrencyRates().finally(function () {
+    loadFromHash();
+  });
+}
+
+document.addEventListener("hashChangeEvent", loadFromHash, false);
 initFilters();
