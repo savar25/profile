@@ -1,16 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">  
     <title>Trade Flow Map</title>
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link type="text/css" rel="stylesheet" href="/localsite/css/base.css" id="/localsite/css/base.css" />
+    <script type="text/javascript" src="/localsite/js/localsite.js?showheader=true&showsearch=true"></script>
+    <script>
+    loadMarkdown("README.md", "readmeDiv", "_parent");
+    </script>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- the id uses v5 to prevent dual loading by localsite.js -->
+    <script src="https://d3js.org/d3.v7.min.js" id="localsite/js/d3.v5.min.js"></script>
     <style>
         body { margin: 0; font-family: sans-serif; }
 
         #map {
+            position: relative;
             height: 100vh;
             width: 100%;
         }
@@ -34,8 +46,8 @@
             border: 1px solid #ccc;
             border-radius: 6px;
             z-index: 1000;
-            min-width: 180px;
-            max-width: 200px;
+            min-width: 200px;
+            max-width: 280px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
         .control-panel h4 {
@@ -100,20 +112,21 @@
 
         #flow-toggle {
             display: flex;
-            gap: 12px;
+            flex-wrap: wrap;
+            gap: 7px;
             margin-bottom: 8px;
         }
         .toggle-opt {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             font-size: 12px;
             font-weight: 600;
             color: #333;
             cursor: pointer;
         }
 
-        #legend {
+        #map-legend {
             position: absolute;
             bottom: 30px;
             left: 10px;
@@ -173,37 +186,42 @@
     </style>
 </head>
 <body>
-    <div id="map"></div>
-
-    <div class="control-panel">
-        <h4>Exiobase Trade Flows · 2022</h4>
-        <div id="flow-toggle">
-            <label class="toggle-opt">
-                <input type="radio" name="flow-dir" value="imports" checked> Imports
-            </label>
-            <label class="toggle-opt">
-                <input type="radio" name="flow-dir" value="exports"> Exports
-            </label>
+    <div style="position:relative">
+        <div id="map">
+            <div id="map-legend">
+                Arrow thickness = total embodied CO&#x2082; &middot; <span id="legend-dir">exporter &rarr; importer</span>
+            </div>
         </div>
-        <label for="country-select" id="country-label">Importing country:</label>
-        <select id="country-select">
-            <option value="US">United States (US)</option>
-            <option value="CN">China (CN)</option>
-            <option value="DE">Germany (DE)</option>
-            <option value="IN">India (IN)</option>
-            <option value="RU">Russia (RU)</option>
-        </select>
-        <div id="status-msg">Loading&hellip;</div>
-        <div id="source-filters"></div>
-    </div>
 
-    <div id="legend">
-        Arrow thickness = total embodied CO&#x2082; &middot; <span id="legend-dir">exporter &rarr; importer</span>
-    </div>
-    <div id="zoom-toast" aria-live="polite"></div>
-    <div id="map-tooltip"></div>
+        <div class="control-panel">
+            <h4>Exiobase Trade Flows · 2022</h4>
+            <div id="flow-toggle">
+                <label class="toggle-opt">
+                    <input type="radio" name="flow-dir" value="imports" checked> Imports
+                </label>
+                <label class="toggle-opt">
+                    <input type="radio" name="flow-dir" value="exports"> Exports
+                </label>
+                <label class="toggle-opt">
+                    <input type="radio" name="flow-dir" value="balance"> Balance
+                </label>
+            </div>
+            <label for="country-select" id="country-label">Importing country:</label>
+            <select id="country-select">
+                <option value="US">United States (US)</option>
+                <option value="CN">China (CN)</option>
+                <option value="DE">Germany (DE)</option>
+                <option value="IN">India (IN)</option>
+                <option value="RU">Russia (RU)</option>
+            </select>
+            <div id="status-msg">Loading&hellip;</div>
+            <div id="source-filters"></div>
+        </div>
 
-    <script>
+        <div id="zoom-toast" aria-live="polite"></div>
+        <div id="map-tooltip"></div>
+    </div>
+<script>
 // ---------------------------------------------------------------------------
 // Country coordinates [lon, lat]
 // ---------------------------------------------------------------------------
@@ -251,13 +269,22 @@ function fmtCO2(val) {
     return val.toExponential(2) + " CO\u2082";
 }
 
+const DEFAULT_MAP_ZOOM = 2;
+const INITIAL_MAP_CENTER = [20, -55];
+const PACIFIC_ROUTE_MIN_LON = 70;
+const COUNTRY_CENTER_OFFSET_FACTOR = 0.26;
+const BALANCE_NEGATIVE_DARK = "#c96256";
+const BALANCE_NEGATIVE_LIGHT = "#f3c6bf";
+const BALANCE_POSITIVE_DARK = "#0f6b57";
+const BALANCE_POSITIVE_LIGHT = "#bfe3d1";
+
 // ---------------------------------------------------------------------------
 // Map setup
 // ---------------------------------------------------------------------------
 const map = L.map("map", {
     scrollWheelZoom: false,
     zoomSnap: 1,
-}).setView([23, 24], 2);
+}).setView(INITIAL_MAP_CENTER, DEFAULT_MAP_ZOOM);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -274,8 +301,8 @@ let zoomToastTimer = null;
 
 L.DomEvent.disableClickPropagation(document.querySelector(".control-panel"));
 L.DomEvent.disableScrollPropagation(document.querySelector(".control-panel"));
-L.DomEvent.disableClickPropagation(document.getElementById("legend"));
-L.DomEvent.disableScrollPropagation(document.getElementById("legend"));
+L.DomEvent.disableClickPropagation(document.getElementById("map-legend"));
+L.DomEvent.disableScrollPropagation(document.getElementById("map-legend"));
 
 function showZoomToast(enabled) {
     zoomToast.textContent = enabled ? "Zoom On" : "Zoom Off";
@@ -310,7 +337,7 @@ function clickShouldToggleZoom(evt) {
 
     return !target.closest([
         ".control-panel",
-        "#legend",
+        "#map-legend",
         "#map-tooltip",
         "#zoom-toast",
         ".leaflet-marker-icon",
@@ -329,6 +356,7 @@ const csvCache = new Map();
 // Interaction state
 // ---------------------------------------------------------------------------
 let currentFlowDir = "imports";   // "imports" or "exports"
+let currentFocusCountry = document.getElementById("country-select").value || "US";
 let selectedArrow = null;
 const NORMAL_OPACITY    = 0.65;
 const HIGHLIGHT_OPACITY = 1.0;
@@ -340,12 +368,19 @@ const DIM_OPACITY       = 0.08;
 const tooltip = document.getElementById("map-tooltip");
 
 function showTooltip(trade, focusCountry, flowDir, evt) {
-    const label = flowDir === "imports"
-        ? `${countryLabel(trade.from)} \u2192 ${countryLabel(focusCountry)}`
-        : `${countryLabel(focusCountry)} \u2192 ${countryLabel(trade.to)}`;
-    tooltip.innerHTML =
-        `<div class="tt-direction">${label}</div>` +
-        `<div class="tt-co2">${fmtCO2(trade.co2)}</div>`;
+    const label = `${countryLabel(trade.from)} \u2192 ${countryLabel(trade.to)}`;
+    if (flowDir === "balance") {
+        const balanceLabel = trade.netCo2 >= 0 ? "Trade surplus" : "Trade deficit";
+        tooltip.innerHTML =
+            `<div class="tt-direction">${label}</div>` +
+            `<div class="tt-co2">${balanceLabel}: ${fmtCO2(trade.co2)}</div>` +
+            `<div>Exports: ${fmtCO2(trade.exportsCo2 || 0)}</div>` +
+            `<div>Imports: ${fmtCO2(trade.importsCo2 || 0)}</div>`;
+    } else {
+        tooltip.innerHTML =
+            `<div class="tt-direction">${label}</div>` +
+            `<div class="tt-co2">${fmtCO2(trade.co2)}</div>`;
+    }
     tooltip.style.display = "block";
     moveTooltip(evt);
 }
@@ -405,9 +440,42 @@ function projectPoint(lon, lat) {
     return map.latLngToLayerPoint(new L.LatLng(lat, lon));
 }
 
+function projectTradePoint(countryCode, lonShift) {
+    const [lon, lat] = COORDS[countryCode];
+    return projectPoint(lon + (lonShift || 0), lat);
+}
+
+function isAmericasCountry(countryCode) {
+    const coords = COORDS[countryCode];
+    if (!coords) return false;
+    const [lon, lat] = coords;
+    return lon <= -30 && lat <= 75 && lat >= -60;
+}
+
+function isAsiaPacificCountry(countryCode) {
+    const coords = COORDS[countryCode];
+    return Boolean(coords && coords[0] >= PACIFIC_ROUTE_MIN_LON);
+}
+
+function getPacificPartnerLonShift(focusCountry, partnerCode) {
+    if (isAmericasCountry(focusCountry) && isAsiaPacificCountry(partnerCode)) {
+        return -360;
+    }
+    if (isAsiaPacificCountry(focusCountry) && isAmericasCountry(partnerCode)) {
+        return 360;
+    }
+    return 0;
+}
+
+function getTradePoints(d) {
+    return {
+        from: projectTradePoint(d.from, d.fromLonShift),
+        to: projectTradePoint(d.to, d.toLonShift),
+    };
+}
+
 function drawCurve(d) {
-    const from = projectPoint(...COORDS[d.from]);
-    const to   = projectPoint(...COORDS[d.to]);
+    const { from, to } = getTradePoints(d);
     return buildArcPath(from, to, 1);
 }
 
@@ -419,8 +487,7 @@ function buildArcPath(from, to, sweepFlag) {
 }
 
 function drawLabelCurve(d, flipLabel) {
-    const from = projectPoint(...COORDS[d.from]);
-    const to   = projectPoint(...COORDS[d.to]);
+    const { from, to } = getTradePoints(d);
     return flipLabel
         ? buildArcPath(to, from, 0)
         : buildArcPath(from, to, 1);
@@ -448,6 +515,168 @@ function update() {
 map.on("zoomend", update);
 map.on("moveend", update);
 
+function getLeftOverlayInset() {
+    return [document.querySelector(".control-panel"), document.getElementById("map-legend")]
+        .filter(Boolean)
+        .reduce((maxInset, el) => {
+            const rect = el.getBoundingClientRect();
+            return Math.max(maxInset, rect.right + 24);
+        }, 0);
+}
+
+function centerMapForCountry(countryCode) {
+    const coords = COORDS[countryCode];
+    if (!coords) return;
+
+    const focusLatLng = new L.LatLng(coords[1], coords[0]);
+    map.setView(focusLatLng, DEFAULT_MAP_ZOOM, { animate: false });
+
+    const mapSize = map.getSize();
+    const desiredPoint = L.point(
+        Math.min(mapSize.x - 80, (mapSize.x / 2) + (getLeftOverlayInset() * COUNTRY_CENTER_OFFSET_FACTOR)),
+        mapSize.y / 2
+    );
+    const currentPoint = map.latLngToContainerPoint(focusLatLng);
+    const panDelta = currentPoint.subtract(desiredPoint);
+
+    if (Math.abs(panDelta.x) > 1 || Math.abs(panDelta.y) > 1) {
+        map.panBy(panDelta, { animate: false });
+    }
+}
+
+function getSelectedCountryValue() {
+    return document.getElementById("country-select").value;
+}
+
+function setSelectedCountryValue(countryCode) {
+    const select = document.getElementById("country-select");
+    const hasOption = Array.from(select.options).some(option => option.value === countryCode);
+    if (!hasOption) return false;
+    select.value = countryCode;
+    return true;
+}
+
+function getHashCountry() {
+    if (typeof getHash !== "function") return "";
+    return getHash().country || "";
+}
+
+function syncCountryToHash(countryCode) {
+    if (typeof updateHash === "function") {
+        updateHash({ country: countryCode });
+    }
+}
+
+function applyCountrySelection(countryCode, flowDir) {
+    if (!setSelectedCountryValue(countryCode)) return false;
+    loadFlows(countryCode, flowDir);
+    return true;
+}
+
+function collectImports(data, focusCountry) {
+    const flowMap = new Map();
+    for (const row of data) {
+        const src = row.region1;
+        if (!src || src === focusCountry || !COORDS[src]) continue;
+        const val = parseFloat(row.CO2_total) || 0;
+        if (val <= 0) continue;
+        flowMap.set(src, (flowMap.get(src) || 0) + val);
+    }
+    return flowMap;
+}
+
+function collectExports(data, focusCountry) {
+    const flowMap = new Map();
+    for (const row of data) {
+        const dst = row.region2;
+        if (!dst || dst === focusCountry || !COORDS[dst]) continue;
+        const val = parseFloat(row.CO2_total) || 0;
+        if (val <= 0) continue;
+        flowMap.set(dst, (flowMap.get(dst) || 0) + val);
+    }
+    return flowMap;
+}
+
+function getCountryLabelText(flowDir) {
+    if (flowDir === "exports") return "Exporting country:";
+    if (flowDir === "balance") return "Balance country:";
+    return "Importing country:";
+}
+
+function buildDirectionalTrades(flowMap, focusCountry, flowDir) {
+    return Array.from(flowMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([partner, co2]) => {
+            const partnerLonShift = getPacificPartnerLonShift(focusCountry, partner);
+            return {
+                from: flowDir === "imports" ? partner : focusCountry,
+                to: flowDir === "imports" ? focusCountry : partner,
+                fromLonShift: flowDir === "imports" ? partnerLonShift : 0,
+                toLonShift: flowDir === "exports" ? partnerLonShift : 0,
+                co2,
+                partner,
+            };
+        });
+}
+
+function buildBalanceTrades(importsData, exportsData, focusCountry) {
+    const importMap = collectImports(importsData, focusCountry);
+    const exportMap = collectExports(exportsData, focusCountry);
+    const partners = new Set([...importMap.keys(), ...exportMap.keys()]);
+
+    return Array.from(partners)
+        .map(partner => {
+            const importsCo2 = importMap.get(partner) || 0;
+            const exportsCo2 = exportMap.get(partner) || 0;
+            const netCo2 = exportsCo2 - importsCo2;
+            if (netCo2 === 0) return null;
+
+            const partnerLonShift = getPacificPartnerLonShift(focusCountry, partner);
+            const isSurplus = netCo2 > 0;
+            return {
+                from: isSurplus ? focusCountry : partner,
+                to: isSurplus ? partner : focusCountry,
+                fromLonShift: isSurplus ? 0 : partnerLonShift,
+                toLonShift: isSurplus ? partnerLonShift : 0,
+                co2: Math.abs(netCo2),
+                netCo2,
+                importsCo2,
+                exportsCo2,
+                balanceSign: isSurplus ? "positive" : "negative",
+                partner,
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.co2 - a.co2);
+}
+
+function getWidthScale(trades) {
+    const maxCO2 = d3.max(trades, d => d.co2) || 0;
+    const minCO2 = d3.min(trades, d => d.co2) || 0;
+    if (maxCO2 === minCO2) {
+        return () => (maxCO2 > 0 ? 8 : 0);
+    }
+    return d3.scaleLinear()
+        .domain([minCO2, maxCO2])
+        .range([1.5, 14]);
+}
+
+function getBalanceColorScale(trades, sign) {
+    const signedTrades = trades.filter(trade => trade.balanceSign === sign);
+    const maxMagnitude = d3.max(signedTrades, d => d.co2) || 0;
+    const darkColor = sign === "negative" ? BALANCE_NEGATIVE_DARK : BALANCE_POSITIVE_DARK;
+    const lightColor = sign === "negative" ? BALANCE_NEGATIVE_LIGHT : BALANCE_POSITIVE_LIGHT;
+
+    if (maxMagnitude <= 0) {
+        return () => darkColor;
+    }
+
+    return magnitude => {
+        const t = Math.max(0, Math.min(1, magnitude / maxMagnitude));
+        return d3.interpolateRgb(darkColor, lightColor)(t);
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Render arrows
 // ---------------------------------------------------------------------------
@@ -457,11 +686,9 @@ function renderArrows(trades, focusCountry, flowDir) {
 
     if (trades.length === 0) return;
 
-    const maxCO2 = d3.max(trades, d => d.co2);
-    const minCO2 = d3.min(trades, d => d.co2);
-    const widthScale = d3.scaleLinear()
-        .domain([minCO2, maxCO2])
-        .range([1.5, 14]);
+    const widthScale = getWidthScale(trades);
+    const negativeBalanceColor = getBalanceColorScale(trades, "negative");
+    const positiveBalanceColor = getBalanceColorScale(trades, "positive");
 
     // Single <defs> for all markers
     const defs = svg.append("defs");
@@ -469,7 +696,9 @@ function renderArrows(trades, focusCountry, flowDir) {
     trades.forEach((trade, i) => {
         const pathId   = `trade-path-${i}`;
         const markerId = `arrowhead-${i}`;
-        const color    = colorScale(i);
+        const color    = flowDir === "balance"
+            ? (trade.balanceSign === "negative" ? negativeBalanceColor(trade.co2) : positiveBalanceColor(trade.co2))
+            : colorScale(i);
         const sw       = widthScale(trade.co2);
 
         defs.append("marker")
@@ -554,7 +783,11 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
 
     const header = document.createElement("div");
     header.style.cssText = "font-size:11px;font-weight:600;margin-bottom:6px;color:#333;";
-    header.textContent = flowDir === "imports" ? "Toggle exporters:" : "Toggle importers:";
+    header.textContent = flowDir === "imports"
+        ? "Toggle exporters:"
+        : flowDir === "exports"
+            ? "Toggle importers:"
+            : "Toggle balance partners:";
     container.appendChild(header);
 
     trades.forEach(trade => {
@@ -571,7 +804,10 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
         });
 
         label.appendChild(checkbox);
-        label.appendChild(document.createTextNode(` ${trade.partner} \u2014 ${fmtCO2(trade.co2)}`));
+        const tradeText = flowDir === "balance"
+            ? ` ${trade.partner} \u2014 ${trade.netCo2 >= 0 ? "surplus" : "deficit"} ${fmtCO2(trade.co2)}`
+            : ` ${trade.partner} \u2014 ${fmtCO2(trade.co2)}`;
+        label.appendChild(document.createTextNode(tradeText));
 
         label.addEventListener("mouseenter", () => applyHighlight(trade.partner));
         label.addEventListener("mouseleave", () => {
@@ -590,72 +826,68 @@ function setStatus(msg) {
 }
 
 function processAndRender(data, focusCountry, flowDir) {
-    const flowMap = new Map();
+    let trades = [];
 
     if (flowDir === "imports") {
-        // Arrows: other countries → focusCountry
-        for (const row of data) {
-            const src = row.region1;
-            if (!src || src === focusCountry || !COORDS[src]) continue;
-            const val = parseFloat(row.CO2_total) || 0;
-            if (val <= 0) continue;
-            flowMap.set(src, (flowMap.get(src) || 0) + val);
-        }
+        trades = buildDirectionalTrades(collectImports(data, focusCountry), focusCountry, flowDir);
+    } else if (flowDir === "exports") {
+        trades = buildDirectionalTrades(collectExports(data, focusCountry), focusCountry, flowDir);
     } else {
-        // Exports: focusCountry → other countries
-        // Export files group by region2 as destination
-        for (const row of data) {
-            const dst = row.region2;
-            if (!dst || dst === focusCountry || !COORDS[dst]) continue;
-            const val = parseFloat(row.CO2_total) || 0;
-            if (val <= 0) continue;
-            flowMap.set(dst, (flowMap.get(dst) || 0) + val);
-        }
+        trades = buildBalanceTrades(data.importsData, data.exportsData, focusCountry);
     }
-
-    const trades = Array.from(flowMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .map(([partner, co2]) => ({
-            from: flowDir === "imports" ? partner : focusCountry,
-            to:   flowDir === "imports" ? focusCountry : partner,
-            co2,
-            partner,
-        }));
 
     if (trades.length === 0) { setStatus("No data found."); return; }
 
     const arrow = flowDir === "imports"
         ? `${trades.length} exporters \u2192 ${countryLabel(focusCountry)}`
-        : `${countryLabel(focusCountry)} \u2192 ${trades.length} importers`;
+        : flowDir === "exports"
+            ? `${countryLabel(focusCountry)} \u2192 ${trades.length} importers`
+            : `${trades.filter(trade => trade.netCo2 > 0).length} surplus / ${trades.filter(trade => trade.netCo2 < 0).length} deficit partners`;
     setStatus(arrow);
 
-    const legendDir = flowDir === "imports" ? "exporter \u2192 importer" : "exporter \u2192 importer";
+    const legendDir = flowDir === "balance"
+        ? "net exporter \u2192 net importer"
+        : "exporter \u2192 importer";
     document.getElementById("legend-dir").textContent = legendDir;
 
     renderArrows(trades, focusCountry, flowDir);
     buildCheckboxes(trades, focusCountry, flowDir);
 }
 
+function fetchTradeCsv(focusCountry, flowDir) {
+    const cacheKey = `${focusCountry}/${flowDir}`;
+    if (csvCache.has(cacheKey)) {
+        return Promise.resolve(csvCache.get(cacheKey));
+    }
+
+    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/${focusCountry}/${flowDir}/trade_impact.csv`;
+    return d3.csv(url).then(function(data) {
+        csvCache.set(cacheKey, data);
+        return data;
+    });
+}
+
 function loadFlows(focusCountry, flowDir) {
+    currentFocusCountry = focusCountry;
     selectedArrow = null;
     hideTooltip();
     g.selectAll("*").remove();
     svg.selectAll("defs").remove();
     document.getElementById("source-filters").innerHTML = "";
-
-    const cacheKey = `${focusCountry}/${flowDir}`;
-
-    // Serve from cache if available
-    if (csvCache.has(cacheKey)) {
-        processAndRender(csvCache.get(cacheKey), focusCountry, flowDir);
-        return;
-    }
+    centerMapForCountry(focusCountry);
 
     setStatus("Loading\u2026");
-    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/${focusCountry}/${flowDir}/trade_impact.csv`;
 
-    d3.csv(url).then(function(data) {
-        csvCache.set(cacheKey, data);
+    const loadRequest = flowDir === "balance"
+        ? Promise.all([
+            fetchTradeCsv(focusCountry, "imports"),
+            fetchTradeCsv(focusCountry, "exports"),
+        ]).then(function([importsData, exportsData]) {
+            return { importsData, exportsData };
+        })
+        : fetchTradeCsv(focusCountry, flowDir);
+
+    loadRequest.then(function(data) {
         processAndRender(data, focusCountry, flowDir);
     }).catch(function(err) {
         setStatus("Error loading data.");
@@ -667,14 +899,14 @@ function loadFlows(focusCountry, flowDir) {
 // Country selector + flow direction toggle
 // ---------------------------------------------------------------------------
 document.getElementById("country-select").addEventListener("change", function() {
+    syncCountryToHash(this.value);
     loadFlows(this.value, currentFlowDir);
 });
 
 document.querySelectorAll("input[name='flow-dir']").forEach(radio => {
     radio.addEventListener("change", function() {
         currentFlowDir = this.value;
-        const lbl = currentFlowDir === "imports" ? "Importing country:" : "Exporting country:";
-        document.getElementById("country-label").textContent = lbl;
+        document.getElementById("country-label").textContent = getCountryLabelText(currentFlowDir);
         loadFlows(document.getElementById("country-select").value, currentFlowDir);
     });
 });
@@ -684,7 +916,28 @@ map.on("click", function(evt) {
     setScrollZoom(!map.scrollWheelZoom.enabled());
 });
 
-loadFlows("US", "imports");
-    </script>
+map.on("resize", function() {
+    centerMapForCountry(currentFocusCountry);
+});
+
+document.addEventListener("hashChangeEvent", function() {
+    const hash = getHash();
+    if (!hash.country || hash.country === window.priorHash?.country || hash.country === currentFocusCountry) {
+        return;
+    }
+    applyCountrySelection(hash.country, currentFlowDir);
+});
+
+const initialCountry = getHashCountry() || getSelectedCountryValue();
+if (!applyCountrySelection(initialCountry, currentFlowDir)) {
+    applyCountrySelection(getSelectedCountryValue(), currentFlowDir);
+}
+syncCountryToHash(getSelectedCountryValue());
+</script>
+
+<div class="content contentpadding large-list">
+  <div id="readmeDiv"></div>
+</div>
+
 </body>
 </html>
