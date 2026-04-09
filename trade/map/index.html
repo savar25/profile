@@ -361,6 +361,7 @@ let selectedArrow = null;
 const NORMAL_OPACITY    = 0.65;
 const HIGHLIGHT_OPACITY = 1.0;
 const DIM_OPACITY       = 0.08;
+const VALID_FLOW_DIRS = new Set(["imports", "exports", "balance"]);
 
 // ---------------------------------------------------------------------------
 // Tooltip
@@ -548,6 +549,10 @@ function getSelectedCountryValue() {
     return document.getElementById("country-select").value;
 }
 
+function getSelectedFlowDirValue() {
+    return document.querySelector("input[name='flow-dir']:checked")?.value || "imports";
+}
+
 function setSelectedCountryValue(countryCode) {
     const select = document.getElementById("country-select");
     const hasOption = Array.from(select.options).some(option => option.value === countryCode);
@@ -556,9 +561,23 @@ function setSelectedCountryValue(countryCode) {
     return true;
 }
 
+function setSelectedFlowDirValue(flowDir) {
+    if (!VALID_FLOW_DIRS.has(flowDir)) return false;
+    const radio = document.querySelector(`input[name='flow-dir'][value='${flowDir}']`);
+    if (!radio) return false;
+    radio.checked = true;
+    return true;
+}
+
 function getHashCountry() {
     if (typeof getHash !== "function") return "";
     return getHash().country || "";
+}
+
+function getHashFlowDir() {
+    if (typeof getHash !== "function") return "";
+    const flowDir = getHash().type || "";
+    return VALID_FLOW_DIRS.has(flowDir) ? flowDir : "";
 }
 
 function syncCountryToHash(countryCode) {
@@ -567,8 +586,22 @@ function syncCountryToHash(countryCode) {
     }
 }
 
-function applyCountrySelection(countryCode, flowDir) {
+function syncFlowDirToHash(flowDir) {
+    if (typeof updateHash === "function" && VALID_FLOW_DIRS.has(flowDir)) {
+        updateHash({ type: flowDir });
+    }
+}
+
+function setFlowDirState(flowDir) {
+    if (!setSelectedFlowDirValue(flowDir)) return false;
+    currentFlowDir = flowDir;
+    document.getElementById("country-label").textContent = getCountryLabelText(flowDir);
+    return true;
+}
+
+function applySelections(countryCode, flowDir) {
     if (!setSelectedCountryValue(countryCode)) return false;
+    if (!setFlowDirState(flowDir)) return false;
     loadFlows(countryCode, flowDir);
     return true;
 }
@@ -905,8 +938,8 @@ document.getElementById("country-select").addEventListener("change", function() 
 
 document.querySelectorAll("input[name='flow-dir']").forEach(radio => {
     radio.addEventListener("change", function() {
-        currentFlowDir = this.value;
-        document.getElementById("country-label").textContent = getCountryLabelText(currentFlowDir);
+        setFlowDirState(this.value);
+        syncFlowDirToHash(currentFlowDir);
         loadFlows(document.getElementById("country-select").value, currentFlowDir);
     });
 });
@@ -922,17 +955,29 @@ map.on("resize", function() {
 
 document.addEventListener("hashChangeEvent", function() {
     const hash = getHash();
-    if (!hash.country || hash.country === window.priorHash?.country || hash.country === currentFocusCountry) {
+    const nextCountry = getHashCountry() || getSelectedCountryValue();
+    const nextFlowDir = getHashFlowDir() || currentFlowDir;
+    const countryChanged = nextCountry !== currentFocusCountry;
+    const flowChanged = nextFlowDir !== currentFlowDir;
+
+    if (!countryChanged && !flowChanged) {
         return;
     }
-    applyCountrySelection(hash.country, currentFlowDir);
+
+    if (hash.country === window.priorHash?.country && hash.type === window.priorHash?.type) {
+        return;
+    }
+
+    applySelections(nextCountry, nextFlowDir);
 });
 
+const initialFlowDir = getHashFlowDir() || getSelectedFlowDirValue();
 const initialCountry = getHashCountry() || getSelectedCountryValue();
-if (!applyCountrySelection(initialCountry, currentFlowDir)) {
-    applyCountrySelection(getSelectedCountryValue(), currentFlowDir);
+if (!applySelections(initialCountry, initialFlowDir)) {
+    applySelections(getSelectedCountryValue(), getSelectedFlowDirValue());
 }
 syncCountryToHash(getSelectedCountryValue());
+syncFlowDirToHash(currentFlowDir);
 </script>
 
 <div class="content contentpadding large-list">
