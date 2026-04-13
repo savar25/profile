@@ -3,58 +3,32 @@
 <head>
 <meta charset="utf-8">
 <title>Exiobase Industry Trade Flow Sankey</title>
-<link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ModelEarth/localsite@main/css/base.css" />
-<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/ModelEarth/localsite@main/js/localsite.js?showheader=true&showsearch=true&showfilters=true"></script>
+
+<link type="text/css" rel="stylesheet" href="/localsite/css/base.css" id="/localsite/css/base.css" />
+<script type="text/javascript" src="/localsite/js/localsite.js?showheader=true&showsearch=true"></script>
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<!-- the id uses v5 to prevent dual loading by localsite.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js" id="localsite/js/d3.v5.min.js"></script>
+
+<script src="/localsite/js/trade.js" id="/localsite/js/trade.js"></script>
 <style>
   .content.contentpadding {
     width: 100%;
-    max-width: none !important;
-    margin: 0 auto;
-    padding: 0 10px;
-    box-sizing: border-box;
+    max-width: 2000px;
+    padding-top: 0px;
   }
-  .sankey-page-header {
-    margin: 1em 0 0.25em;
-  }
-  .sankey-page-header h2 {
-    margin: 0 0 0.2em;
-    font-size: 1.5em;
-  }
-  .sankey-page-header p {
-    margin: 0 0 1em;
-    color: #555;
-    font-size: 0.95em;
-  }
-  .sankey-header-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75em;
-    align-items: flex-start;
-    justify-content: space-between;
-  }
-  #score-help-button {
-    padding: 0.45em 0.8em;
-    border: 1px solid #cfd6df;
-    border-radius: 999px;
-    background: #fff;
-    color: #1f2937;
-    font-size: 0.9em;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #score-help-button:hover {
-    background: #f8fafc;
+  #about-chart-wrap {
+    margin-top: 1em;
   }
   #score-help-panel {
-    margin: 0 0 1em;
-    padding: 0.85em 1em;
+    position: relative;
+    padding: 0.85em 2.5em 0.85em 1em;
     border: 1px solid #dde1e7;
     border-radius: 6px;
-    background: #f8fafc;
-    color: #334155;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     font-size: 0.92em;
     line-height: 1.55;
   }
@@ -67,32 +41,59 @@
   #score-help-panel p:last-child {
     margin-bottom: 0;
   }
+  .dark score-help-panel {
+    border: none;
+  }
+  #score-help-button[hidden] { display: none; }
+  #score-help-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border-medium);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   #sankey-controls {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 0.75em;
+    padding: 0.75em 1em;
+  }
+  #trade-only {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5em;
     align-items: center;
-    padding: 0.75em 1em;
-    background: #f4f6f8;
-    border: 1px solid #dde1e7;
-    border-radius: 6px;
-    margin-bottom: 0.75em;
+    border-top: 1px solid #eee;
+    padding-top: 7px;
   }
-  #sankey-controls label {
+  .dark #trade-only {
+    border-top-color: #777;
+  }
+  #trade-only label {
     display: flex;
     align-items: center;
     gap: 0.5em;
     font-size: 0.93em;
-    color: #333;
+    color: var(--text-primary);
   }
-  #sankey-controls select {
+  #trade-only select {
     padding: 0.25em 0.5em;
     font-size: 0.93em;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background: #fff;
+    background: var(--bg-tertiary);
   }
-  #sankey-controls input[type=range] {
+  #trade-only input[type=range] {
     width: 120px;
     cursor: pointer;
   }
@@ -103,7 +104,6 @@
   }
   #sankey-status {
     font-size: 0.88em;
-    color: #666;
     font-style: italic;
     margin: 0 0 0.5em;
     min-height: 1.3em;
@@ -114,8 +114,11 @@
     padding: 4px 6px;
     box-sizing: border-box;
     border: 1px solid #e8eaed;
-    border-radius: 4px;
-    background: #fff;
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+  }
+  .dark #sankey-chart {
+    border: none;
   }
   #partner-chart-panel {
     margin-top: 1.25em;
@@ -129,12 +132,10 @@
   }
   #partner-chart-note {
     margin: 0 0 0.75em;
-    color: #555;
     font-size: 0.92em;
   }
   #partner-chart-status {
     font-size: 0.88em;
-    color: #666;
     font-style: italic;
     margin: 0 0 0.5em;
     min-height: 1.3em;
@@ -147,12 +148,8 @@
     background: #fff;
   }
   #sankey-attribution {
-    margin-top: 1em;
-    padding-top: 0.75em;
-    border-top: 1px solid #dde1e7;
-    font-size: 0.85em;
-    color: #666;
-    line-height: 1.8;
+    margin: 0.75em 0 0;
+    line-height: 2;
   }
   #sankey-attribution a {
     color: #2563eb;
@@ -177,65 +174,34 @@
 <div class="content contentpadding">
 
   <div class="sankey-page-header">
-    <div class="sankey-header-row">
-      <div>
-        <h2>Exiobase Industry Trade Flow Sankey</h2>
-        <p>
-          Global industry-to-industry embodied environmental flows with the same country/year/flow selection used by the main dashboard &middot;
-          <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
-        </p>
-      </div>
-      <button id="score-help-button" type="button" aria-expanded="false" aria-controls="score-help-panel">Score Help</button>
+    <div>
+      <h2>Exiobase Industry Trade Flow Sankey</h2>
+      <p>
+        Global industry-to-industry embodied environmental factors from our <a href="/exiobase/tradeflow/">trade flow csv files</a> are also used in our <a href="../../trade/map/">trade flow map</a>
+      </p>
     </div>
   </div>
 
-  <div id="score-help-panel" hidden>
-    <p><strong>How the partner-country score works:</strong> the score ranks import/export partner countries from best to worst on a 0 to 100 scale.</p>
-    <p><strong>Amount Spent:</strong> score = 100 x partner trade value / largest partner trade value.</p>
-    <p><strong>CO&#x2082; Emissions and Water Use:</strong> score = 100 x (0.6 x trade strength + 0.4 x lower impact per amount-spent efficiency).</p>
-    <p><strong>Employment:</strong> score = 100 x (0.6 x trade strength + 0.4 x higher jobs per amount-spent efficiency).</p>
-    <p><strong>Trade strength</strong> is the partner&rsquo;s trade value relative to the largest partner. <strong>Efficiency</strong> compares indicator per amount spent across the visible partner-country set.</p>
-  </div>
-
   <div id="sankey-controls">
-    <label>
-      Country:
-      <select id="country-select"></select>
-    </label>
-    <label>
-      Year:
-      <select id="year-select"></select>
-    </label>
-    <label>
-      Flow:
-      <select id="flow-select"></select>
-    </label>
-    <label>
-      Indicator:
-      <select id="metric-select">
-        <option value="CO2_total">CO&#x2082; Emissions</option>
-        <option value="Water_total">Water Use</option>
-        <option value="Employment_total">Employment</option>
-        <option value="amount">Amount Spent</option>
-      </select>
-    </label>
-    <label id="currency-select-label">
-      Currency:
-      <select id="currency-select"></select>
-    </label>
-    <label>
-      Industry labels:
-      <select id="industry-label-select">
-        <option value="title">Title</option>
-        <option value="short">Short name</option>
-        <option value="verbose">Complete verbose name</option>
-      </select>
-    </label>
-    <label>
-      Top flows:
-      <input type="range" id="topn-slider" min="5" max="50" step="1" value="15">
-      <span id="topn-label">15</span>
-    </label>
+    <div id="trade-shared-controls"></div>
+    <div id="trade-only">
+      <label>
+        Country:
+        <select id="country-select"></select>
+      </label>
+      <label>
+        Flow:
+        <select id="flow-select"></select>
+      </label>
+      <label>
+        Industry labels:
+        <select id="industry-label-select">
+          <option value="title">Title</option>
+          <option value="short">Short name</option>
+          <option value="verbose">Complete verbose name</option>
+        </select>
+      </label>
+    </div>
   </div>
 
   <div id="sankey-status">Loading data&hellip;</div>
@@ -249,14 +215,27 @@
     <div id="partner-chart"></div>
   </div>
 
-  <div id="sankey-attribution">
-    <strong>Data source:</strong>
-    <a href="https://exiobase.eu" target="_blank" rel="noopener">EXIOBASE 3</a>
-    (multi-regional input-output database, 44 countries, 163 sectors) &middot;
-    <a href="https://github.com/savar25/trade-data" target="_blank" rel="noopener">savar25/trade-data</a>
-    &middot; labels from <code>year/[year]/industry.csv</code>
-    &middot; currency rates from <code>concordance/eur_annual_rates.csv</code>
-    &middot; repo CSV: <code id="csv-path-label">year/.../trade_impact.csv</code>
+  <div id="about-chart-wrap">
+    <button id="score-help-button" class="btn btn-secondary btn-med" type="button" aria-expanded="false" aria-controls="score-help-panel">About Chart</button>
+    <div id="score-help-panel" hidden>
+      <button id="score-help-close" aria-label="Close">&times;</button>
+      <p id="sankey-attribution">
+        <strong>Data source:</strong>
+        <a href="/exiobase/tradeflow/">Trade flow data pull</a> from 
+        <a href="https://exiobase.eu">EXIOBASE 3</a>
+        (multi-regional input-output database, 44 countries, 163 sectors)<br>
+        Labels from <code>year/[year]/industry.csv</code><br>
+        Currency rates from <code>concordance/eur_annual_rates.csv</code><br>
+        Repo CSV: <code id="csv-path-label">year/.../trade_impact.csv</code>
+      </p>
+      <div id="sankey-info">
+        <p><strong>How the partner-country score works:</strong> the score ranks import/export partner countries from best to worst on a 0 to 100 scale.</p>
+        <p><strong>Amount Spent:</strong> score = 100 x partner trade value / largest partner trade value.</p>
+        <p><strong>CO&#x2082; Emissions and Water Use:</strong> score = 100 x (0.6 x trade strength + 0.4 x lower impact per amount-spent efficiency).</p>
+        <p><strong>Employment:</strong> score = 100 x (0.6 x trade strength + 0.4 x higher jobs per amount-spent efficiency).</p>
+        <p><strong>Trade strength</strong> is the partner&rsquo;s trade value relative to the largest partner. <strong>Efficiency</strong> compares indicator per amount spent across the visible partner-country set.</p>
+      </div>
+    </div>
   </div>
 
 </div><!-- end .content.contentpadding -->
@@ -285,6 +264,9 @@ const INDUSTRY_LABEL_MODES = {
   title: true,
   verbose: true
 };
+
+const FACTOR_TO_METRIC = { co2: "CO2_total", water: "Water_total", emp: "Employment_total", amt: "amount" };
+const METRIC_TO_FACTOR = { CO2_total: "co2", Water_total: "water", Employment_total: "emp", amount: "amt" };
 
 const CURRENCY_NAMES = {
   EUR: "Euro",
@@ -410,20 +392,40 @@ const SECTOR_NAMES = {
 };
 
 // ---------------------------------------------------------------------------
+// Shared trade controls (Year, Indicator, Currency, Top flows)
+// ---------------------------------------------------------------------------
+(function() {
+  const hash = typeof getHash === "function" ? getHash() : {};
+  const saved = JSON.parse(localStorage.getItem("sankey-state") || "{}");
+  const initCountry = hash.country || saved.country || manifest.defaultSelection.country;
+  TradeShared.init({
+    years: manifest.yearsByCountry[initCountry] || [],
+    currencies: ["EUR"],
+    initialState: {
+      year:     hash.year     || saved.year     || manifest.defaultSelection.year,
+      metric:   FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
+      currency: hash.currency || saved.currency || "EUR",
+      topn: parseInt(hash.inflows, 10) || parseInt(saved.inflows, 10) || 15
+    }
+  });
+})();
+
+// ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 const countrySelect = document.getElementById("country-select");
-const yearSelect = document.getElementById("year-select");
+const yearSelect = document.getElementById("trade-year-select");
 const flowSelect = document.getElementById("flow-select");
-const metricSelect = document.getElementById("metric-select");
-const currencySelect = document.getElementById("currency-select");
-const currencySelectLabel = document.getElementById("currency-select-label");
+const metricSelect = document.getElementById("factor");
+const currencySelect = document.getElementById("trade-currency-select");
+const currencySelectLabel = document.getElementById("trade-currency-label");
 const industryLabelSelect = document.getElementById("industry-label-select");
-const topnSlider = document.getElementById("topn-slider");
-const topnLabel = document.getElementById("topn-label");
+const topnSlider = document.getElementById("trade-topn-slider");
+const topnLabel = document.getElementById("trade-topn-label");
 const csvPathLabel = document.getElementById("csv-path-label");
 const scoreHelpButton = document.getElementById("score-help-button");
 const scoreHelpPanel = document.getElementById("score-help-panel");
+const scoreHelpClose = document.getElementById("score-help-close");
 const chartDom = document.getElementById("sankey-chart");
 const chart = echarts.init(chartDom);
 const partnerChartPanel = document.getElementById("partner-chart-panel");
@@ -720,19 +722,15 @@ function getMetricValue(row, metricKey) {
 function setStatus(msg, isError) {
   const status = document.getElementById("sankey-status");
   status.textContent = msg;
-  status.style.color = isError ? "#a3412d" : "#666";
+  status.style.color = isError ? "#a3412d" : "";
 }
 
 function setPartnerStatus(msg, isError) {
   partnerChartStatus.textContent = msg;
-  partnerChartStatus.style.color = isError ? "#a3412d" : "#666";
+  partnerChartStatus.style.color = isError ? "#a3412d" : "";
 }
 
 function syncControlVisibility() {
-  if (!currencySelectLabel) {
-    return;
-  }
-  currencySelectLabel.style.display = metricSelect.value === "amount" ? "flex" : "none";
 }
 
 function supportedFlows(country, year) {
@@ -742,37 +740,48 @@ function supportedFlows(country, year) {
 }
 
 function readHashState() {
-  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const hash = typeof getHash === "function" ? getHash() : {};
+  const saved = JSON.parse(localStorage.getItem("sankey-state") || "{}");
   return {
-    country: normalizeCode(params.get("country")) || manifest.defaultSelection.country,
-    year: normalizeCode(params.get("year")) || manifest.defaultSelection.year,
-    flow: normalizeCode(params.get("flow")) || (manifest.defaultSelection.flow || "domestic"),
-    metric: normalizeCode(params.get("metric")) || "CO2_total",
-    currency: normalizeCode(params.get("currency")) || "",
-    industryLabelMode: normalizeCode(params.get("labels")) || "title",
-    topn: parseInt(params.get("topn"), 10) || 15
+    country:           hash.country  || saved.country  || manifest.defaultSelection.country,
+    year:              hash.year     || saved.year     || manifest.defaultSelection.year,
+    flow:              hash.flow     || saved.flow     || (manifest.defaultSelection.flow || "domestic"),
+    metric:            FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
+    currency:          hash.currency || saved.currency || "",
+    industryLabelMode: hash.labels   || saved.labels   || "title",
+    topn: parseInt(hash.inflows, 10) || parseInt(saved.inflows, 10) || 15
   };
 }
 
-function writeHashState(state, replaceOnly) {
-  const params = new URLSearchParams();
-  params.set("country", state.country);
-  params.set("year", state.year);
-  params.set("flow", state.flow);
-  params.set("metric", state.metric);
-  params.set("currency", state.currency);
-  params.set("labels", state.industryLabelMode);
-  params.set("topn", String(state.topn));
-  const nextHash = params.toString();
-
-  if (replaceOnly && window.history && typeof window.history.replaceState === "function") {
-    window.history.replaceState(null, "", window.location.pathname + window.location.search + "#" + nextHash);
-    return;
+function writeHashState(state) {
+  const defaults = {
+    country: manifest.defaultSelection.country,
+    year: manifest.defaultSelection.year,
+    flow: manifest.defaultSelection.flow || "domestic",
+    currency: "EUR",
+    labels: "title",
+    inflows: 15
+  };
+  const hashObj = {};
+  if (state.country !== defaults.country) hashObj.country = state.country;
+  if (state.year !== defaults.year) hashObj.year = state.year;
+  if (state.flow !== defaults.flow) hashObj.flow = state.flow;
+  hashObj.factor = METRIC_TO_FACTOR[state.metric] || state.metric;
+  if (state.currency !== defaults.currency) hashObj.currency = state.currency;
+  if (state.industryLabelMode !== defaults.labels) hashObj.labels = state.industryLabelMode;
+  if (state.topn !== defaults.inflows) hashObj.inflows = String(state.topn);
+  if (typeof goHash === "function") {
+    goHash(hashObj);
   }
-
-  if (window.location.hash.replace(/^#/, "") !== nextHash) {
-    window.location.hash = nextHash;
-  }
+  localStorage.setItem("sankey-state", JSON.stringify({
+    country: state.country,
+    year: state.year,
+    flow: state.flow,
+    factor: METRIC_TO_FACTOR[state.metric] || state.metric,
+    currency: state.currency,
+    labels: state.industryLabelMode,
+    inflows: state.topn
+  }));
 }
 
 function syncCountryOptions() {
@@ -1090,6 +1099,10 @@ function removeCycles(links) {
 function render() {
   if (!rawData || !activeSelection) return;
 
+  const bodyStyle = getComputedStyle(document.body);
+  const tooltipBg = bodyStyle.getPropertyValue("--bg-primary").trim() || "#fff";
+  const tooltipText = bodyStyle.getPropertyValue("--text-primary").trim() || "#333";
+
   const metric = METRICS[activeSelection.metric];
   const { nodes, links } = buildSankeyData(activeSelection.metric, activeSelection.topn);
 
@@ -1105,6 +1118,8 @@ function render() {
       trigger: "item",
       triggerOn: "mousemove",
       confine: true,
+      backgroundColor: tooltipBg,
+      textStyle: { color: tooltipText },
       formatter: function(params) {
         if (params.dataType === "edge") {
           return (
@@ -1140,7 +1155,7 @@ function render() {
         overflow: "break",
         lineHeight: 14,
         align: "left",
-        color: "#333",
+        color: getComputedStyle(document.body).getPropertyValue("--text-primary").trim() || "#333",
         formatter: function(params) {
           return wrapLabel(sectorLabel(params.name), 24);
         }
@@ -1170,6 +1185,10 @@ function render() {
 }
 
 function renderPartnerChart() {
+  const bodyStyle = getComputedStyle(document.body);
+  const tooltipBg = bodyStyle.getPropertyValue("--bg-primary").trim() || "#fff";
+  const tooltipText = bodyStyle.getPropertyValue("--text-primary").trim() || "#333";
+
   if (!rawData || !activeSelection || activeSelection.flow === "domestic") {
     partnerChartPanel.hidden = true;
     partnerChart.clear();
@@ -1236,6 +1255,8 @@ function renderPartnerChart() {
       trigger: "axis",
       axisPointer: { type: "shadow" },
       confine: true,
+      backgroundColor: tooltipBg,
+      textStyle: { color: tooltipText },
       formatter: function (params) {
         const lines = ["<b>" + params[0].axisValue + "</b>"];
         params.forEach(function (item) {
@@ -1397,7 +1418,15 @@ async function loadSelection(selection) {
 // ---------------------------------------------------------------------------
 function loadFromHash(replaceOnly) {
   const selection = resolveSelection(readHashState());
-  writeHashState(selection, Boolean(replaceOnly));
+  const attr = document.getElementById("sankey-attribution");
+  if (attr) {
+    const dbg = document.createElement("div");
+    dbg.textContent = "loadFromHash(replaceOnly=" + replaceOnly + "): country=" + countrySelect.value + " (" + countrySelect.options.length + " opts) year=" + yearSelect.value + " (" + yearSelect.options.length + " opts) flow=" + flowSelect.value + " currency=" + currencySelect.value + " (" + currencySelect.options.length + " opts) | selection.year=" + selection.year + " selection.country=" + selection.country;
+    attr.appendChild(dbg);
+  }
+  if (!replaceOnly) {
+    writeHashState(selection);
+  }
   loadSelection(selection);
 }
 
@@ -1415,15 +1444,13 @@ function updateHashFromControls() {
   activeSelection = selection;
   topnLabel.textContent = String(selection.topn);
   syncControlVisibility();
-  writeHashState(selection, false);
+  writeHashState(selection);
 }
 
 // ---------------------------------------------------------------------------
 // Events
 // ---------------------------------------------------------------------------
 syncCountryOptions();
-currencySelect.innerHTML = "<option value=\"EUR\">EUR - Euro</option>";
-syncControlVisibility();
 
 countrySelect.addEventListener("change", function() {
   syncYearOptions(countrySelect.value, yearSelect.value);
@@ -1447,7 +1474,7 @@ metricSelect.addEventListener("change", function() {
     return;
   }
   activeSelection.metric = metricSelect.value;
-  writeHashState(activeSelection, false);
+  writeHashState(activeSelection);
   render();
 });
 
@@ -1457,7 +1484,7 @@ currencySelect.addEventListener("change", function() {
     return;
   }
   activeSelection.currency = currencySelect.value || "EUR";
-  writeHashState(activeSelection, false);
+  writeHashState(activeSelection);
   render();
 });
 
@@ -1467,7 +1494,7 @@ industryLabelSelect.addEventListener("change", function() {
     return;
   }
   activeSelection.industryLabelMode = industryLabelSelect.value || "title";
-  writeHashState(activeSelection, false);
+  writeHashState(activeSelection);
   render();
 });
 
@@ -1478,21 +1505,21 @@ topnSlider.addEventListener("input", function() {
     return;
   }
   activeSelection.topn = parseInt(topnSlider.value, 10) || 15;
-  writeHashState(activeSelection, false);
+  writeHashState(activeSelection);
   render();
 });
 
 scoreHelpButton.addEventListener("click", function() {
-  const isHidden = scoreHelpPanel.hasAttribute("hidden");
-  if (isHidden) {
-    scoreHelpPanel.removeAttribute("hidden");
-  } else {
-    scoreHelpPanel.setAttribute("hidden", "");
-  }
-  scoreHelpButton.setAttribute("aria-expanded", String(isHidden));
+  scoreHelpPanel.removeAttribute("hidden");
+  scoreHelpButton.setAttribute("hidden", "");
 });
 
-window.addEventListener("hashchange", function() {
+scoreHelpClose.addEventListener("click", function() {
+  scoreHelpPanel.setAttribute("hidden", "");
+  scoreHelpButton.removeAttribute("hidden");
+});
+
+document.addEventListener("hashChangeEvent", function() {
   loadFromHash(false);
 });
 
@@ -1503,6 +1530,7 @@ window.addEventListener("resize", function() {
 
 // Init
 loadCurrencyRates().finally(function () {
+  TradeShared.setCurrencies(availableCurrencyCodes);
   loadFromHash(true);
 });
 </script>

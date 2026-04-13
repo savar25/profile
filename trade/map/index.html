@@ -18,6 +18,7 @@
 
     <!-- the id uses v5 to prevent dual loading by localsite.js -->
     <script src="https://d3js.org/d3.v7.min.js" id="localsite/js/d3.v5.min.js"></script>
+    <script src="/localsite/js/trade.js"></script>
     <style>
         body { margin: 0; font-family: sans-serif; }
 
@@ -140,6 +141,33 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
+        /* Shared trade controls inside the map panel */
+        .control-panel #trade-shared-controls {
+            flex-direction: column;
+            gap: 5px;
+            padding: 6px 0 2px;
+            background: none;
+            border: none;
+            border-top: 1px solid #eee;
+            border-radius: 0;
+            margin-bottom: 4px;
+        }
+        .control-panel #trade-shared-controls label {
+            font-size: 12px;
+            gap: 5px;
+            color: #444;
+        }
+        .control-panel #trade-shared-controls select {
+            font-size: 12px;
+            padding: 2px 4px;
+            flex: 1;
+        }
+        .control-panel #trade-shared-controls input[type=range] {
+            width: 80px;
+        }
+        .control-panel #trade-topn-label {
+            min-width: 1.5em;
+        }
         #zoom-toast {
             position: absolute;
             left: 50%;
@@ -189,12 +217,12 @@
     <div style="position:relative">
         <div id="map">
             <div id="map-legend">
-                Arrow thickness = total embodied CO&#x2082; &middot; <span id="legend-dir">exporter &rarr; importer</span>
+                <span id="legend-metric">Arrow thickness = CO&#x2082; Emissions &middot; </span><span id="legend-dir">exporter &rarr; importer</span>
             </div>
         </div>
 
         <div class="control-panel">
-            <h4>Exiobase Trade Flows · 2022</h4>
+            <h4>Exiobase Trade Flows</h4>
             <div id="flow-toggle">
                 <label class="toggle-opt">
                     <input type="radio" name="flow-dir" value="imports" checked> Imports
@@ -214,6 +242,7 @@
                 <option value="IN">India (IN)</option>
                 <option value="RU">Russia (RU)</option>
             </select>
+            <div id="trade-shared-controls"></div>
             <div id="status-msg">Loading&hellip;</div>
             <div id="source-filters"></div>
         </div>
@@ -267,6 +296,42 @@ function fmtCO2(val) {
     if (val >= 1e12) return (val / 1e12).toFixed(2) + " Gt CO\u2082";
     if (val >= 1e9)  return (val / 1e9).toFixed(2)  + " Mt CO\u2082";
     return val.toExponential(2) + " CO\u2082";
+}
+
+function getCurrencyRate(year, code) {
+    if (!code || code === "EUR") return 1;
+    const yearRates = mapCurrencyRates[String(year)] || {};
+    return parseFloat(yearRates[code]) || 1;
+}
+
+function fmtIndicator(val) {
+    const state = TradeShared.getState();
+    const metricKey = state.metric;
+    const metric = TradeShared.METRICS[metricKey];
+    if (!metric || metricKey === "CO2_total") return fmtCO2(val);
+    if (metricKey === "amount") {
+        const rate = getCurrencyRate(state.year, state.currency);
+        const converted = val * rate;
+        const scaled = converted / metric.scale;
+        return scaled.toFixed(2) + "\u00A0M\u00A0" + state.currency;
+    }
+    const scaled = val / metric.scale;
+    return scaled.toFixed(2) + "\u00A0" + metric.unit;
+}
+
+function indicatorSourceKey() {
+    const metricKey = TradeShared.getState().metric;
+    const metric = TradeShared.METRICS[metricKey];
+    return (metric && metric.sourceKeys && metric.sourceKeys[0]) || "CO2_total";
+}
+
+function indicatorLabel() {
+    const state = TradeShared.getState();
+    const metricKey = state.metric;
+    if (metricKey === "amount") {
+        return "Amount Spent (" + state.currency + ")";
+    }
+    return (TradeShared.METRICS[metricKey] && TradeShared.METRICS[metricKey].label) || "CO\u2082 Emissions";
 }
 
 const DEFAULT_MAP_ZOOM = 2;
@@ -352,6 +417,9 @@ function clickShouldToggleZoom(evt) {
 // ---------------------------------------------------------------------------
 const csvCache = new Map();
 
+// Currency exchange rates keyed by year string, then currency code
+const mapCurrencyRates = {};
+
 // ---------------------------------------------------------------------------
 // Interaction state
 // ---------------------------------------------------------------------------
@@ -374,13 +442,13 @@ function showTooltip(trade, focusCountry, flowDir, evt) {
         const balanceLabel = trade.netCo2 >= 0 ? "Trade surplus" : "Trade deficit";
         tooltip.innerHTML =
             `<div class="tt-direction">${label}</div>` +
-            `<div class="tt-co2">${balanceLabel}: ${fmtCO2(trade.co2)}</div>` +
-            `<div>Exports: ${fmtCO2(trade.exportsCo2 || 0)}</div>` +
-            `<div>Imports: ${fmtCO2(trade.importsCo2 || 0)}</div>`;
+            `<div class="tt-co2">${balanceLabel}: ${fmtIndicator(trade.co2)}</div>` +
+            `<div>Exports: ${fmtIndicator(trade.exportsCo2 || 0)}</div>` +
+            `<div>Imports: ${fmtIndicator(trade.importsCo2 || 0)}</div>`;
     } else {
         tooltip.innerHTML =
             `<div class="tt-direction">${label}</div>` +
-            `<div class="tt-co2">${fmtCO2(trade.co2)}</div>`;
+            `<div class="tt-co2">${fmtIndicator(trade.co2)}</div>`;
     }
     tooltip.style.display = "block";
     moveTooltip(evt);
@@ -607,11 +675,12 @@ function applySelections(countryCode, flowDir) {
 }
 
 function collectImports(data, focusCountry) {
+    const srcKey = indicatorSourceKey();
     const flowMap = new Map();
     for (const row of data) {
         const src = row.region1;
         if (!src || src === focusCountry || !COORDS[src]) continue;
-        const val = parseFloat(row.CO2_total) || 0;
+        const val = parseFloat(row[srcKey]) || 0;
         if (val <= 0) continue;
         flowMap.set(src, (flowMap.get(src) || 0) + val);
     }
@@ -619,11 +688,12 @@ function collectImports(data, focusCountry) {
 }
 
 function collectExports(data, focusCountry) {
+    const srcKey = indicatorSourceKey();
     const flowMap = new Map();
     for (const row of data) {
         const dst = row.region2;
         if (!dst || dst === focusCountry || !COORDS[dst]) continue;
-        const val = parseFloat(row.CO2_total) || 0;
+        const val = parseFloat(row[srcKey]) || 0;
         if (val <= 0) continue;
         flowMap.set(dst, (flowMap.get(dst) || 0) + val);
     }
@@ -637,8 +707,10 @@ function getCountryLabelText(flowDir) {
 }
 
 function buildDirectionalTrades(flowMap, focusCountry, flowDir) {
+    const topn = TradeShared.getState().topn;
     return Array.from(flowMap.entries())
         .sort((a, b) => b[1] - a[1])
+        .slice(0, topn)
         .map(([partner, co2]) => {
             const partnerLonShift = getPacificPartnerLonShift(focusCountry, partner);
             return {
@@ -838,8 +910,8 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
 
         label.appendChild(checkbox);
         const tradeText = flowDir === "balance"
-            ? ` ${trade.partner} \u2014 ${trade.netCo2 >= 0 ? "surplus" : "deficit"} ${fmtCO2(trade.co2)}`
-            : ` ${trade.partner} \u2014 ${fmtCO2(trade.co2)}`;
+            ? ` ${trade.partner} \u2014 ${trade.netCo2 >= 0 ? "surplus" : "deficit"} ${fmtIndicator(trade.co2)}`
+            : ` ${trade.partner} \u2014 ${fmtIndicator(trade.co2)}`;
         label.appendChild(document.createTextNode(tradeText));
 
         label.addEventListener("mouseenter", () => applyHighlight(trade.partner));
@@ -882,18 +954,21 @@ function processAndRender(data, focusCountry, flowDir) {
         ? "net exporter \u2192 net importer"
         : "exporter \u2192 importer";
     document.getElementById("legend-dir").textContent = legendDir;
+    document.getElementById("legend-metric").textContent =
+        "Arrow thickness = " + indicatorLabel() + " \u00B7 ";
 
     renderArrows(trades, focusCountry, flowDir);
     buildCheckboxes(trades, focusCountry, flowDir);
 }
 
 function fetchTradeCsv(focusCountry, flowDir) {
-    const cacheKey = `${focusCountry}/${flowDir}`;
+    const year = TradeShared.getState().year || "2022";
+    const cacheKey = `${year}/${focusCountry}/${flowDir}`;
     if (csvCache.has(cacheKey)) {
         return Promise.resolve(csvCache.get(cacheKey));
     }
 
-    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/${focusCountry}/${flowDir}/trade_impact.csv`;
+    const url = `https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/${year}/${focusCountry}/${flowDir}/trade_impact.csv`;
     return d3.csv(url).then(function(data) {
         csvCache.set(cacheKey, data);
         return data;
@@ -969,6 +1044,58 @@ document.addEventListener("hashChangeEvent", function() {
     }
 
     applySelections(nextCountry, nextFlowDir);
+});
+
+// Initialize shared trade controls
+const _FACTOR_TO_METRIC = { co2: "CO2_total", water: "Water_total", emp: "Employment_total", amt: "amount" };
+const _initHash = typeof getHash === 'function' ? getHash() : {};
+const _initSaved = JSON.parse(localStorage.getItem('trade-map-state') || '{}');
+const _initCurrency = _initHash.currency || localStorage.getItem('trade-currency') || 'EUR';
+TradeShared.init({
+    years: ["2022"],
+    currencies: ["EUR"],
+    initialState: {
+        year: "2022",
+        metric: _FACTOR_TO_METRIC[_initHash.factor || _initSaved.factor] || "CO2_total",
+        currency: _initCurrency,
+        topn: parseInt(_initHash.inflows, 10) || parseInt(_initSaved.inflows, 10) || 15
+    }
+});
+
+// Load full currency list and rates once #trade-currency-select is in the DOM
+waitForElm('#trade-currency-select').then(function() {
+    d3.csv('https://raw.githubusercontent.com/ModelEarth/trade-data/refs/heads/main/concordance/eur_annual_rates.csv')
+        .then(function(rows) {
+            const cols = (rows.columns || []).filter(function(c) { return c !== 'Year'; });
+            rows.forEach(function(row) {
+                const yr = String(row.Year || '').trim();
+                if (!yr) return;
+                const rates = {};
+                cols.forEach(function(c) {
+                    const v = parseFloat(row[c]);
+                    if (v > 0) rates[c] = v;
+                });
+                mapCurrencyRates[yr] = rates;
+            });
+            const codes = ['EUR'].concat(cols);
+            TradeShared.setCurrencies(codes);
+        })
+        .catch(function() {});
+});
+
+// Reload map when shared state changes; sync currency to hash + localStorage
+const _METRIC_TO_FACTOR = { CO2_total: "co2", Water_total: "water", Employment_total: "emp", amount: "amt" };
+document.addEventListener("trade:change", function(evt) {
+    const state = (evt && evt.detail) || TradeShared.getState();
+    if (typeof updateHash === 'function') {
+        updateHash({ currency: state.currency, factor: _METRIC_TO_FACTOR[state.metric] || state.metric });
+    }
+    localStorage.setItem('trade-currency', state.currency);
+    localStorage.setItem('trade-map-state', JSON.stringify({
+        factor: _METRIC_TO_FACTOR[state.metric] || state.metric,
+        inflows: state.topn
+    }));
+    loadFlows(currentFocusCountry, currentFlowDir);
 });
 
 const initialFlowDir = getHashFlowDir() || getSelectedFlowDirValue();

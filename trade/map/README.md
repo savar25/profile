@@ -2,6 +2,8 @@
 
 Interactive environmental impact visualizations for industry-to-industry trade flows using [EXIOBASE 3](https://exiobase.eu) data. Part of [ModelEarth/projects Issue #65](https://github.com/modelearth/projects/issues/65).
 
+[View Sankey Trade Flow](../../charts/sankey/)
+
 ---
 
 ## Files
