@@ -372,6 +372,7 @@ function displayTable(locale, formatType) {
       tableData,
       options
     );
+    syncCvStylePrintDownloadIcons();
   }
 }
 
@@ -380,9 +381,105 @@ function updateTable(locale) {
     displayTable(locale, getCurrentNumberFormat());
 }
 
+function syncCvStylePrintDownloadIcons() {
+  const topControls = document.getElementById('topControls');
+  if (!topControls) return;
+
+  const iconButtons = topControls.querySelectorAll('.print-download-container .print-download-icon');
+  if (iconButtons[0] && iconButtons[0].dataset.cvStyled !== 'true') {
+    iconButtons[0].innerHTML = '<span class="material-icons icon-print">print</span>';
+    iconButtons[0].dataset.cvStyled = 'true';
+  }
+  if (iconButtons[1] && iconButtons[1].dataset.cvStyled !== 'true') {
+    iconButtons[1].innerHTML = '<span class="material-icons icon-download">download</span>';
+    iconButtons[1].dataset.cvStyled = 'true';
+  }
+}
+
 </script>
 
 <style>
+  #topControls {
+    float: right;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  #topControls > div {
+    float: none !important;
+    margin-bottom: 0 !important;
+  }
+  #topControls .print-download-container {
+    margin: 0;
+    order: -1;
+  }
+  #topControls .print-download-icon {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid #d9d9d9;
+    border-radius: 999px;
+    background: #fff;
+    color: #444;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  #topControls .print-download-icon:hover {
+    background: #f5f5f5;
+    border-color: #c7c7c7;
+    color: #111;
+  }
+  #topControls .print-download-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  #topControls .print-download-icon .material-icons {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 1;
+    text-align: center;
+    transform: translate(-50%, -50%);
+  }
+  #topControls .print-download-icon .icon-print {
+    transform: translate(calc(-50% - 0.5px), calc(-50% - 0.5px));
+  }
+  #topControls .print-download-popup {
+    top: calc(100% + 8px);
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+  }
+  #topControls .popup-header {
+    padding: 10px 12px;
+  }
+  #topControls .popup-item {
+    padding: 10px 14px;
+  }
+  .dark #topControls .print-download-icon {
+    background: #2f2f2f;
+    border-color: #555;
+    color: #d7d7d7;
+  }
+  .dark #topControls .print-download-icon:hover {
+    background: #3c3c3c;
+    border-color: #6a6a6a;
+    color: #fff;
+  }
+  .dark #topControls .print-download-popup {
+    background: #2a2a2a;
+    border-color: #555;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  }
   .summary-card {
     padding: 15px;
     background: #f8f9fa;
