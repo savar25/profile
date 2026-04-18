@@ -207,6 +207,12 @@ document.write('<script src="' + window.SANKEY_LOCALSITE_BASE + '/js/trade.js"><
         Country:
         <select id="country-select"></select>
       </label>
+      <label id="other-country-wrap" hidden>
+        <span id="other-country-label">From:</span>
+        <select id="other-country">
+          <option value="">All</option>
+        </select>
+      </label>
       <label>
         Flow:
         <select id="flow-select"></select>
@@ -432,6 +438,9 @@ const SECTOR_NAMES = {
 // State
 // ---------------------------------------------------------------------------
 const countrySelect = document.getElementById("country-select");
+const otherCountryWrap = document.getElementById("other-country-wrap");
+const otherCountryLabel = document.getElementById("other-country-label");
+const otherCountrySelect = document.getElementById("other-country");
 const yearSelect = document.getElementById("trade-year-select");
 const flowSelect = document.getElementById("flow-select");
 const metricSelect = document.getElementById("factor");
@@ -746,7 +755,12 @@ function formatSankeyEdgeTooltip(link, selectedMetricKey) {
     METRICS[metricKey].label + ": <b>" + fmtValue(link.value, metricKey) + "</b>"
   ];
 
-  if (activeSelection && activeSelection.flow !== "domestic" && link.topPartner) {
+  if (activeSelection && activeSelection.flow !== "domestic" && activeSelection.otherCountry) {
+    lines.push(
+      (activeSelection.flow === "exports" ? "To" : "From") +
+      " country: <b>" + activeSelection.otherCountry + "</b>"
+    );
+  } else if (activeSelection && activeSelection.flow !== "domestic" && link.topPartner) {
     lines.push(
       "Top " + activeSelection.flow.slice(0, -1) + " partner by " + METRICS[metricKey].label +
       ": <b>" + link.topPartner + "</b>" +
@@ -780,6 +794,11 @@ function setPartnerStatus(msg, isError) {
 }
 
 function syncControlVisibility() {
+  const flow = normalizeCode(flowSelect.value);
+  const isTradeMode = flow === "imports" || flow === "exports";
+  otherCountryWrap.hidden = !isTradeMode;
+  otherCountrySelect.disabled = !isTradeMode;
+  otherCountryLabel.textContent = flow === "exports" ? "To:" : "From:";
 }
 
 function supportedFlows(country, year) {
@@ -793,6 +812,7 @@ function readHashState() {
   const saved = JSON.parse(localStorage.getItem("sankey-state") || "{}");
   return {
     country:           hash.country  || saved.country  || manifest.defaultSelection.country,
+    otherCountry:      hash.othercountry || saved.otherCountry || "",
     year:              hash.year     || saved.year     || manifest.defaultSelection.year,
     flow:              hash.flow     || saved.flow     || (manifest.defaultSelection.flow || "domestic"),
     metric:            FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
@@ -813,6 +833,7 @@ function writeHashState(state) {
   };
   const hashObj = {};
   if (state.country !== defaults.country) hashObj.country = state.country;
+  if (state.otherCountry) hashObj.othercountry = state.otherCountry;
   if (state.year !== defaults.year) hashObj.year = state.year;
   if (state.flow !== defaults.flow) hashObj.flow = state.flow;
   hashObj.factor = METRIC_TO_FACTOR[state.metric] || state.metric;
@@ -824,6 +845,7 @@ function writeHashState(state) {
   }
   localStorage.setItem("sankey-state", JSON.stringify({
     country: state.country,
+    otherCountry: state.otherCountry || "",
     year: state.year,
     flow: state.flow,
     factor: METRIC_TO_FACTOR[state.metric] || state.metric,
@@ -841,6 +863,38 @@ function syncCountryOptions() {
     option.textContent = country;
     countrySelect.appendChild(option);
   });
+}
+
+function syncOtherCountryOptions(country, preferredOtherCountry, availablePartners) {
+  const selectedCountry = normalizeCode(country);
+  const preferred = normalizeCode(preferredOtherCountry);
+  const fallbackPartners = (manifest.countries || []).filter(function (code) {
+    return normalizeCode(code) && normalizeCode(code) !== selectedCountry;
+  });
+  const partners = (availablePartners && availablePartners.length ? availablePartners : fallbackPartners)
+    .map(normalizeCode)
+    .filter(function (code, index, array) {
+      return code && code !== selectedCountry && array.indexOf(code) === index;
+    })
+    .sort();
+
+  otherCountrySelect.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = "";
+  allOption.textContent = "All";
+  otherCountrySelect.appendChild(allOption);
+
+  partners.forEach(function (partner) {
+    const option = document.createElement("option");
+    option.value = partner;
+    option.textContent = partner;
+    otherCountrySelect.appendChild(option);
+  });
+
+  const resolved = partners.includes(preferred) ? preferred : "";
+  otherCountrySelect.value = resolved;
+  return resolved;
 }
 
 function syncYearOptions(country, preferredYear) {
@@ -871,10 +925,14 @@ function resolveSelection(state) {
   const country = manifest.countries.includes(state.country)
     ? state.country
     : manifest.defaultSelection.country;
+  const otherCountry = normalizeCode(state.otherCountry) === country
+    ? ""
+    : normalizeCode(state.otherCountry);
   syncYearOptions(country, state.year);
   const year = yearSelect.value || manifest.defaultSelection.year;
   syncFlowOptions(country, year, state.flow);
   const flow = flowSelect.value || manifest.defaultSelection.flow || "domestic";
+  const resolvedOtherCountry = syncOtherCountryOptions(country, otherCountry);
   const preferredCurrency = state.currency ||
     (state.metric === "amount_usd" ? "USD" : "EUR");
   syncCurrencyOptions(year, preferredCurrency);
@@ -888,6 +946,7 @@ function resolveSelection(state) {
   const topn = Math.max(5, Math.min(50, state.topn || 15));
 
   countrySelect.value = country;
+  otherCountrySelect.value = flow === "domestic" ? "" : resolvedOtherCountry;
   yearSelect.value = year;
   flowSelect.value = flow;
   metricSelect.value = metric;
@@ -899,6 +958,7 @@ function resolveSelection(state) {
 
   return {
     country: country,
+    otherCountry: flow === "domestic" ? "" : (otherCountrySelect.value || ""),
     year: year,
     flow: flow,
     metric: metric,
@@ -962,10 +1022,45 @@ function partnerCountryCode(row, selection) {
   return "";
 }
 
+function availablePartnerCountries(rows, selection) {
+  const partners = new Set();
+
+  (rows || []).forEach(function (row) {
+    const partner = partnerCountryCode(row, selection);
+    if (partner) {
+      partners.add(partner);
+    }
+  });
+
+  return Array.from(partners).sort();
+}
+
+function rowMatchesCountryPair(row, selection) {
+  const otherCountry = normalizeCode(selection && selection.otherCountry);
+  if (!otherCountry || !selection || selection.flow === "domestic") {
+    return true;
+  }
+
+  const selectedCountry = normalizeCode(selection.country);
+  const region1 = normalizeCode(row.region1);
+  const region2 = normalizeCode(row.region2);
+
+  return (
+    (region1 === selectedCountry && region2 === otherCountry) ||
+    (region1 === otherCountry && region2 === selectedCountry)
+  );
+}
+
+function rowsForSelection(selection) {
+  return (rawData || []).filter(function (row) {
+    return rowMatchesCountryPair(row, selection);
+  });
+}
+
 function buildPartnerBreakdown(metricKey, limit) {
   const byPartner = new Map();
 
-  rawData.forEach(function (row) {
+  rowsForSelection(activeSelection).forEach(function (row) {
     const partner = partnerCountryCode(row, activeSelection);
     if (!partner) {
       return;
@@ -1036,7 +1131,7 @@ function buildPartnerBreakdown(metricKey, limit) {
 function buildSankeyData(metricKey, topN) {
   const metricKeys = Object.keys(METRICS);
   const flowMap = new Map();
-  for (const row of rawData) {
+  for (const row of rowsForSelection(activeSelection)) {
     const src = row.industry1;
     const tgt = row.industry2;
     if (!src || !tgt || src === tgt) continue;
@@ -1248,11 +1343,16 @@ function render() {
   }, true);
   chart.resize();
 
+  const partnerContext = activeSelection.otherCountry
+    ? (activeSelection.flow === "exports"
+      ? " to " + activeSelection.otherCountry
+      : " from " + activeSelection.otherCountry)
+    : "";
   setStatus(
     "Showing top\u00A0" + links.length +
     " " + activeSelection.flow +
     " flows by " + metric.label +
-    " for " + activeSelection.country + " " + activeSelection.year,
+    " for " + activeSelection.country + partnerContext + " " + activeSelection.year,
     false
   );
 
@@ -1263,8 +1363,9 @@ function renderPartnerChart() {
   const bodyStyle = getComputedStyle(document.body);
   const tooltipBg = bodyStyle.getPropertyValue("--bg-primary").trim() || "#fff";
   const tooltipText = bodyStyle.getPropertyValue("--text-primary").trim() || "#333";
+  const isPairFiltered = !!normalizeCode(activeSelection && activeSelection.otherCountry);
 
-  if (!rawData || !activeSelection || activeSelection.flow === "domestic") {
+  if (!rawData || !activeSelection || activeSelection.flow === "domestic" || isPairFiltered) {
     partnerChartPanel.hidden = true;
     partnerChart.clear();
     partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
@@ -1483,12 +1584,23 @@ async function loadSelection(selection) {
     rawDataKey = "";
     chart.clear();
     partnerChart.clear();
-    partnerChartPanel.hidden = selection.flow === "domestic";
+    partnerChartPanel.hidden = selection.flow === "domestic" || !!normalizeCode(selection.otherCountry);
     setStatus("Error loading data for " + selectionKey + ".", true);
     return;
   }
 
   rawData = d3.csvParse(response.text);
+  const resolvedOtherCountry = syncOtherCountryOptions(
+    selection.country,
+    selection.otherCountry,
+    availablePartnerCountries(rawData, selection)
+  );
+  activeSelection = Object.assign({}, selection, {
+    otherCountry: selection.flow === "domestic" ? "" : resolvedOtherCountry
+  });
+  if ((selection.otherCountry || "") !== activeSelection.otherCountry) {
+    writeHashState(activeSelection);
+  }
   rawDataKey = selectionKey;
   render();
 }
@@ -1507,6 +1619,7 @@ function loadFromHash(replaceOnly) {
 function updateHashFromControls() {
   const selection = {
     country: countrySelect.value,
+    otherCountry: flowSelect.value === "domestic" ? "" : otherCountrySelect.value,
     year: yearSelect.value,
     flow: flowSelect.value,
     metric: metricSelect.value,
@@ -1528,6 +1641,7 @@ function updateHashFromControls() {
 syncCountryOptions();
 
 countrySelect.addEventListener("change", function() {
+  syncOtherCountryOptions(countrySelect.value, otherCountrySelect.value);
   syncYearOptions(countrySelect.value, yearSelect.value);
   syncFlowOptions(countrySelect.value, yearSelect.value, flowSelect.value);
   syncCurrencyOptions(yearSelect.value, currencySelect.value);
@@ -1540,7 +1654,23 @@ yearSelect.addEventListener("change", function() {
   updateHashFromControls();
 });
 
-flowSelect.addEventListener("change", updateHashFromControls);
+flowSelect.addEventListener("change", function() {
+  if (flowSelect.value === "domestic") {
+    otherCountrySelect.value = "";
+  }
+  syncControlVisibility();
+  updateHashFromControls();
+});
+
+otherCountrySelect.addEventListener("change", function() {
+  if (!activeSelection) {
+    updateHashFromControls();
+    return;
+  }
+  activeSelection.otherCountry = flowSelect.value === "domestic" ? "" : (otherCountrySelect.value || "");
+  writeHashState(activeSelection);
+  render();
+});
 
 metricSelect.addEventListener("change", function() {
   syncControlVisibility();
@@ -1603,6 +1733,7 @@ document.addEventListener("hashChangeEvent", function() {
   ].join("|");
   if (activeSelection &&
       activeSelection.country === selection.country &&
+      activeSelection.otherCountry === selection.otherCountry &&
       activeSelection.year === selection.year &&
       activeSelection.flow === selection.flow &&
       activeSelection.metric === selection.metric &&
