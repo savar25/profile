@@ -93,25 +93,91 @@
             max-width: 280px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
+        .industry-bar {
+            position: absolute;
+            top: 10px;
+            left: 312px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 14px;
+            padding: 10px 12px;
+            border: 1px solid rgba(31, 41, 55, 0.12);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.96);
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+            backdrop-filter: blur(8px);
+        }
+        .industry-bar-title {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #3b4b67;
+        }
+        .industry-bar-controls {
+            display: flex;
+            flex: 1 1 420px;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 14px;
+        }
+        .toolbar-select-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            margin: 0;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .toolbar-select-wrap span {
+            white-space: nowrap;
+        }
+        #view-mode-select,
+        #direction-select,
+        #country-select,
+        #industry-select {
+            min-width: 170px;
+            max-width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #22314c;
+            background: #fff;
+            box-sizing: border-box;
+        }
+        #view-mode-select,
+        #direction-select {
+            min-width: 140px;
+        }
+        #industry-select {
+            min-width: 220px;
+        }
+        #view-mode-select:disabled,
+        #direction-select:disabled,
+        #country-select:disabled,
+        #industry-select:disabled {
+            color: #94a3b8;
+            background: #f8fafc;
+        }
+        .toolbar-select-wrap[hidden] {
+            display: none;
+        }
+        #industry-bar-note {
+            flex: 1 1 100%;
+            font-size: 11px;
+            line-height: 1.35;
+            color: #607086;
+        }
         .control-panel h4 {
             margin: 0 0 8px;
             font-size: 13px;
             color: #333;
-        }
-        .control-panel label {
-            display: block;
-            font-size: 12px;
-            margin-bottom: 4px;
-            color: #444;
-        }
-        #country-select {
-            width: 100%;
-            padding: 4px 6px;
-            font-size: 12px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
         }
         #status-msg {
             font-size: 11px;
@@ -128,16 +194,19 @@
         }
         #source-filters label {
             display: flex;
-            align-items: center;
-            gap: 7px;
-            margin-bottom: 4px;
-            padding: 5px 6px;
-            border-radius: 6px;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 6px;
+            padding: 7px 8px;
+            border: 1px solid rgba(31, 41, 55, 0.08);
+            border-radius: 8px;
+            background: #fff;
             cursor: pointer;
-            transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+            transition: background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
         }
         #source-filters label:hover {
-            background: #f0f4ff;
+            background: #f7faff;
+            border-color: rgba(91, 124, 255, 0.2);
             transform: translateX(1px);
         }
         #source-filters label.highlighted {
@@ -146,14 +215,16 @@
             border-left: 3px solid var(--row-accent, #5b7cff);
         }
         #source-filters label input[type=checkbox] {
-            margin: 0;
+            margin: 2px 0 0;
+            flex: 0 0 auto;
             accent-color: var(--row-accent, #5b7cff);
         }
         .filter-swatch {
-            flex: 0 0 24px;
-            width: 24px;
+            flex: 0 0 18px;
+            width: 18px;
             height: 0;
-            border-top-width: 4px;
+            margin-top: 1px;
+            border-top-width: 3px;
             border-top-style: solid;
             border-top-color: var(--row-accent, #5b7cff);
             border-radius: 999px;
@@ -163,18 +234,26 @@
             min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 3px;
+            flex: 1 1 auto;
+        }
+        .filter-topline {
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
         }
         .filter-name {
             font-size: 12px;
             font-weight: 700;
             color: #23314d;
             line-height: 1.2;
+            min-width: 0;
         }
         .filter-meta {
             font-size: 11px;
             color: #5b6577;
-            line-height: 1.25;
+            line-height: 1.35;
         }
 
         .label-text {
@@ -192,23 +271,6 @@
         .arrow-label {
             pointer-events: none;
         }
-
-        #flow-toggle {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            margin-bottom: 8px;
-        }
-        .toggle-opt {
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #333;
-            cursor: pointer;
-        }
-
         #map-legend {
             position: absolute;
             bottom: 30px;
@@ -314,6 +376,13 @@
             display: block;
             margin-top: 2px;
         }
+        @media (max-width: 960px) {
+            .industry-bar {
+                top: 176px;
+                left: 10px;
+                right: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -322,31 +391,46 @@
         <div id="map">
             <div id="map-legend">
                 <span id="legend-metric">Arrow thickness = CO&#x2082; Emissions &middot; </span><span id="legend-dir">exporter &rarr; importer</span>
-                <div id="legend-style">Color blends flow direction with the dominant trade type. Dash pattern indicates the broader industry family.</div>
+                <div id="legend-style">Color blends flow direction with the dominant trade type. Most arrows stay solid, with only service-heavy flows lightly dashed.</div>
             </div>
         </div>
 
-        <div class="control-panel">
-            <h4>Exiobase Trade Flows</h4>
-            <div id="flow-toggle">
-                <label class="toggle-opt">
-                    <input type="radio" name="flow-dir" value="imports" checked> Imports
+        <div class="industry-bar">
+            <div class="industry-bar-title">Trade View</div>
+            <div class="industry-bar-controls">
+                <label class="toolbar-select-wrap" for="view-mode-select">
+                    <span>View</span>
+                    <select id="view-mode-select">
+                        <option value="all">All trade</option>
+                        <option value="industry">By industry</option>
+                    </select>
                 </label>
-                <label class="toggle-opt">
-                    <input type="radio" name="flow-dir" value="exports"> Exports
+                <label class="toolbar-select-wrap" for="country-select">
+                    <span id="country-label-text">Importing country</span>
+                    <select id="country-select">
+                        <option value="US">United States (US)</option>
+                        <option value="CN">China (CN)</option>
+                        <option value="DE">Germany (DE)</option>
+                        <option value="IN">India (IN)</option>
+                        <option value="RU">Russia (RU)</option>
+                    </select>
                 </label>
-                <label class="toggle-opt">
-                    <input type="radio" name="flow-dir" value="balance"> Balance
+                <label class="toolbar-select-wrap" for="direction-select">
+                    <span>Direction</span>
+                    <select id="direction-select"></select>
+                </label>
+                <label class="toolbar-select-wrap" for="industry-select" id="industry-select-wrap" hidden>
+                    <span>Industry</span>
+                    <select id="industry-select" disabled>
+                        <option value="ALL">All exporting industries</option>
+                    </select>
                 </label>
             </div>
-            <label for="country-select" id="country-label">Importing country:</label>
-            <select id="country-select">
-                <option value="US">United States (US)</option>
-                <option value="CN">China (CN)</option>
-                <option value="DE">Germany (DE)</option>
-                <option value="IN">India (IN)</option>
-                <option value="RU">Russia (RU)</option>
-            </select>
+            <div id="industry-bar-note">Use By industry to isolate one exporting industry between countries. In that mode, color and arrowhead shape show direction, width shows quantity traded, and most lines stay solid for readability.</div>
+        </div>
+
+        <div class="control-panel">
+            <h4>Visible Partners</h4>
             <div id="status-msg">Loading&hellip;</div>
             <div id="source-filters"></div>
         </div>
@@ -466,6 +550,10 @@ const BALANCE_NEGATIVE_DARK = "#c96256";
 const BALANCE_NEGATIVE_LIGHT = "#f3c6bf";
 const BALANCE_POSITIVE_DARK = "#0f6b57";
 const BALANCE_POSITIVE_LIGHT = "#bfe3d1";
+const ALL_INDUSTRY_VALUE = "ALL";
+const STANDARD_ARROW_HEAD_PATH = "M0,-4.4L13,0L0,4.4Z";
+const INDUSTRY_IMPORT_ARROW_HEAD_PATH = "M0,-3.9L12.2,0L0,3.9Z";
+const INDUSTRY_EXPORT_ARROW_HEAD_PATH = "M0,-4.9L13.8,0L0,4.9Z";
 const FLOW_BASE_COLORS = {
     imports: "#2563eb",
     exports: "#dd6b20",
@@ -474,31 +562,31 @@ const TYPE_STYLE_MAP = {
     resources: {
         label: "materials",
         dasharray: "",
-        markerPath: "M0,-5L10,0L0,5Z",
+        markerPath: STANDARD_ARROW_HEAD_PATH,
         swatchStyle: "solid",
     },
     manufacturing: {
         label: "manufacturing",
-        dasharray: "16 7",
-        markerPath: "M0,-4L9,0L0,4L3.2,0Z",
-        swatchStyle: "dashed",
+        dasharray: "",
+        markerPath: STANDARD_ARROW_HEAD_PATH,
+        swatchStyle: "solid",
     },
     consumer: {
         label: "consumer goods",
-        dasharray: "18 7 4 7",
-        markerPath: "M0,-5L10,0L0,5L2.3,0Z",
-        swatchStyle: "dashed",
+        dasharray: "",
+        markerPath: STANDARD_ARROW_HEAD_PATH,
+        swatchStyle: "solid",
     },
     services: {
         label: "services",
-        dasharray: "4 7",
-        markerPath: "M0,0L5,-4L10,0L5,4Z",
-        swatchStyle: "dotted",
+        dasharray: "10 7",
+        markerPath: STANDARD_ARROW_HEAD_PATH,
+        swatchStyle: "dashed",
     },
     mixed: {
         label: "mixed trade",
-        dasharray: "10 7",
-        markerPath: "M0,-5L10,0L0,5Z",
+        dasharray: "",
+        markerPath: STANDARD_ARROW_HEAD_PATH,
         swatchStyle: "solid",
     },
 };
@@ -524,6 +612,12 @@ const typeColorScale = d3.scaleOrdinal([
     "#22c55e", "#06b6d4", "#8b5cf6", "#f43f5e", "#f59e0b",
     "#14b8a6", "#84cc16", "#ec4899", "#0ea5e9", "#a855f7",
 ]);
+const viewModeSelect = document.getElementById("view-mode-select");
+const directionSelect = document.getElementById("direction-select");
+const countryLabelText = document.getElementById("country-label-text");
+const industrySelect = document.getElementById("industry-select");
+const industrySelectWrap = document.getElementById("industry-select-wrap");
+const industryBarNote = document.getElementById("industry-bar-note");
 const zoomToast = document.getElementById("zoom-toast");
 let zoomToastTimer = null;
 
@@ -531,6 +625,8 @@ L.DomEvent.disableClickPropagation(document.querySelector(".control-panel"));
 L.DomEvent.disableScrollPropagation(document.querySelector(".control-panel"));
 L.DomEvent.disableClickPropagation(document.getElementById("map-legend"));
 L.DomEvent.disableScrollPropagation(document.getElementById("map-legend"));
+L.DomEvent.disableClickPropagation(document.querySelector(".industry-bar"));
+L.DomEvent.disableScrollPropagation(document.querySelector(".industry-bar"));
 
 function showZoomToast(enabled) {
     zoomToast.textContent = enabled ? "Zoom On" : "Zoom Off";
@@ -589,11 +685,26 @@ const industryNameByYear = {};
 // ---------------------------------------------------------------------------
 let currentFlowDir = "imports";   // "imports" or "exports"
 let currentFocusCountry = document.getElementById("country-select").value || "US";
+let currentIndustryMode = "all";
+let currentIndustryCode = ALL_INDUSTRY_VALUE;
+let currentIndustryFlowDir = "both";
 let selectedArrow = null;
 const NORMAL_OPACITY    = 0.65;
 const HIGHLIGHT_OPACITY = 1.0;
 const DIM_OPACITY       = 0.08;
 const VALID_FLOW_DIRS = new Set(["imports", "exports", "balance"]);
+const VALID_INDUSTRY_MODES = new Set(["all", "industry"]);
+const VALID_INDUSTRY_FLOW_DIRS = new Set(["both", "imports", "exports"]);
+const COUNTRY_DIRECTION_OPTIONS = [
+    { value: "imports", label: "Imports" },
+    { value: "exports", label: "Exports" },
+    { value: "balance", label: "Balance" },
+];
+const INDUSTRY_DIRECTION_OPTIONS = [
+    { value: "both", label: "Both" },
+    { value: "imports", label: "Imports" },
+    { value: "exports", label: "Exports" },
+];
 
 // ---------------------------------------------------------------------------
 // Tooltip
@@ -697,9 +808,161 @@ function prepareDirectionalSummary(summary) {
     return summary;
 }
 
+function getSelectedIndustryLabel(industryCode) {
+    const normalized = normalizeCode(industryCode);
+    return normalized === ALL_INDUSTRY_VALUE
+        ? "All exporting industries"
+        : industryLabel(normalized);
+}
+
+function updateIndustryBarNote() {
+    if (currentIndustryMode === "industry") {
+        const selectedLabel = getSelectedIndustryLabel(currentIndustryCode);
+        const flowCopy = currentIndustryFlowDir === "imports"
+            ? "imports"
+            : currentIndustryFlowDir === "exports"
+                ? "exports"
+                : "imports and exports";
+        industryBarNote.textContent =
+            `${selectedLabel} view shows ${flowCopy}. Color and arrowhead shape show direction, width shows quantity traded, and most lines stay solid for readability.`;
+        return;
+    }
+
+    industryBarNote.textContent =
+        "All trade keeps the existing country view. Switch to By industry to compare imports and exports together, then narrow the map with the industry dropdown.";
+}
+
+function syncDirectionOptions() {
+    const options = currentIndustryMode === "industry"
+        ? INDUSTRY_DIRECTION_OPTIONS
+        : COUNTRY_DIRECTION_OPTIONS;
+    const preferredValue = currentIndustryMode === "industry" ? currentIndustryFlowDir : currentFlowDir;
+
+    directionSelect.innerHTML = "";
+    options.forEach(entry => {
+        const option = document.createElement("option");
+        option.value = entry.value;
+        option.textContent = entry.label;
+        directionSelect.appendChild(option);
+    });
+
+    directionSelect.value = options.some(entry => entry.value === preferredValue)
+        ? preferredValue
+        : options[0].value;
+}
+
+function syncToolbarVisibility() {
+    const industryMode = currentIndustryMode === "industry";
+    industrySelectWrap.hidden = !industryMode;
+    industrySelect.disabled = !industryMode;
+    countryLabelText.textContent = industryMode ? "Focus country" : getCountryLabelText(currentFlowDir);
+    syncDirectionOptions();
+}
+
+function setIndustryModeState(mode) {
+    const nextMode = VALID_INDUSTRY_MODES.has(mode) ? mode : "all";
+    currentIndustryMode = nextMode;
+    viewModeSelect.value = nextMode;
+    syncToolbarVisibility();
+    updateIndustryBarNote();
+    return true;
+}
+
+function setIndustrySelectionState(industryCode) {
+    const normalized = normalizeCode(industryCode) || ALL_INDUSTRY_VALUE;
+    currentIndustryCode = normalized;
+    const matchingOption = Array.from(industrySelect.options).find(option => normalizeCode(option.value) === normalized);
+    if (matchingOption) {
+        industrySelect.value = matchingOption.value;
+    }
+    updateIndustryBarNote();
+    return true;
+}
+
+function setIndustryFlowState(flowDir) {
+    const nextFlowDir = VALID_INDUSTRY_FLOW_DIRS.has(flowDir) ? flowDir : "both";
+    currentIndustryFlowDir = nextFlowDir;
+    if (currentIndustryMode === "industry") {
+        syncDirectionOptions();
+    }
+    updateIndustryBarNote();
+    return true;
+}
+
+function syncIndustryOptions(preferredIndustryCode) {
+    const yearKey = normalizeCode(TradeShared.getState().year);
+    const yearMap = industryNameByYear[yearKey] || {};
+    const preferred = normalizeCode(preferredIndustryCode) || ALL_INDUSTRY_VALUE;
+    const options = Object.entries(yearMap)
+        .sort((a, b) => String(a[1]).localeCompare(String(b[1])))
+        .map(([code, label]) => ({ code, label }));
+
+    industrySelect.innerHTML = "";
+
+    const allOption = document.createElement("option");
+    allOption.value = ALL_INDUSTRY_VALUE;
+    allOption.textContent = "All exporting industries";
+    industrySelect.appendChild(allOption);
+
+    options.forEach(entry => {
+        const option = document.createElement("option");
+        option.value = entry.code;
+        option.textContent = `${entry.label} (${entry.code})`;
+        industrySelect.appendChild(option);
+    });
+
+    const fallbackCode = options[0]?.code || ALL_INDUSTRY_VALUE;
+    setIndustrySelectionState(options.some(entry => entry.code === preferred) || preferred === ALL_INDUSTRY_VALUE
+        ? preferred
+        : fallbackCode);
+}
+
+function getHashIndustryMode() {
+    if (typeof getHash !== "function") return "";
+    const mode = normalizeCode(getHash().view).toLowerCase();
+    return VALID_INDUSTRY_MODES.has(mode) ? mode : "";
+}
+
+function getHashIndustryCode() {
+    if (typeof getHash !== "function") return "";
+    return normalizeCode(getHash().industry);
+}
+
+function getHashIndustryFlowDir() {
+    if (typeof getHash !== "function") return "";
+    const flowDir = String(getHash().industryflow || "").trim().toLowerCase();
+    return VALID_INDUSTRY_FLOW_DIRS.has(flowDir) ? flowDir : "";
+}
+
+function syncIndustryModeToHash(mode) {
+    if (typeof updateHash === "function") {
+        updateHash({ view: VALID_INDUSTRY_MODES.has(mode) ? mode : "all" });
+    }
+}
+
+function syncIndustryCodeToHash(industryCode) {
+    if (typeof updateHash === "function") {
+        updateHash({ industry: normalizeCode(industryCode) || ALL_INDUSTRY_VALUE });
+    }
+}
+
+function syncIndustryFlowDirToHash(flowDir) {
+    if (typeof updateHash === "function") {
+        updateHash({ industryflow: VALID_INDUSTRY_FLOW_DIRS.has(flowDir) ? flowDir : "both" });
+    }
+}
+
 function showTooltip(trade, focusCountry, flowDir, evt) {
     const label = `${countryLabel(trade.from)} \u2192 ${countryLabel(trade.to)}`;
-    if (flowDir === "balance") {
+    if (trade.viewMode === "industry") {
+        const tradeLabel = trade.flowDir === "imports" ? "Imports" : "Exports";
+        tooltip.innerHTML =
+            `<div class="tt-direction">${label}</div>` +
+            `<div class="tt-co2">${tradeLabel}: ${fmtAmountValue(trade.amount || 0)}</div>` +
+            `<div class="tt-muted">Industry: ${escapeHtml(trade.industryLabel || trade.dominantTypeLabel || "Mixed trade")}</div>` +
+            `<div class="tt-muted">${escapeHtml(indicatorLabel())}: ${escapeHtml(fmtIndicator(trade.co2 || 0))}</div>` +
+            `<div class="tt-muted">Arrow style: ${escapeHtml(trade.typeFamilyLabel || "mixed trade")} family</div>`;
+    } else if (flowDir === "balance") {
         const balanceLabel = trade.netCo2 >= 0 ? "Trade surplus" : "Trade deficit";
         tooltip.innerHTML =
             `<div class="tt-direction">${label}</div>` +
@@ -763,14 +1026,12 @@ function applyHighlight(partnerCode, options) {
             return `${parseFloat(this.getAttribute("data-base-sw")) || 2}px`;
         });
 
-    const targetPath = g.select("path.arrow-" + partnerCode);
-    if (!targetPath.empty()) {
-        const baseSW = parseFloat(targetPath.attr("data-base-sw")) || 2;
+    const targetPaths = g.selectAll("path.arrow-" + partnerCode);
+    if (!targetPaths.empty()) {
         g.selectAll(".arrow-" + partnerCode).raise();
-        targetPath
+        targetPaths
             .classed("is-active", true)
-            .style("opacity", HIGHLIGHT_OPACITY)
-            .style("stroke-width", (baseSW + 4.5) + "px");
+            .style("opacity", HIGHLIGHT_OPACITY);
     }
 
     document.querySelectorAll("#source-filters label").forEach(el => {
@@ -835,9 +1096,32 @@ function getTradePoints(d) {
     };
 }
 
+function getIndustryCurveOffset(from, to, direction) {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const distance = Math.sqrt((dx * dx) + (dy * dy)) || 1;
+    const magnitude = Math.max(24, Math.min(82, distance * 0.16));
+    return magnitude * direction;
+}
+
+function buildQuadraticPath(from, to, offset) {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const distance = Math.sqrt((dx * dx) + (dy * dy)) || 1;
+    const nx = -dy / distance;
+    const ny = dx / distance;
+    const cx = ((from.x + to.x) / 2) + (nx * offset);
+    const cy = ((from.y + to.y) / 2) + (ny * offset);
+    return `M${from.x},${from.y}Q${cx},${cy} ${to.x},${to.y}`;
+}
+
 function drawCurve(d) {
     const { from, to } = getTradePoints(d);
-    return buildArcPath(from, to, 1);
+    if (d.viewMode === "industry") {
+        const offsetDirection = d.flowDir === "imports" ? -1 : 1;
+        return buildQuadraticPath(from, to, getIndustryCurveOffset(from, to, offsetDirection));
+    }
+    return buildArcPath(from, to, d.curveSweep == null ? 1 : d.curveSweep);
 }
 
 function buildArcPath(from, to, sweepFlag) {
@@ -849,9 +1133,17 @@ function buildArcPath(from, to, sweepFlag) {
 
 function drawLabelCurve(d, flipLabel) {
     const { from, to } = getTradePoints(d);
+    if (d.viewMode === "industry") {
+        const offsetDirection = d.flowDir === "imports" ? -1 : 1;
+        const offset = getIndustryCurveOffset(from, to, offsetDirection);
+        return flipLabel
+            ? buildQuadraticPath(to, from, -offset)
+            : buildQuadraticPath(from, to, offset);
+    }
+    const sweep = d.curveSweep == null ? 1 : d.curveSweep;
     return flipLabel
-        ? buildArcPath(to, from, 0)
-        : buildArcPath(from, to, 1);
+        ? buildArcPath(to, from, sweep === 1 ? 0 : 1)
+        : buildArcPath(from, to, sweep);
 }
 
 function pathMidAngle(pathNode) {
@@ -911,7 +1203,9 @@ function getSelectedCountryValue() {
 }
 
 function getSelectedFlowDirValue() {
-    return document.querySelector("input[name='flow-dir']:checked")?.value || "imports";
+    return currentIndustryMode === "industry"
+        ? currentFlowDir
+        : (directionSelect.value || "imports");
 }
 
 function setSelectedCountryValue(countryCode) {
@@ -924,9 +1218,10 @@ function setSelectedCountryValue(countryCode) {
 
 function setSelectedFlowDirValue(flowDir) {
     if (!VALID_FLOW_DIRS.has(flowDir)) return false;
-    const radio = document.querySelector(`input[name='flow-dir'][value='${flowDir}']`);
-    if (!radio) return false;
-    radio.checked = true;
+    if (currentIndustryMode !== "industry") {
+        syncDirectionOptions();
+        directionSelect.value = flowDir;
+    }
     return true;
 }
 
@@ -956,7 +1251,9 @@ function syncFlowDirToHash(flowDir) {
 function setFlowDirState(flowDir) {
     if (!setSelectedFlowDirValue(flowDir)) return false;
     currentFlowDir = flowDir;
-    document.getElementById("country-label").textContent = getCountryLabelText(flowDir);
+    if (currentIndustryMode !== "industry") {
+        countryLabelText.textContent = getCountryLabelText(flowDir);
+    }
     return true;
 }
 
@@ -967,7 +1264,8 @@ function applySelections(countryCode, flowDir) {
     return true;
 }
 
-function collectDirectionalSummaries(data, focusCountry, flowDir) {
+function collectDirectionalSummaries(data, focusCountry, flowDir, options) {
+    const settings = Object.assign({ industryCode: ALL_INDUSTRY_VALUE }, options);
     const srcKey = indicatorSourceKey();
     const partnerKey = flowDir === "imports" ? "region1" : "region2";
     const typeKey = "industry1";
@@ -981,8 +1279,9 @@ function collectDirectionalSummaries(data, focusCountry, flowDir) {
         const amountValue = parseFloat(row.amount) || 0;
         if (metricValue <= 0 && amountValue <= 0) continue;
 
-        const summary = getPartnerSummary(flowMap, partner);
         const typeCode = normalizeCode(row[typeKey]) || "UNKNOWN";
+        if (settings.industryCode !== ALL_INDUSTRY_VALUE && typeCode !== settings.industryCode) continue;
+        const summary = getPartnerSummary(flowMap, partner);
 
         summary.co2 += metricValue;
         summary.amount += amountValue;
@@ -1030,6 +1329,7 @@ function buildDirectionalTrades(flowMap, focusCountry, flowDir) {
                 dominantTypeLabel: summary.dominantTypeLabel,
                 typeFamily: summary.typeFamily,
                 partner,
+                viewMode: "all",
             };
         });
 }
@@ -1073,6 +1373,7 @@ function buildBalanceTrades(importsData, exportsData, focusCountry) {
                 typeFamily: dominantSummary.typeFamily || "mixed",
                 balanceSign: isSurplus ? "positive" : "negative",
                 partner,
+                viewMode: "all",
             };
         })
         .filter(Boolean)
@@ -1080,14 +1381,96 @@ function buildBalanceTrades(importsData, exportsData, focusCountry) {
         .slice(0, topn);
 }
 
+function createIndustryTrade(summary, focusCountry, flowDir, industryCode) {
+    const partner = summary.partner;
+    const partnerLonShift = getPacificPartnerLonShift(focusCountry, partner);
+    const normalizedIndustry = normalizeCode(industryCode) || ALL_INDUSTRY_VALUE;
+    const visibleIndustryCode = normalizedIndustry === ALL_INDUSTRY_VALUE
+        ? (summary.dominantType || ALL_INDUSTRY_VALUE)
+        : normalizedIndustry;
+
+    return {
+        from: flowDir === "imports" ? partner : focusCountry,
+        to: flowDir === "imports" ? focusCountry : partner,
+        fromLonShift: flowDir === "imports" ? partnerLonShift : 0,
+        toLonShift: flowDir === "exports" ? partnerLonShift : 0,
+        co2: summary.co2,
+        amount: summary.amount,
+        topTypes: summary.topTypes,
+        dominantType: summary.dominantType,
+        dominantTypeLabel: summary.dominantTypeLabel,
+        typeFamily: summary.typeFamily,
+        partner,
+        flowDir,
+        curveSweep: flowDir === "imports" ? 0 : 1,
+        industryCode: visibleIndustryCode,
+        industryLabel: normalizedIndustry === ALL_INDUSTRY_VALUE
+            ? (summary.dominantTypeLabel || "All exporting industries")
+            : industryLabel(normalizedIndustry),
+        viewMode: "industry",
+    };
+}
+
+function buildIndustryTrades(importsData, exportsData, focusCountry, industryCode, industryFlowDir) {
+    const selectedIndustryCode = normalizeCode(industryCode) || ALL_INDUSTRY_VALUE;
+    const selectedFlowDir = VALID_INDUSTRY_FLOW_DIRS.has(industryFlowDir) ? industryFlowDir : "both";
+    const importsMap = collectDirectionalSummaries(importsData, focusCountry, "imports", { industryCode: selectedIndustryCode });
+    const exportsMap = collectDirectionalSummaries(exportsData, focusCountry, "exports", { industryCode: selectedIndustryCode });
+    const topn = TradeShared.getState().topn;
+    const rankedPartners = Array.from(new Set([...importsMap.keys(), ...exportsMap.keys()]))
+        .map(partner => {
+            const importsSummary = importsMap.get(partner) || createPartnerSummary(partner);
+            const exportsSummary = exportsMap.get(partner) || createPartnerSummary(partner);
+            const amount = selectedFlowDir === "imports"
+                ? (importsSummary.amount || 0)
+                : selectedFlowDir === "exports"
+                    ? (exportsSummary.amount || 0)
+                    : (importsSummary.amount || 0) + (exportsSummary.amount || 0);
+            const metric = selectedFlowDir === "imports"
+                ? (importsSummary.co2 || 0)
+                : selectedFlowDir === "exports"
+                    ? (exportsSummary.co2 || 0)
+                    : (importsSummary.co2 || 0) + (exportsSummary.co2 || 0);
+            return {
+                partner,
+                amount,
+                metric,
+            };
+        })
+        .filter(entry => entry.amount > 0 || entry.metric > 0)
+        .sort((a, b) => (b.amount - a.amount) || (b.metric - a.metric))
+        .slice(0, topn)
+        .map(entry => entry.partner);
+
+    const trades = [];
+    rankedPartners.forEach(partner => {
+        const importsSummary = importsMap.get(partner);
+        const exportsSummary = exportsMap.get(partner);
+        if (selectedFlowDir !== "exports" && importsSummary && (importsSummary.amount > 0 || importsSummary.co2 > 0)) {
+            trades.push(createIndustryTrade(importsSummary, focusCountry, "imports", selectedIndustryCode));
+        }
+        if (selectedFlowDir !== "imports" && exportsSummary && (exportsSummary.amount > 0 || exportsSummary.co2 > 0)) {
+            trades.push(createIndustryTrade(exportsSummary, focusCountry, "exports", selectedIndustryCode));
+        }
+    });
+
+    return trades.sort((a, b) => (b.amount - a.amount) || (b.co2 - a.co2));
+}
+
+function getTradeWidthValue(trade) {
+    return trade.viewMode === "industry"
+        ? (parseFloat(trade.amount) || 0)
+        : (parseFloat(trade.co2) || 0);
+}
+
 function getWidthScale(trades) {
-    const maxCO2 = d3.max(trades, d => d.co2) || 0;
-    const minCO2 = d3.min(trades, d => d.co2) || 0;
-    if (maxCO2 === minCO2) {
-        return () => (maxCO2 > 0 ? 8 : 0);
+    const maxValue = d3.max(trades, getTradeWidthValue) || 0;
+    const minValue = d3.min(trades, getTradeWidthValue) || 0;
+    if (maxValue === minValue) {
+        return () => (maxValue > 0 ? 8 : 0);
     }
     return d3.scaleLinear()
-        .domain([minCO2, maxCO2])
+        .domain([minValue, maxValue])
         .range([1.5, 14]);
 }
 
@@ -1111,17 +1494,33 @@ function getTradeTypeStyle(trade, flowDir, negativeBalanceColor, positiveBalance
     const family = TYPE_STYLE_MAP[trade.typeFamily] || TYPE_STYLE_MAP.mixed;
     const accent = typeColorScale(trade.dominantType || trade.partner);
     const flowBaseColor = FLOW_BASE_COLORS[flowDir] || FLOW_BASE_COLORS.imports;
-    const color = flowDir === "balance"
+    let color = flowDir === "balance"
         ? (trade.balanceSign === "negative" ? negativeBalanceColor(trade.co2) : positiveBalanceColor(trade.co2))
         : d3.interpolateRgb(flowBaseColor, accent)(0.35);
+    let markerPath = family.markerPath;
+
+    if (trade.viewMode === "industry") {
+        color = FLOW_BASE_COLORS[trade.flowDir] || FLOW_BASE_COLORS.imports;
+        markerPath = trade.flowDir === "imports"
+            ? INDUSTRY_IMPORT_ARROW_HEAD_PATH
+            : INDUSTRY_EXPORT_ARROW_HEAD_PATH;
+    }
 
     return {
         color,
         dasharray: family.dasharray,
-        markerPath: family.markerPath,
+        markerPath,
         typeFamilyLabel: family.label,
         swatchStyle: family.swatchStyle,
     };
+}
+
+function getArrowMarkerSize(strokeWidth) {
+    return Math.max(11, Math.min(20, 9 + (strokeWidth * 0.58)));
+}
+
+function getArrowMarkerRefX(strokeWidth) {
+    return Math.max(8.6, Math.min(9.8, 8.6 + (strokeWidth * 0.08)));
 }
 
 // ---------------------------------------------------------------------------
@@ -1172,9 +1571,12 @@ function renderArrows(trades, focusCountry, flowDir) {
     trades.forEach((trade, i) => {
         const pathId   = `trade-path-${i}`;
         const markerId = `arrowhead-${i}`;
-        const style    = getTradeTypeStyle(trade, flowDir, negativeBalanceColor, positiveBalanceColor);
+        const effectiveFlowDir = trade.viewMode === "industry" ? trade.flowDir : flowDir;
+        const style    = getTradeTypeStyle(trade, effectiveFlowDir, negativeBalanceColor, positiveBalanceColor);
         const color    = style.color;
-        const sw       = widthScale(trade.co2);
+        const sw       = widthScale(getTradeWidthValue(trade));
+        const markerSize = getArrowMarkerSize(sw);
+        const markerRefX = getArrowMarkerRefX(sw);
 
         trade.strokeColor = color;
         trade.strokeDasharray = style.dasharray;
@@ -1184,14 +1586,17 @@ function renderArrows(trades, focusCountry, flowDir) {
 
         defs.append("marker")
             .attr("id", markerId)
-            .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 10).attr("refY", 0)
-            .attr("markerWidth", 5).attr("markerHeight", 5)
+            .attr("viewBox", "0 -6 14 12")
+            .attr("refX", markerRefX).attr("refY", 0)
+            .attr("markerUnits", "userSpaceOnUse")
+            .attr("markerWidth", markerSize).attr("markerHeight", markerSize)
+            .attr("overflow", "visible")
             .attr("orient", "auto")
             .append("path")
             .attr("d", trade.markerPath)
             .attr("fill", color)
-            .attr("opacity", 0.7);
+            .attr("stroke", "none")
+            .attr("opacity", 0.88);
 
         const path = g.append("path")
             .datum(trade)
@@ -1251,18 +1656,51 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
 
     const header = document.createElement("div");
     header.style.cssText = "font-size:11px;font-weight:600;margin-bottom:6px;color:#333;";
-    header.textContent = flowDir === "imports"
-        ? "Toggle exporters:"
-        : flowDir === "exports"
-            ? "Toggle importers:"
-            : "Toggle balance partners:";
+    header.textContent = currentIndustryMode === "industry"
+        ? "Toggle trade partners:"
+        : flowDir === "imports"
+            ? "Toggle exporters:"
+            : flowDir === "exports"
+                ? "Toggle importers:"
+                : "Toggle balance partners:";
     container.appendChild(header);
 
-        trades.forEach(trade => {
+    const displayTrades = currentIndustryMode === "industry"
+        ? Array.from(trades.reduce((partnerMap, trade) => {
+            if (!partnerMap.has(trade.partner)) {
+                partnerMap.set(trade.partner, {
+                    partner: trade.partner,
+                    importsAmount: 0,
+                    exportsAmount: 0,
+                    importsMetric: 0,
+                    exportsMetric: 0,
+                    totalAmount: 0,
+                    totalMetric: 0,
+                    strokeColor: trade.strokeColor,
+                    swatchStyle: trade.swatchStyle,
+                    typeFamilyLabel: trade.typeFamilyLabel,
+                });
+            }
+            const summary = partnerMap.get(trade.partner);
+            if (trade.flowDir === "imports") {
+                summary.importsAmount += trade.amount || 0;
+                summary.importsMetric += trade.co2 || 0;
+            } else {
+                summary.exportsAmount += trade.amount || 0;
+                summary.exportsMetric += trade.co2 || 0;
+            }
+            summary.totalAmount += trade.amount || 0;
+            summary.totalMetric += trade.co2 || 0;
+            return partnerMap;
+        }, new Map()).values()).sort((a, b) => b.totalAmount - a.totalAmount)
+        : trades;
+
+    displayTrades.forEach(trade => {
         const label    = document.createElement("label");
         const checkbox = document.createElement("input");
         const swatch   = document.createElement("span");
         const copy     = document.createElement("span");
+        const topline  = document.createElement("span");
         const name     = document.createElement("span");
         const meta     = document.createElement("span");
         checkbox.type    = "checkbox";
@@ -1274,12 +1712,23 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
         swatch.style.borderTopColor = trade.strokeColor || "#5b7cff";
         swatch.style.borderTopStyle = trade.swatchStyle || "solid";
         copy.className = "filter-copy";
+        topline.className = "filter-topline";
         name.className = "filter-name";
         meta.className = "filter-meta";
         name.textContent = `${countryLabel(trade.partner)} (${trade.partner})`;
-        meta.textContent = flowDir === "balance"
-            ? `${trade.netCo2 >= 0 ? "Net exporter" : "Net importer"} | ${trade.dominantTypeLabel || "Mixed trade"} | ${fmtIndicator(trade.co2)}`
-            : `${trade.dominantTypeLabel || "Mixed trade"} | ${fmtIndicator(trade.co2)} | ${fmtAmountValue(trade.amount || 0)}`;
+        meta.textContent = currentIndustryMode === "industry"
+            ? currentIndustryFlowDir === "imports"
+                ? `Imports ${fmtAmountValue(trade.importsAmount || 0)} | ${fmtIndicator(trade.importsMetric || trade.totalMetric || 0)}`
+                : currentIndustryFlowDir === "exports"
+                    ? `Exports ${fmtAmountValue(trade.exportsAmount || 0)} | ${fmtIndicator(trade.exportsMetric || trade.totalMetric || 0)}`
+                    : [
+                        trade.importsAmount > 0 ? `Imports ${fmtAmountValue(trade.importsAmount)}` : "",
+                        trade.exportsAmount > 0 ? `Exports ${fmtAmountValue(trade.exportsAmount)}` : "",
+                        fmtIndicator(trade.totalMetric || 0),
+                      ].filter(Boolean).join(" | ")
+            : flowDir === "balance"
+                ? `${trade.netCo2 >= 0 ? "Net exporter" : "Net importer"} | ${trade.dominantTypeLabel || "Mixed trade"} | ${fmtIndicator(trade.co2)}`
+                : `${trade.dominantTypeLabel || "Mixed trade"} | ${fmtIndicator(trade.co2)} | ${fmtAmountValue(trade.amount || 0)}`;
 
         checkbox.addEventListener("change", function() {
             const vis = this.checked ? "visible" : "hidden";
@@ -1287,8 +1736,9 @@ function buildCheckboxes(trades, focusCountry, flowDir) {
         });
 
         label.appendChild(checkbox);
-        label.appendChild(swatch);
-        copy.appendChild(name);
+        topline.appendChild(swatch);
+        topline.appendChild(name);
+        copy.appendChild(topline);
         copy.appendChild(meta);
         label.appendChild(copy);
 
@@ -1311,7 +1761,9 @@ function setStatus(msg) {
 function processAndRender(data, focusCountry, flowDir) {
     let trades = [];
 
-    if (flowDir === "imports") {
+    if (currentIndustryMode === "industry") {
+        trades = buildIndustryTrades(data.importsData, data.exportsData, focusCountry, currentIndustryCode, currentIndustryFlowDir);
+    } else if (flowDir === "imports") {
         trades = buildDirectionalTrades(collectDirectionalSummaries(data, focusCountry, flowDir), focusCountry, flowDir);
     } else if (flowDir === "exports") {
         trades = buildDirectionalTrades(collectDirectionalSummaries(data, focusCountry, flowDir), focusCountry, flowDir);
@@ -1321,22 +1773,38 @@ function processAndRender(data, focusCountry, flowDir) {
 
     if (trades.length === 0) { setStatus("No data found."); return; }
 
-    const arrow = flowDir === "imports"
-        ? `${trades.length} exporters \u2192 ${countryLabel(focusCountry)}`
-        : flowDir === "exports"
-            ? `${countryLabel(focusCountry)} \u2192 ${trades.length} importers`
-            : `${trades.filter(trade => trade.netCo2 > 0).length} surplus / ${trades.filter(trade => trade.netCo2 < 0).length} deficit partners`;
+    const arrow = currentIndustryMode === "industry"
+        ? currentIndustryFlowDir === "imports"
+            ? `${trades.length} import arrows for ${getSelectedIndustryLabel(currentIndustryCode)}`
+            : currentIndustryFlowDir === "exports"
+                ? `${trades.length} export arrows for ${getSelectedIndustryLabel(currentIndustryCode)}`
+                : `${trades.filter(trade => trade.flowDir === "imports").length} import arrows and ${trades.filter(trade => trade.flowDir === "exports").length} export arrows for ${getSelectedIndustryLabel(currentIndustryCode)}`
+        : flowDir === "imports"
+            ? `${trades.length} exporters \u2192 ${countryLabel(focusCountry)}`
+            : flowDir === "exports"
+                ? `${countryLabel(focusCountry)} \u2192 ${trades.length} importers`
+                : `${trades.filter(trade => trade.netCo2 > 0).length} surplus / ${trades.filter(trade => trade.netCo2 < 0).length} deficit partners`;
     setStatus(arrow);
 
-    const legendDir = flowDir === "balance"
-        ? "net exporter \u2192 net importer"
-        : "exporter \u2192 importer";
+    const legendDir = currentIndustryMode === "industry"
+        ? currentIndustryFlowDir === "imports"
+            ? "blue imports for the selected industry"
+            : currentIndustryFlowDir === "exports"
+                ? "orange exports for the selected industry"
+                : "blue imports + orange exports for the selected industry"
+        : flowDir === "balance"
+            ? "net exporter \u2192 net importer"
+            : "exporter \u2192 importer";
     document.getElementById("legend-dir").textContent = legendDir;
     document.getElementById("legend-metric").textContent =
-        "Arrow thickness = " + indicatorLabel() + " \u00B7 ";
-    document.getElementById("legend-style").textContent = flowDir === "balance"
-        ? "Green arrows show net export advantage, red arrows show net import dependence. Dash pattern still tracks the dominant industry family."
-        : `Base color tracks ${flowDir === "imports" ? "imports" : "exports"}, while the tint and dash pattern reflect the dominant trade type.`;
+        "Arrow thickness = " + (currentIndustryMode === "industry" ? "quantity traded" : indicatorLabel()) + " \u00B7 ";
+    document.getElementById("legend-style").textContent = currentIndustryMode === "industry"
+        ? currentIndustryFlowDir === "both"
+            ? "Color and arrowhead shape distinguish imports from exports. Most lines stay solid, with only service-heavy flows using a light dash."
+            : `The ${currentIndustryFlowDir === "imports" ? "import" : "export"} selection keeps the same quantity scaling and simplified line styles.`
+        : flowDir === "balance"
+            ? "Green arrows show net export advantage, red arrows show net import dependence, and line styling stays mostly solid for readability."
+            : `Base color tracks ${flowDir === "imports" ? "imports" : "exports"}, while the tint reflects the dominant trade type. Only service-heavy flows use a light dash.`;
 
     renderArrows(trades, focusCountry, flowDir);
     buildCheckboxes(trades, focusCountry, flowDir);
@@ -1368,7 +1836,8 @@ function loadFlows(focusCountry, flowDir) {
 
     setStatus("Loading\u2026");
 
-    const loadRequest = flowDir === "balance"
+    const needsDualFlowData = currentIndustryMode === "industry" || flowDir === "balance";
+    const loadRequest = needsDualFlowData
         ? Promise.all([
             fetchTradeCsv(focusCountry, "imports"),
             fetchTradeCsv(focusCountry, "exports"),
@@ -1381,6 +1850,7 @@ function loadFlows(focusCountry, flowDir) {
         loadIndustryNamesForYear(year),
         loadRequest,
     ]).then(function([_, data]) {
+        syncIndustryOptions(currentIndustryCode);
         processAndRender(data, focusCountry, flowDir);
     }).catch(function(err) {
         setStatus("Error loading data.");
@@ -1396,12 +1866,48 @@ document.getElementById("country-select").addEventListener("change", function() 
     loadFlows(this.value, currentFlowDir);
 });
 
-document.querySelectorAll("input[name='flow-dir']").forEach(radio => {
-    radio.addEventListener("change", function() {
+viewModeSelect.addEventListener("change", function() {
+    if (!setIndustryModeState(this.value)) return;
+    syncIndustryModeToHash(currentIndustryMode);
+    syncIndustryCodeToHash(currentIndustryCode);
+    syncIndustryFlowDirToHash(currentIndustryFlowDir);
+    const saved = JSON.parse(localStorage.getItem("trade-map-state") || "{}");
+    saved.view = currentIndustryMode;
+    saved.industry = currentIndustryCode;
+    saved.industryflow = currentIndustryFlowDir;
+    localStorage.setItem("trade-map-state", JSON.stringify(saved));
+    loadFlows(getSelectedCountryValue(), currentFlowDir);
+});
+
+industrySelect.addEventListener("change", function() {
+    setIndustrySelectionState(this.value);
+    syncIndustryModeToHash(currentIndustryMode);
+    syncIndustryCodeToHash(currentIndustryCode);
+    syncIndustryFlowDirToHash(currentIndustryFlowDir);
+    const saved = JSON.parse(localStorage.getItem("trade-map-state") || "{}");
+    saved.view = currentIndustryMode;
+    saved.industry = currentIndustryCode;
+    saved.industryflow = currentIndustryFlowDir;
+    localStorage.setItem("trade-map-state", JSON.stringify(saved));
+    loadFlows(getSelectedCountryValue(), currentFlowDir);
+});
+
+directionSelect.addEventListener("change", function() {
+    if (currentIndustryMode === "industry") {
+        setIndustryFlowState(this.value);
+        syncIndustryModeToHash(currentIndustryMode);
+        syncIndustryCodeToHash(currentIndustryCode);
+        syncIndustryFlowDirToHash(currentIndustryFlowDir);
+        const saved = JSON.parse(localStorage.getItem("trade-map-state") || "{}");
+        saved.view = currentIndustryMode;
+        saved.industry = currentIndustryCode;
+        saved.industryflow = currentIndustryFlowDir;
+        localStorage.setItem("trade-map-state", JSON.stringify(saved));
+    } else {
         setFlowDirState(this.value);
         syncFlowDirToHash(currentFlowDir);
-        loadFlows(document.getElementById("country-select").value, currentFlowDir);
-    });
+    }
+    loadFlows(document.getElementById("country-select").value, currentFlowDir);
 });
 
 map.on("click", function(evt) {
@@ -1417,17 +1923,32 @@ document.addEventListener("hashChangeEvent", function() {
     const hash = getHash();
     const nextCountry = getHashCountry() || getSelectedCountryValue();
     const nextFlowDir = getHashFlowDir() || currentFlowDir;
+    const nextIndustryMode = getHashIndustryMode() || currentIndustryMode;
+    const nextIndustryCode = getHashIndustryCode() || currentIndustryCode;
+    const nextIndustryFlowDir = getHashIndustryFlowDir() || currentIndustryFlowDir;
     const countryChanged = nextCountry !== currentFocusCountry;
     const flowChanged = nextFlowDir !== currentFlowDir;
+    const industryModeChanged = nextIndustryMode !== currentIndustryMode;
+    const industryChanged = nextIndustryCode !== currentIndustryCode;
+    const industryFlowChanged = nextIndustryFlowDir !== currentIndustryFlowDir;
 
-    if (!countryChanged && !flowChanged) {
+    if (!countryChanged && !flowChanged && !industryModeChanged && !industryChanged && !industryFlowChanged) {
         return;
     }
 
-    if (hash.country === window.priorHash?.country && hash.type === window.priorHash?.type) {
+    if (
+        hash.country === window.priorHash?.country &&
+        hash.type === window.priorHash?.type &&
+        hash.view === window.priorHash?.view &&
+        hash.industry === window.priorHash?.industry &&
+        hash.industryflow === window.priorHash?.industryflow
+    ) {
         return;
     }
 
+    setIndustryModeState(nextIndustryMode);
+    setIndustrySelectionState(nextIndustryCode);
+    setIndustryFlowState(nextIndustryFlowDir);
     applySelections(nextCountry, nextFlowDir);
 });
 
@@ -1473,15 +1994,28 @@ const _METRIC_TO_FACTOR = { CO2_total: "co2", Water_total: "water", Employment_t
 document.addEventListener("trade:change", function(evt) {
     const state = (evt && evt.detail) || TradeShared.getState();
     if (typeof updateHash === 'function') {
-        updateHash({ currency: state.currency, factor: _METRIC_TO_FACTOR[state.metric] || state.metric });
+        updateHash({
+            currency: state.currency,
+            factor: _METRIC_TO_FACTOR[state.metric] || state.metric,
+            view: currentIndustryMode,
+            industry: currentIndustryCode,
+            industryflow: currentIndustryFlowDir,
+        });
     }
     localStorage.setItem('trade-currency', state.currency);
     localStorage.setItem('trade-map-state', JSON.stringify({
         factor: _METRIC_TO_FACTOR[state.metric] || state.metric,
-        inflows: state.topn
+        inflows: state.topn,
+        view: currentIndustryMode,
+        industry: currentIndustryCode,
+        industryflow: currentIndustryFlowDir,
     }));
     loadFlows(currentFocusCountry, currentFlowDir);
 });
+
+setIndustryModeState(getHashIndustryMode() || _initSaved.view || "all");
+setIndustrySelectionState(getHashIndustryCode() || _initSaved.industry || ALL_INDUSTRY_VALUE);
+setIndustryFlowState(getHashIndustryFlowDir() || _initSaved.industryflow || "both");
 
 const initialFlowDir = getHashFlowDir() || getSelectedFlowDirValue();
 const initialCountry = getHashCountry() || getSelectedCountryValue();
@@ -1490,6 +2024,9 @@ if (!applySelections(initialCountry, initialFlowDir)) {
 }
 syncCountryToHash(getSelectedCountryValue());
 syncFlowDirToHash(currentFlowDir);
+syncIndustryModeToHash(currentIndustryMode);
+syncIndustryCodeToHash(currentIndustryCode);
+syncIndustryFlowDirToHash(currentIndustryFlowDir);
 </script>
 
 <div class="content contentpadding large-list">
