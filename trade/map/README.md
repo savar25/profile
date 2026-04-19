@@ -20,7 +20,7 @@ Interactive environmental impact visualizations for industry-to-industry trade f
 
 An interactive [Apache eCharts](https://echarts.apache.org/) Sankey diagram showing embodied environmental flows between global industries for the World (WM) aggregate region, 2022 baseline.
 
-**Live data fetch:** No build step required. The chart fetches CSV directly from GitHub at load time:
+**Live data fetch:** No build step required. The chart discovers available `trade_impact.csv` files from the repo, then fetches the selected CSV directly from GitHub at load time and builds Sankey nodes/links in the browser:
 ```
 https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2022/WM/domestic/trade_impact.csv
 ```
@@ -49,12 +49,7 @@ The CSV path follows this pattern in [ModelEarth/trade-data](https://github.com/
 year/{YEAR}/{REGION}/domestic/trade_impact.csv
 ```
 
-To show a different region or year, change the `CSV_URL` constant at the top of `sankey.html`:
-```js
-// Example: Germany, 2021
-const CSV_URL =
-  "https://raw.githubusercontent.com/ModelEarth/trade-data/main/year/2021/DE/domestic/trade_impact.csv";
-```
+The live page now populates the available country/year/flow controls automatically from the repo's CSV inventory, so there is no stored Sankey dataset to maintain.
 
 Available region codes follow ISO 3166-1 alpha-2 (e.g. `US`, `CN`, `DE`, `IN`) plus `WM` for World aggregate.
 
