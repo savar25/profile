@@ -8,15 +8,21 @@
 (function () {
   const hostname = window.location.hostname || "";
   const isFile = window.location.protocol === "file:";
+  const normalizedPath = (window.location.pathname || "").replace(/\\/g, "/");
   const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
   const isGitHubPages = /\.github\.io$/i.test(hostname);
-  const firstPathSegment = (window.location.pathname || "/").split("/").filter(Boolean)[0] || "";
+  const firstPathSegment = normalizedPath.split("/").filter(Boolean)[0] || "";
+  const isLocalsiteProfileMirror = /\/localsite\/profile\//i.test(normalizedPath);
   const servesLocalsiteAtRoot = isLocalhost || firstPathSegment.toLowerCase() === "localsite" || !isGitHubPages;
   const localsiteBase = isFile
-    ? "../../../localsite"
+    ? (isLocalsiteProfileMirror ? "../../.." : "../../../localsite")
     : (servesLocalsiteAtRoot ? "/localsite" : "https://cdn.jsdelivr.net/gh/ModelEarth/localsite@main");
+  const tradeMapUrl = isLocalsiteProfileMirror
+    ? (isFile ? "../../../../profile/trade/map/index.html" : "/profile/trade/map/index.html")
+    : "../../trade/map/index.html";
 
   window.SANKEY_LOCALSITE_BASE = localsiteBase;
+  window.SANKEY_TRADE_MAP_URL = tradeMapUrl;
 
   document.write('<link type="text/css" rel="stylesheet" href="' + localsiteBase + '/css/base.css" />');
   document.write('<script type="text/javascript" src="' + localsiteBase + '/js/localsite.js?showheader=true&showsearch=true"><\/script>');
@@ -195,7 +201,7 @@ document.write('<script src="' + window.SANKEY_LOCALSITE_BASE + '/js/trade.js"><
     <div>
       <h2>Exiobase Industry Trade Flow Sankey</h2>
       <p>
-        Global industry-to-industry embodied environmental factors from our <a href="https://model.earth/exiobase/tradeflow/">trade flow csv files</a> are also used in our <a href="../../trade/map/">trade flow map</a>
+        Global industry-to-industry embodied environmental factors from our <a href="https://model.earth/exiobase/tradeflow/">trade flow csv files</a> are also used in our <a id="trade-map-link" href="../../trade/map/index.html">trade flow map</a>
       </p>
     </div>
   </div>
@@ -462,6 +468,11 @@ const partnerChartDom = document.getElementById("partner-chart");
 const partnerChart = echarts.init(partnerChartDom);
 const industryNameByYear = {};
 const currencyRatesByYear = {};
+
+const tradeMapLink = document.getElementById("trade-map-link");
+if (tradeMapLink && window.SANKEY_TRADE_MAP_URL) {
+  tradeMapLink.href = window.SANKEY_TRADE_MAP_URL;
+}
 
 let availableCurrencyCodes = ["EUR"];
 let currencyRatesPromise = null;

@@ -1,3 +1,20 @@
-<script type="text/javascript">
-  window.location="../../charts/sankey/";
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Trade Flow Sankey Redirect</title>
+  <script>
+  (function () {
+    const isFile = window.location.protocol === "file:";
+    const normalizedPath = (window.location.pathname || "").replace(/\\/g, "/");
+    const isLocalsiteProfileMirror = /\/localsite\/profile\//i.test(normalizedPath);
+    const target = isLocalsiteProfileMirror
+      ? (isFile ? "../../../../profile/charts/sankey/index.html" : "/profile/charts/sankey/index.html")
+      : "../../charts/sankey/index.html";
+    const suffix = (window.location.search || "") + (window.location.hash || "");
+    window.location.replace(target + suffix);
+  })();
+  </script>
+</head>
+<body></body>
+</html>
