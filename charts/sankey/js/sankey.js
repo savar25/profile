@@ -149,7 +149,7 @@ const CURRENCY_NAMES = {
 };
 
 const METRICS = {
-  amount: { label: "Amount Spent", unit: "M EUR", scale: 1 },
+  amount: { label: "Total Amount", unit: "M EUR", scale: 1 },
   CO2_total: { label: "CO\u2082 Emissions", unit: "Gt CO\u2082", scale: 1e12 },
   Water_total: { label: "Water Use", unit: "Gm\u00B3", scale: 1e9 },
   Employment_total: { label: "Employment", unit: "M jobs", scale: 1e6 }
