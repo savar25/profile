@@ -239,7 +239,7 @@ document.write('<script src="' + window.SANKEY_LOCALSITE_BASE + '/js/trade.js"><
   <div id="partner-chart-panel" hidden>
     <h3 id="partner-chart-header">Top Partner Countries</h3>
     <p id="partner-chart-note">
-      Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.
+      Top 10 partner countries for the selected import/export view, showing the selected indicator alongside total amount.
     </p>
     <div id="partner-chart-status"></div>
     <div id="partner-chart"></div>
@@ -260,10 +260,10 @@ document.write('<script src="' + window.SANKEY_LOCALSITE_BASE + '/js/trade.js"><
       </p>
       <div id="sankey-info">
         <p><strong>How the partner-country score works:</strong> the score ranks import/export partner countries from best to worst on a 0 to 100 scale.</p>
-        <p><strong>Amount Spent:</strong> score = 100 x partner trade value / largest partner trade value.</p>
+        <p><strong>Total Amount:</strong> score = 100 x partner trade value / largest partner trade value.</p>
         <p><strong>CO&#x2082; Emissions and Water Use:</strong> score = 100 x (0.6 x trade strength + 0.4 x lower impact per amount-spent efficiency).</p>
         <p><strong>Employment:</strong> score = 100 x (0.6 x trade strength + 0.4 x higher jobs per amount-spent efficiency).</p>
-        <p><strong>Trade strength</strong> is the partner&rsquo;s trade value relative to the largest partner. <strong>Efficiency</strong> compares indicator per amount spent across the visible partner-country set.</p>
+        <p><strong>Trade strength</strong> is the partner&rsquo;s trade value relative to the largest partner. <strong>Efficiency</strong> compares indicator per total amount across the visible partner-country set.</p>
       </div>
     </div>
   </div>
@@ -292,10 +292,10 @@ function createDefaultManifest() {
 let manifest = createDefaultManifest();
 
 const METRICS = {
+  amount:           { label: "Total Amount",        unit: "M EUR",       scale: 1,    sourceKeys: ["amount"], scoreDirection: "higher" },
   CO2_total:        { label: "CO\u2082 Emissions",  unit: "Gt CO\u2082", scale: 1e12, sourceKeys: ["CO2_total"], scoreDirection: "lower" },
   Water_total:      { label: "Water Use",           unit: "Gm\u00B3",    scale: 1e9,  sourceKeys: ["Water_total"], scoreDirection: "lower" },
-  Employment_total: { label: "Employment",          unit: "M jobs",      scale: 1e6,  sourceKeys: ["Employment_total", "Employment_people_total"], scoreDirection: "higher" },
-  amount:           { label: "Amount Spent",        unit: "M EUR",       scale: 1,    sourceKeys: ["amount"], scoreDirection: "higher" }
+  Employment_total: { label: "Employment",          unit: "M jobs",      scale: 1e6,  sourceKeys: ["Employment_total", "Employment_people_total"], scoreDirection: "higher" }
 };
 
 const INDUSTRY_LABEL_MODES = {
@@ -431,7 +431,7 @@ const SECTOR_NAMES = {
 };
 
 // ---------------------------------------------------------------------------
-// Shared trade controls (Year, Indicator, Currency, Top flows)
+// Shared trade controls (Year, Indicator, Currency, Inflows)
 // ---------------------------------------------------------------------------
 (function() {
   const hash = typeof getHash === "function" ? getHash() : {};
@@ -1587,7 +1587,7 @@ function renderPartnerChart() {
   if (!rawData || !activeSelection || activeSelection.flow === "domestic" || isPairFiltered) {
     partnerChartPanel.hidden = true;
     partnerChart.clear();
-    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
+    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside total amount.";
     setPartnerStatus("");
     return;
   }
@@ -1601,14 +1601,14 @@ function renderPartnerChart() {
 
   if (!rows.length) {
     partnerChart.clear();
-    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
+    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside total amount.";
     setPartnerStatus("No partner-country data available for this selection.", true);
     return;
   }
 
   partnerChartNote.textContent = metricKey === "amount"
-    ? "Countries are ranked from strongest to weakest by amount-spent score, scaled relative to the largest partner-country trade value."
-    : "Countries are ranked from best to worst using a score that blends 60% trade-value strength with 40% indicator efficiency per amount spent.";
+    ? "Countries are ranked from strongest to weakest by total-amount score, scaled relative to the largest partner-country trade value."
+    : "Countries are ranked from best to worst using a score that blends 60% trade-value strength with 40% indicator efficiency per total amount.";
 
   const categories = rows.map(function (row) {
     return row.partner;

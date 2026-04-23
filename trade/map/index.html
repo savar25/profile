@@ -523,7 +523,7 @@ function indicatorLabel() {
     const state = TradeShared.getState();
     const metricKey = state.metric;
     if (metricKey === "amount") {
-        return "Amount Spent (" + state.currency + ")";
+        return "Total Amount (" + state.currency + ")";
     }
     return (TradeShared.METRICS[metricKey] && TradeShared.METRICS[metricKey].label) || "CO\u2082 Emissions";
 }
@@ -981,7 +981,7 @@ function showTooltip(trade, focusCountry, flowDir, evt) {
         tooltip.innerHTML =
             `<div class="tt-direction">${label}</div>` +
             `<div class="tt-co2">${tradeLabel}: ${fmtIndicator(trade.co2)}</div>` +
-            `<div class="tt-muted">Amount spent: ${fmtAmountValue(trade.amount || 0)}</div>` +
+            `<div class="tt-muted">Total Amount: ${fmtAmountValue(trade.amount || 0)}</div>` +
             `<div class="tt-muted">Dominant type: ${escapeHtml(trade.dominantTypeLabel || "Mixed trade")} (${escapeHtml(trade.typeFamilyLabel || "mixed trade")})</div>` +
             `<div class="tt-subhead">Top ${tradeLabel.toLowerCase()} types</div>` +
             formatTypeChips(trade.topTypes, tradeLabel);
@@ -1964,7 +1964,7 @@ TradeShared.init({
     currencies: ["EUR"],
     initialState: {
         year: "2022",
-        metric: _FACTOR_TO_METRIC[_initHash.factor || _initSaved.factor] || "CO2_total",
+        metric: _FACTOR_TO_METRIC[_initHash.factor] || "amount",
         currency: _initCurrency,
         topn: parseInt(_initHash.inflows, 10) || parseInt(_initSaved.inflows, 10) || 15
     }
