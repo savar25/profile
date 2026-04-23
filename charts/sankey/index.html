@@ -1145,9 +1145,12 @@ function supportedFlows(country, year) {
 function readHashState() {
   const hash = typeof getHash === "function" ? getHash() : {};
   const saved = JSON.parse(localStorage.getItem("sankey-state") || "{}");
+  const currentOtherCountry = activeSelection && activeSelection.otherCountry
+    ? activeSelection.otherCountry
+    : "";
   return {
     country:           hash.country  || saved.country  || manifest.defaultSelection.country,
-    otherCountry:      hash.othercountry || saved.otherCountry || "",
+    otherCountry:      hash.othercountry || currentOtherCountry || saved.otherCountry || "",
     year:              hash.year     || saved.year     || manifest.defaultSelection.year,
     flow:              hash.flow     || saved.flow     || (manifest.defaultSelection.flow || "domestic"),
     metric:            FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
@@ -2080,16 +2083,34 @@ document.addEventListener("hashChangeEvent", function() {
     selection.year,
     selection.flow
   ].join("|");
-  if (activeSelection &&
-      activeSelection.country === selection.country &&
-      activeSelection.otherCountry === selection.otherCountry &&
-      activeSelection.year === selection.year &&
-      activeSelection.flow === selection.flow &&
-      activeSelection.metric === selection.metric &&
-      activeSelection.currency === selection.currency &&
-      activeSelection.industryLabelMode === selection.industryLabelMode &&
-      activeSelection.topn === selection.topn &&
-      (rawDataKey === selectionKey || pendingDataKey === selectionKey)) {
+  const sameDataSelection = activeSelection &&
+    activeSelection.country === selection.country &&
+    activeSelection.otherCountry === selection.otherCountry &&
+    activeSelection.year === selection.year &&
+    activeSelection.flow === selection.flow &&
+    (rawDataKey === selectionKey || pendingDataKey === selectionKey);
+
+  if (sameDataSelection) {
+    if (activeSelection.metric === selection.metric &&
+        activeSelection.currency === selection.currency &&
+        activeSelection.industryLabelMode === selection.industryLabelMode &&
+        activeSelection.topn === selection.topn) {
+      return;
+    }
+
+    activeSelection = Object.assign({}, activeSelection, {
+      metric: selection.metric,
+      currency: selection.currency,
+      industryLabelMode: selection.industryLabelMode,
+      topn: selection.topn
+    });
+    metricSelect.value = activeSelection.metric;
+    currencySelect.value = activeSelection.currency;
+    industryLabelSelect.value = activeSelection.industryLabelMode;
+    topnSlider.value = String(activeSelection.topn);
+    topnLabel.textContent = String(activeSelection.topn);
+    syncControlVisibility();
+    render();
     return;
   }
   loadFromHash(false);
