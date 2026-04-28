@@ -148,6 +148,42 @@ const CURRENCY_NAMES = {
   RUB: "Russian Rouble"
 };
 
+const CURRENCY_SYMBOLS = {
+  EUR: "\u20ac",
+  USD: "$",
+  JPY: "\u00a5",
+  GBP: "\u00a3",
+  CHF: "CHF ",
+  SEK: "kr ",
+  NOK: "kr ",
+  DKK: "kr ",
+  CZK: "K\u010d ",
+  PLN: "z\u0142 ",
+  HUF: "Ft ",
+  RON: "lei ",
+  HRK: "kn ",
+  BGN: "\u043b\u0432 ",
+  TRY: "\u20ba",
+  AUD: "A$",
+  CAD: "C$",
+  HKD: "HK$",
+  SGD: "S$",
+  KRW: "\u20a9",
+  ZAR: "R ",
+  MXN: "MX$",
+  INR: "\u20b9",
+  CNY: "\u00a5",
+  BRL: "R$",
+  IDR: "Rp ",
+  ILS: "\u20aa",
+  MYR: "RM ",
+  PHP: "\u20b1",
+  THB: "\u0e3f",
+  ISK: "kr ",
+  NZD: "NZ$",
+  RUB: "\u20bd"
+};
+
 const METRICS = {
   amount: { label: "Total Amount", unit: "M EUR", scale: 1 },
   CO2_total: { label: "CO\u2082 Emissions", unit: "Gt CO\u2082", scale: 1e12 },
@@ -280,6 +316,39 @@ function wrapLabel(text, maxChars) {
   return lines.join("\n");
 }
 
+function currencySymbol(currencyCode) {
+  const normalized = normalizeCode(currencyCode).toUpperCase();
+  return CURRENCY_SYMBOLS[normalized] || (normalized ? normalized + " " : "");
+}
+
+function formatCurrencyMagnitudeWordValue(value, currencyCode) {
+  const numericValue = parseNumber(value) * 1e6;
+  const absolute = Math.abs(numericValue);
+  const thresholds = [
+    { size: 1e12, label: "Trillion" },
+    { size: 1e9, label: "Billion" },
+    { size: 1e6, label: "Million" },
+    { size: 1e3, label: "Thousand" }
+  ];
+  const threshold = thresholds.find(function (entry) {
+    return absolute >= entry.size;
+  });
+
+  if (!threshold) {
+    return currencySymbol(currencyCode) + numericValue.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  }
+
+  const scaled = numericValue / threshold.size;
+  const maximumFractionDigits = Math.abs(scaled) >= 100 ? 0 : 1;
+  const precision = Math.pow(10, maximumFractionDigits);
+  const rounded = Math.round(scaled * precision) / precision;
+
+  return currencySymbol(currencyCode) + rounded.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maximumFractionDigits
+  }) + " " + threshold.label;
+}
+
 function metricUnit(metricKey) {
   if (metricKey === "amount") {
     return "M " + currentCurrency;
@@ -308,6 +377,9 @@ function displayMetricValue(value, metricKey) {
 }
 
 function fmtValue(value, metricKey) {
+  if (metricKey === "amount") {
+    return formatCurrencyMagnitudeWordValue(displayMetricValue(value, metricKey), currentCurrency);
+  }
   const scaled = displayMetricValue(value, metricKey) / metricScale(metricKey);
   const formatted = scaled >= 1000
     ? scaled.toLocaleString(undefined, { maximumFractionDigits: 0 })

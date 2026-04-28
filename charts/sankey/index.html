@@ -835,6 +835,15 @@ function wrapLabel(text, maxChars) {
   return lines.join("\n");
 }
 
+function formatSankeyNodeLabel(node, metricKey, options) {
+  const label = wrapLabel(sectorLabel(node && node.name), options.labelWrapChars);
+  const nodeValue = parseNumber(node && (node.nodeValue || node.value));
+  if (nodeValue <= 0) {
+    return label;
+  }
+  return label + " " + fmtCompactValue(nodeValue, metricKey);
+}
+
 async function loadIndustryNamesForYear(year) {
   const key = normalizeCode(year);
   if (!key || industryNameByYear[key]) {
@@ -1110,7 +1119,7 @@ function getSankeyLayoutConfig(linkCount) {
     right: (15 + (pressure * 4)).toFixed(1) + "%",
     labelFontSize: Math.round(12 - (pressure * 3)),
     labelLineHeight: Math.round(14 - (pressure * 2)),
-    labelWidth: Math.round(150 - (pressure * 30)),
+    labelWidth: Math.round(220 - (pressure * 40)),
     labelWrapChars: Math.round(24 - (pressure * 6)),
     edgeLabelFontSize: Math.round(11 - (pressure * 3)),
     preferCompactAmount: pressure > 0.1 || linkCount > 12
@@ -1540,15 +1549,31 @@ function buildSankeyData(metricKey, topN) {
 
   links = removeCycles(links);
 
-  const nodeSet = new Set();
+  const nodeTotals = new Map();
   for (const link of links) {
-    nodeSet.add(link.source);
-    nodeSet.add(link.target);
+    const sourceTotals = nodeTotals.get(link.source) || { incoming: 0, outgoing: 0 };
+    const targetTotals = nodeTotals.get(link.target) || { incoming: 0, outgoing: 0 };
+    sourceTotals.outgoing += link.value;
+    targetTotals.incoming += link.value;
+    nodeTotals.set(link.source, sourceTotals);
+    nodeTotals.set(link.target, targetTotals);
   }
 
   return {
-    nodes: Array.from(nodeSet).map(function (name) {
-      return { name: name };
+    nodes: Array.from(nodeTotals.entries()).map(function (entry) {
+      const name = entry[0];
+      const totals = entry[1];
+      const nodeValue = Math.max(totals.incoming, totals.outgoing);
+      const isSink = totals.incoming > 0 && totals.outgoing === 0;
+      return {
+        name: name,
+        value: nodeValue,
+        nodeValue: nodeValue,
+        label: {
+          position: isSink ? "left" : "right",
+          align: isSink ? "right" : "left"
+        }
+      };
     }),
     links: links
   };
@@ -1668,19 +1693,11 @@ function render() {
         align: "left",
         color: chartText,
         formatter: function(params) {
-          return wrapLabel(sectorLabel(params.name), layout.labelWrapChars);
+          return formatSankeyNodeLabel(params.data, activeSelection.metric, layout);
         }
       },
       edgeLabel: {
-        show: true,
-        fontSize: layout.edgeLabelFontSize,
-        color: chartText,
-        backgroundColor: "transparent",
-        borderRadius: 0,
-        padding: 0,
-        formatter: function (params) {
-          return formatSankeyEdgeLabel(params.data, activeSelection.metric, layout);
-        }
+        show: false
       },
       lineStyle: {
         color: "gradient",
