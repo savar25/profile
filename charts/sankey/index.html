@@ -452,7 +452,7 @@ const SECTOR_NAMES = {
     initialState: {
       year:     initYear,
       metric:   FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
-      currency: hash.currency || saved.currency || "EUR",
+      currency: hash.currency || saved.currency || null,
       topn: parseInt(hash.inflows, 10) || parseInt(saved.inflows, 10) || 15
     }
   });
@@ -479,16 +479,10 @@ const scoreHelpPanel = document.getElementById("score-help-panel");
 const scoreHelpClose = document.getElementById("score-help-close");
 const chartDom = document.getElementById("sankey-chart");
 const chart = echarts.init(chartDom);
-const partnerChartPanel = document.getElementById("partner-chart-panel");
-const partnerChartHeader = document.getElementById("partner-chart-header");
-const partnerChartNote = document.getElementById("partner-chart-note");
 const partnerChartStatus = document.getElementById("partner-chart-status");
-const partnerChartDom = document.getElementById("partner-chart");
-const partnerChart = echarts.init(partnerChartDom);
 const industryNameByYear = {};
 const currencyRatesByYear = {};
-const countryNameMap = new Map();
-let countryNamesPromise = null;
+TradePartner.initChart("partner-chart");
 
 const tradeMapLink = document.getElementById("trade-map-link");
 if (tradeMapLink && window.SANKEY_TRADE_MAP_URL) {
@@ -917,42 +911,6 @@ function currencyName(code) {
   return CURRENCY_NAMES[key] || key;
 }
 
-function countryFullName(code) {
-  const key = normalizeCode(code);
-  return countryNameMap.get(key) || key;
-}
-
-async function loadCountryNames() {
-  if (countryNamesPromise) return countryNamesPromise;
-  countryNamesPromise = (async function() {
-    const url = window.SANKEY_LOCALSITE_BASE + "/info/data/map-filters/countries-full.csv";
-    const response = await fetchTextWithFallback([url]);
-    if (!response || !response.text) return;
-    const rows = d3.csvParse(response.text);
-    rows.forEach(function(row) {
-      const code = normalizeCode(row.Country);
-      const name = String(row.CountryName || "").trim();
-      if (code && name) countryNameMap.set(code, name);
-    });
-  })().catch(function() {});
-  return countryNamesPromise;
-}
-
-function initCountryNameSwap(selectEl) {
-  selectEl.addEventListener("mousedown", function() {
-    Array.from(selectEl.options).forEach(function(opt) {
-      if (opt.value) opt.textContent = countryFullName(opt.value);
-    });
-  });
-  function restoreCodes() {
-    Array.from(selectEl.options).forEach(function(opt) {
-      if (opt.value) opt.textContent = opt.value;
-    });
-  }
-  selectEl.addEventListener("change", restoreCodes);
-  selectEl.addEventListener("blur", restoreCodes);
-}
-
 function currenciesForYear(year) {
   const yearRates = currencyRatesByYear[normalizeCode(year)] || { EUR: 1 };
   return availableCurrencyCodes.filter(function (currencyCode) {
@@ -1202,7 +1160,7 @@ function readHashState() {
     year:              hash.year     || saved.year     || manifest.defaultSelection.year,
     flow:              hash.flow     || saved.flow     || (manifest.defaultSelection.flow || "domestic"),
     metric:            FACTOR_TO_METRIC[hash.factor || saved.factor] || "CO2_total",
-    currency:          hash.currency || saved.currency || "",
+    currency:          hash.currency || saved.currency || TradeShared.detectCurrency() || "",
     industryLabelMode: hash.labels   || saved.labels   || "title",
     topn: parseInt(hash.inflows, 10) || parseInt(saved.inflows, 10) || 15
   };
@@ -1444,74 +1402,6 @@ function rowsForSelection(selection) {
   });
 }
 
-function buildPartnerBreakdown(metricKey, limit) {
-  const byPartner = new Map();
-
-  rowsForSelection(activeSelection).forEach(function (row) {
-    const partner = partnerCountryCode(row, activeSelection);
-    if (!partner) {
-      return;
-    }
-
-    const metricValue = getMetricValue(row, metricKey);
-    const amountValue = getMetricValue(row, "amount");
-    if (metricValue <= 0 && amountValue <= 0) {
-      return;
-    }
-
-    const current = byPartner.get(partner) || {
-      partner: partner,
-      metricValue: 0,
-      amountValue: 0
-    };
-    current.metricValue += metricValue;
-    current.amountValue += amountValue;
-    byPartner.set(partner, current);
-  });
-
-  const rows = Array.from(byPartner.values()).map(function (row) {
-    const intensity = row.amountValue > 0 ? (row.metricValue / row.amountValue) : 0;
-    return Object.assign({}, row, { intensity: intensity });
-  });
-
-  if (!rows.length) {
-    return rows;
-  }
-
-  const maxAmount = Math.max.apply(null, rows.map(function (row) {
-    return row.amountValue;
-  }));
-  const intensities = rows.map(function (row) {
-    return row.intensity;
-  });
-  const minIntensity = Math.min.apply(null, intensities);
-  const maxIntensity = Math.max.apply(null, intensities);
-  const invertIntensity = (METRICS[metricKey] && METRICS[metricKey].scoreDirection) === "lower";
-
-  return rows
-    .map(function (row) {
-      const tradeStrength = maxAmount > 0 ? (row.amountValue / maxAmount) : 0;
-      const impactEfficiency = metricKey === "amount"
-        ? tradeStrength
-        : normalizeRange(row.intensity, minIntensity, maxIntensity, invertIntensity);
-      const score = metricKey === "amount"
-        ? (tradeStrength * 100)
-        : ((tradeStrength * 0.6 + impactEfficiency * 0.4) * 100);
-      return Object.assign({}, row, {
-        tradeStrength: tradeStrength,
-        impactEfficiency: impactEfficiency,
-        score: score
-      });
-    })
-    .sort(function (a, b) {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      }
-      return b.amountValue - a.amountValue;
-    })
-    .slice(0, limit);
-}
-
 // ---------------------------------------------------------------------------
 // Build Sankey data from rawData
 // ---------------------------------------------------------------------------
@@ -1689,7 +1579,7 @@ function render() {
   if (!links.length) {
     setStatus("No data available for this combination.", true);
     chart.clear();
-    renderPartnerChart();
+    TradePartner.render(rawData, activeSelection);
     return;
   }
 
@@ -1764,205 +1654,7 @@ function render() {
     false
   );
 
-  renderPartnerChart();
-}
-
-function renderPartnerChart() {
-  const bodyStyle = getComputedStyle(document.body);
-  const tooltipBg = bodyStyle.getPropertyValue("--bg-primary").trim() || "#fff";
-  const tooltipText = bodyStyle.getPropertyValue("--text-primary").trim() || "#333";
-  const isPairFiltered = !!normalizeCode(activeSelection && activeSelection.otherCountry);
-
-  if (!rawData || !activeSelection || activeSelection.flow === "domestic" || isPairFiltered) {
-    partnerChartPanel.hidden = true;
-    partnerChart.clear();
-    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
-    setPartnerStatus("");
-    return;
-  }
-
-  partnerChartPanel.hidden = false;
-  if (partnerChartHeader && activeSelection) {
-    partnerChartHeader.textContent = countryFullName(activeSelection.country) + " - Top Partner Countries";
-  }
-
-  const metricKey = activeSelection.metric;
-  const metric = METRICS[metricKey];
-  const amountMetric = METRICS.amount;
-  const rows = buildPartnerBreakdown(metricKey, 10);
-
-  if (!rows.length) {
-    partnerChart.clear();
-    partnerChartNote.textContent = "Top 10 partner countries for the selected import/export view, showing the selected indicator alongside amount spent.";
-    setPartnerStatus("No partner-country data available for this selection.", true);
-    return;
-  }
-
-  partnerChartNote.textContent = metricKey === "amount"
-    ? "Countries are ranked from strongest to weakest by amount-spent score, scaled relative to the largest partner-country trade value."
-    : "Countries are ranked from best to worst using a score that blends 60% trade-value strength with 40% indicator efficiency per amount spent.";
-
-  const categories = rows.map(function (row) {
-    return countryFullName(row.partner);
-  });
-  const metricSeries = rows.map(function (row) {
-    return {
-      value: row.metricValue,
-      amountValue: row.amountValue,
-      score: row.score,
-      intensity: row.intensity
-    };
-  });
-  const amountSeries = rows.map(function (row) {
-    return {
-      value: row.amountValue,
-      metricValue: row.metricValue,
-      score: row.score,
-      intensity: row.intensity
-    };
-  });
-  const showAmountSeries = metricKey !== "amount";
-
-  partnerChart.setOption({
-    animationDuration: 300,
-    legend: {
-      top: 10,
-      left: "center",
-      itemGap: 18,
-      data: showAmountSeries ? [metric.label, amountMetric.label] : [amountMetric.label]
-    },
-    grid: {
-      left: 88,
-      right: 88,
-      top: 62,
-      bottom: 28,
-      containLabel: true
-    },
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      confine: true,
-      backgroundColor: tooltipBg,
-      textStyle: { color: tooltipText },
-      formatter: function (params) {
-        const lines = ["<b>" + params[0].axisValue + "</b>"];
-        params.forEach(function (item) {
-          const metricForSeries = item.seriesName === amountMetric.label ? "amount" : metricKey;
-          lines.push(item.marker + item.seriesName + ": <b>" + fmtValue(item.value, metricForSeries) + "</b>");
-        });
-        const source = params[0] && params[0].data ? params[0].data : null;
-        if (source) {
-          lines.push("Score: <b>" + fmtScore(source.score) + "</b>");
-          if (metricKey !== "amount") {
-            lines.push("Indicator per " + metricUnit("amount") + ": <b>" + fmtCompactValue(convertIntensityPerCurrency(source.intensity, activeSelection.year, activeSelection.currency), metricKey) + "</b>");
-          }
-        }
-        return lines.join("<br/>");
-      }
-    },
-    yAxis: {
-      type: "category",
-      inverse: true,
-      axisTick: { show: false },
-      data: categories
-    },
-    xAxis: showAmountSeries ? [
-      {
-        type: "value",
-        name: metric.label + " (" + metricUnit(metricKey) + ")",
-        position: "top",
-        nameTextStyle: {
-          padding: [0, 0, 8, 0]
-        },
-        axisLabel: {
-          formatter: function (value) {
-            return fmtAxisTick(value, metricKey);
-          }
-        }
-      },
-      {
-        type: "value",
-        name: amountMetric.label + " (" + metricUnit("amount") + ")",
-        position: "bottom",
-        nameTextStyle: {
-          padding: [0, 0, 8, 0]
-        },
-        axisLabel: {
-          formatter: function (value) {
-            return fmtAxisTick(value, "amount");
-          }
-        }
-      }
-    ] : [
-      {
-        type: "value",
-        name: amountMetric.label + " (" + metricUnit("amount") + ")",
-        position: "bottom",
-        nameTextStyle: {
-          padding: [0, 0, 8, 0]
-        },
-        axisLabel: {
-          formatter: function (value) {
-            return fmtAxisTick(value, "amount");
-          }
-        }
-      }
-    ],
-    series: showAmountSeries ? [
-      {
-        name: metric.label,
-        type: "bar",
-        xAxisIndex: 0,
-        data: metricSeries,
-        itemStyle: { color: "#2563eb" },
-        barMaxWidth: 18,
-        barGap: "20%"
-      },
-      {
-        name: amountMetric.label,
-        type: "bar",
-        xAxisIndex: 1,
-        data: amountSeries,
-        itemStyle: { color: "#f59e0b" },
-        barMaxWidth: 18,
-        label: {
-          show: true,
-          position: "right",
-          distance: 10,
-          color: "#333",
-          fontWeight: 600,
-          formatter: function (params) {
-            return "Score " + fmtScore(params.data.score);
-          }
-        }
-      }
-    ] : [
-      {
-        name: amountMetric.label,
-        type: "bar",
-        data: amountSeries,
-        itemStyle: { color: "#f59e0b" },
-        barMaxWidth: 22,
-        label: {
-          show: true,
-          position: "right",
-          distance: 10,
-          color: "#333",
-          fontWeight: 600,
-          formatter: function (params) {
-            return "Score " + fmtScore(params.data.score);
-          }
-        }
-      }
-    ]
-  }, true);
-  partnerChart.resize();
-
-  setPartnerStatus(
-    "Top 10 " + activeSelection.flow + " partner countries ranked best to worst for " +
-    countryFullName(activeSelection.country) + " " + activeSelection.year + ".",
-    false
-  );
+  TradePartner.render(rawData, activeSelection);
 }
 
 // ---------------------------------------------------------------------------
@@ -1994,8 +1686,7 @@ async function loadSelection(selection) {
     rawData = null;
     rawDataKey = "";
     chart.clear();
-    partnerChart.clear();
-    partnerChartPanel.hidden = selection.flow === "domestic" || !!normalizeCode(selection.otherCountry);
+    TradePartner.render(null, activeSelection);
     setStatus("Error loading data for " + selectionKey + ".", true);
     return;
   }
@@ -2050,8 +1741,8 @@ function updateHashFromControls() {
 // Events
 // ---------------------------------------------------------------------------
 syncCountryOptions();
-initCountryNameSwap(countrySelect);
-initCountryNameSwap(otherCountrySelect);
+TradePartner.initCountryNameSwap(countrySelect);
+TradePartner.initCountryNameSwap(otherCountrySelect);
 
 countrySelect.addEventListener("change", function() {
   syncOtherCountryOptions(countrySelect.value, otherCountrySelect.value);
@@ -2179,14 +1870,13 @@ document.addEventListener("hashChangeEvent", function() {
 
 window.addEventListener("resize", function() {
   chart.resize();
-  partnerChart.resize();
+  TradePartner.resize();
 });
 
 // Init
 Promise.all([
   loadCurrencyRates(),
-  loadManifest(),
-  loadCountryNames()
+  loadManifest()
 ]).finally(function () {
   syncCountryOptions();
   TradeShared.setCurrencies(availableCurrencyCodes);
