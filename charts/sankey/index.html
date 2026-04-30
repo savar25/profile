@@ -480,12 +480,15 @@ const scoreHelpClose = document.getElementById("score-help-close");
 const chartDom = document.getElementById("sankey-chart");
 const chart = echarts.init(chartDom);
 const partnerChartPanel = document.getElementById("partner-chart-panel");
+const partnerChartHeader = document.getElementById("partner-chart-header");
 const partnerChartNote = document.getElementById("partner-chart-note");
 const partnerChartStatus = document.getElementById("partner-chart-status");
 const partnerChartDom = document.getElementById("partner-chart");
 const partnerChart = echarts.init(partnerChartDom);
 const industryNameByYear = {};
 const currencyRatesByYear = {};
+const countryNameMap = new Map();
+let countryNamesPromise = null;
 
 const tradeMapLink = document.getElementById("trade-map-link");
 if (tradeMapLink && window.SANKEY_TRADE_MAP_URL) {
@@ -912,6 +915,42 @@ async function loadCurrencyRates() {
 function currencyName(code) {
   const key = normalizeCode(code);
   return CURRENCY_NAMES[key] || key;
+}
+
+function countryFullName(code) {
+  const key = normalizeCode(code);
+  return countryNameMap.get(key) || key;
+}
+
+async function loadCountryNames() {
+  if (countryNamesPromise) return countryNamesPromise;
+  countryNamesPromise = (async function() {
+    const url = window.SANKEY_LOCALSITE_BASE + "/info/data/map-filters/countries-full.csv";
+    const response = await fetchTextWithFallback([url]);
+    if (!response || !response.text) return;
+    const rows = d3.csvParse(response.text);
+    rows.forEach(function(row) {
+      const code = normalizeCode(row.Country);
+      const name = String(row.CountryName || "").trim();
+      if (code && name) countryNameMap.set(code, name);
+    });
+  })().catch(function() {});
+  return countryNamesPromise;
+}
+
+function initCountryNameSwap(selectEl) {
+  selectEl.addEventListener("mousedown", function() {
+    Array.from(selectEl.options).forEach(function(opt) {
+      if (opt.value) opt.textContent = countryFullName(opt.value);
+    });
+  });
+  function restoreCodes() {
+    Array.from(selectEl.options).forEach(function(opt) {
+      if (opt.value) opt.textContent = opt.value;
+    });
+  }
+  selectEl.addEventListener("change", restoreCodes);
+  selectEl.addEventListener("blur", restoreCodes);
 }
 
 function currenciesForYear(year) {
@@ -1743,6 +1782,9 @@ function renderPartnerChart() {
   }
 
   partnerChartPanel.hidden = false;
+  if (partnerChartHeader && activeSelection) {
+    partnerChartHeader.textContent = countryFullName(activeSelection.country) + " - Top Partner Countries";
+  }
 
   const metricKey = activeSelection.metric;
   const metric = METRICS[metricKey];
@@ -1761,7 +1803,7 @@ function renderPartnerChart() {
     : "Countries are ranked from best to worst using a score that blends 60% trade-value strength with 40% indicator efficiency per amount spent.";
 
   const categories = rows.map(function (row) {
-    return row.partner;
+    return countryFullName(row.partner);
   });
   const metricSeries = rows.map(function (row) {
     return {
@@ -1918,7 +1960,7 @@ function renderPartnerChart() {
 
   setPartnerStatus(
     "Top 10 " + activeSelection.flow + " partner countries ranked best to worst for " +
-    activeSelection.country + " " + activeSelection.year + ".",
+    countryFullName(activeSelection.country) + " " + activeSelection.year + ".",
     false
   );
 }
@@ -2008,6 +2050,8 @@ function updateHashFromControls() {
 // Events
 // ---------------------------------------------------------------------------
 syncCountryOptions();
+initCountryNameSwap(countrySelect);
+initCountryNameSwap(otherCountrySelect);
 
 countrySelect.addEventListener("change", function() {
   syncOtherCountryOptions(countrySelect.value, otherCountrySelect.value);
@@ -2141,7 +2185,8 @@ window.addEventListener("resize", function() {
 // Init
 Promise.all([
   loadCurrencyRates(),
-  loadManifest()
+  loadManifest(),
+  loadCountryNames()
 ]).finally(function () {
   syncCountryOptions();
   TradeShared.setCurrencies(availableCurrencyCodes);
